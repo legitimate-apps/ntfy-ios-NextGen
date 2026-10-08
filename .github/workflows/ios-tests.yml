@@ -1,0 +1,101 @@
+name: iOS tests
+
+# Build the app and run the full unit suite on every push to main and every pull request,
+# including pull requests from forks. GitHub-hosted runners: free for public repositories, and a
+# fresh VM per run, so a pull request's code never runs on anyone's own machine.
+#
+# The build uses the public defaults in Configuration/Base.xcconfig (no Local.xcconfig) and the
+# placeholder Firebase config from scripts/bootstrap.sh, exactly what a fresh clone gets. The tests
+# use an in-memory store and never reach Firebase.
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+concurrency:
+  group: ios-tests-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Build and test
+    runs-on: macos-26
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Pick an available iPhone simulator
+        # Don't hardcode a device name: the image's simulators change with Xcode updates, and a
+        # stale name fails with an unhelpful "destination not found". One awk, no pipeline, so
+        # `pipefail` can't abort the step before the emptiness check reports anything.
+        id: sim
+        run: |
+          set -euo pipefail
+          udid=$(xcrun simctl list devices available \
+                 | awk 'match($0, /^[[:space:]]+iPhone/) && match($0, /\(([0-9A-Fa-f-]{36})\)/) {
+                          print substr($0, RSTART+1, RLENGTH-2); exit
+                        }')
+          if [ -z "$udid" ]; then
+            echo "::error::No available iPhone simulator on this runner."
+            xcrun simctl list devices available || true
+            exit 1
+          fi
+          echo "udid=$udid" >> "$GITHUB_OUTPUT"
+          echo "Using simulator $udid"
+
+      - name: Boot the simulator and wait for it to be ready
+        # Booting inside `xcodebuild test` charges first-boot data migration to the tests' own
+        # timeouts. `bootstatus -b` boots if needed and blocks until the device is usable.
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: xcrun simctl bootstatus "$SIM_UDID" -b
+
+      - name: Bootstrap
+        # Installs the placeholder GoogleService-Info.plist, a required build input that is
+        # gitignored because a real one carries an API key.
+        run: ./scripts/bootstrap.sh
+
+      - name: Build and test
+        # CODE_SIGNING_ALLOWED=NO is correct for build+test (not for install-and-run: an unsigned
+        # app is denied its App Group container). -parallel-testing-enabled NO: cloning the
+        # simulator to parallelize is slower here and fails after a successful build.
+        env:
+          SIM_UDID: ${{ steps.sim.outputs.udid }}
+        run: |
+          set -o pipefail
+          xcodebuild \
+            -project ntfy.xcodeproj \
+            -scheme ntfy \
+            -destination "platform=iOS Simulator,id=$SIM_UDID" \
+            -configuration Debug \
+            -parallel-testing-enabled NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            test 2>&1 | tee "$RUNNER_TEMP/test.log"
+
+      - name: Test summary
+        # `xcodebuild test` can exit non-zero, or even zero, without running a test (a vanished
+        # destination, a cloning failure), so assert that tests were actually executed.
+        if: always()
+        run: |
+          set -uo pipefail
+          grep -E "Executed [0-9]+ test|\*\* TEST (SUCCEEDED|FAILED) \*\*" "$RUNNER_TEMP/test.log" | tail -20 || true
+          if ! grep -qE "Executed [0-9]+ test" "$RUNNER_TEMP/test.log"; then
+            echo "::error::No test was executed. A green exit code here would be meaningless."
+            exit 1
+          fi
+          if grep -qE "Executed 0 tests" "$RUNNER_TEMP/test.log"; then
+            echo "::error::The suite ran zero tests."
+            exit 1
+          fi
+
+      - name: Upload test log on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xcodebuild-log
+          path: ${{ runner.temp }}/test.log
+          retention-days: 7

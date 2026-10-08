@@ -1,0 +1,74 @@
+name: Bug report
+description: Something in the app isn't working right
+title: "[bug]: "
+labels: ["bug"]
+body:
+  - type: textarea
+    id: description
+    attributes:
+      label: Describe the bug
+      description: A clear description of what's wrong.
+    validations:
+      required: true
+
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: What did you do, step by step?
+      placeholder: |
+        1. Go to '...'
+        2. Tap on '...'
+        3. See error
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen instead?
+    validations:
+      required: false
+
+  - type: input
+    id: app-version
+    attributes:
+      label: App version
+      description: Settings screen, or the version shown in TestFlight/App Store
+      placeholder: e.g. 2.6.0 (build 42)
+    validations:
+      required: true
+
+  - type: input
+    id: ios-version
+    attributes:
+      label: iOS version
+      placeholder: e.g. iOS 18.1
+    validations:
+      required: true
+
+  - type: input
+    id: device
+    attributes:
+      label: Device
+      placeholder: e.g. iPhone 15 Pro, iPhone SE (2020)
+    validations:
+      required: true
+
+  - type: input
+    id: server
+    attributes:
+      label: ntfy server
+      description: ntfy.sh, a self-hosted server, or unsure
+      placeholder: e.g. self-hosted, ntfy.sh
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Additional context
+      description: Screenshots, logs, anything else that might help.
+    validations:
+      required: false

@@ -1,0 +1,163 @@
+name: auto-merge-tier1
+
+# Tier-based auto-merge for safe-tier-1 / safe-tier-2 PRs.
+#
+# A PR is eligible to merge iff ALL of:
+#   1. State == OPEN, mergeable, not draft, not from a fork.
+#   2. Has label `safe-tier-1` (docs/markdown-only) or `safe-tier-2`
+#      (small isolated code change) — and for tier-2, the operator has
+#      set repo variable AUTOPILOT_TIER2_ENABLED == 'true'.
+#      Labels are a trust signal: they should only ever be applied by
+#      the operator (or `github-actions[bot]`) — this workflow does not
+#      itself guard who applies the label (no tier-label-guard here yet),
+#      so treat the label as operator-controlled process, not a
+#      cryptographic guarantee.
+#   3. Tier-1: every changed file matches TIER1_PATHS_REGEX (docs/markdown
+#      only — no code, no project file, no CI, no entitlements/signing).
+#   4. Tier-2: no changed file matches FORBIDDEN_PATHS_REGEX, diff size is
+#      within TIER2_MAX_ADDITIONS/TIER2_MAX_FILES, and no added line
+#      matches FORBIDDEN_DIFF_CONTENT_REGEX (secrets, entitlements,
+#      signing config, URL scheme handling, shell-out patterns).
+#
+# If all of the above pass we call `gh pr merge --auto --squash`. GitHub
+# itself then waits for required status checks (per branch protection,
+# principally `validate-author`) to go green before merging — we do not
+# poll checks ourselves.
+#
+# The regex/threshold policy lives inline below.
+
+on:
+  pull_request:
+    types: [labeled, synchronize, reopened]
+
+permissions:
+  pull-requests: write
+  contents: write
+  checks: read
+
+concurrency:
+  group: auto-merge-tier1-${{ github.event.pull_request.number }}
+  cancel-in-progress: false
+
+env:
+  # Tier-1: markdown / docs only. No Swift, no project file, no CI, no
+  # entitlements/plist/signing surface.
+  TIER1_PATHS_REGEX: '\.md$|^README|^docs/'
+
+  # Tier-2: small isolated code change, opt-in only.
+  TIER2_MAX_ADDITIONS: 80
+  TIER2_MAX_FILES: 3
+
+  # Forbidden regardless of tier/size — project signing, CI itself,
+  # push/notification credentials, entitlements, dependency locks.
+  FORBIDDEN_PATHS_REGEX: '^(ntfy\.xcodeproj/|Configuration/|scripts/|\.github/workflows/|.*\.entitlements$|.*GoogleService-Info\.plist$|.*Package\.resolved$|.*Info\.plist$|ntfyNSE/)'
+
+  # Sensitive content added in an otherwise-allowed path.
+  FORBIDDEN_DIFF_CONTENT_REGEX: '\b(apiKey|api_key|clientSecret|client_secret|privateKey|BEGIN (RSA|EC|PRIVATE) KEY|access_token|refresh_token|Keychain\.set|URLScheme|CFBundleURLSchemes)\b'
+
+jobs:
+  evaluate:
+    # Bail early for fork PRs — `gh pr merge --auto` won't work for them
+    # anyway, and we want one clear refusal line rather than a confusing
+    # later failure.
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - name: Evaluate and (maybe) enable auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          TIER2_ENABLED: ${{ vars.AUTOPILOT_TIER2_ENABLED }}
+        run: |
+          set -euo pipefail
+
+          comment_and_skip() {
+            local reason="$1"
+            gh pr comment "$PR_NUMBER" --repo "$REPO" --body "auto-merge skipped: $reason"
+            echo "skip #$PR_NUMBER: $reason"
+            exit 0
+          }
+
+          echo "=== evaluating PR #$PR_NUMBER ==="
+          META=$(gh pr view "$PR_NUMBER" --repo "$REPO" \
+            --json state,mergeable,labels,files,additions,changedFiles,isDraft)
+
+          state=$(jq -r .state <<<"$META")
+          mergeable=$(jq -r .mergeable <<<"$META")
+          is_draft=$(jq -r .isDraft <<<"$META")
+          labels=$(jq -r '.labels[].name' <<<"$META" | tr '\n' ',')
+
+          if [ "$state" != "OPEN" ]; then
+              echo "PR state=$state, skipping"; exit 0
+          fi
+          if [ "$is_draft" = "true" ]; then
+              echo "PR is draft, skipping"; exit 0
+          fi
+          if [ "$mergeable" != "MERGEABLE" ]; then
+              echo "PR mergeable=$mergeable, skipping"; exit 0
+          fi
+
+          if [[ ",$labels," == *",safe-tier-1,"* ]]; then
+              tier="safe-tier-1"
+          elif [[ ",$labels," == *",safe-tier-2,"* ]]; then
+              if [ "${TIER2_ENABLED:-false}" != "true" ]; then
+                  echo "PR has safe-tier-2 but AUTOPILOT_TIER2_ENABLED!=true, skipping"
+                  exit 0
+              fi
+              tier="safe-tier-2"
+          else
+              echo "PR has no safe-tier label, skipping"
+              exit 0
+          fi
+          echo "tier=$tier"
+
+          files=$(jq -r '.files[].path' <<<"$META")
+
+          # ─── Forbidden paths (both tiers) ──────────────────────────
+          if echo "$files" | grep -qE "$FORBIDDEN_PATHS_REGEX"; then
+              gh pr edit "$PR_NUMBER" --repo "$REPO" \
+                  --remove-label safe-tier-1 --remove-label safe-tier-2 \
+                  --add-label needs-review || true
+              comment_and_skip "touches a forbidden path (signing/entitlements/CI/project file) — needs manual review"
+          fi
+
+          if [ "$tier" = "safe-tier-1" ]; then
+              # Every changed file must be docs/markdown.
+              non_doc=$(echo "$files" | grep -vE "$TIER1_PATHS_REGEX" || true)
+              if [ -n "$non_doc" ]; then
+                  gh pr edit "$PR_NUMBER" --repo "$REPO" \
+                      --remove-label safe-tier-1 --add-label needs-review || true
+                  comment_and_skip "safe-tier-1 requires docs/markdown-only changes; found non-doc file(s):
+          $non_doc"
+              fi
+          else
+              # safe-tier-2: size caps + diff content scan.
+              additions=$(jq -r .additions <<<"$META")
+              changed_files=$(jq -r .changedFiles <<<"$META")
+              if [ "$additions" -gt "$TIER2_MAX_ADDITIONS" ] || [ "$changed_files" -gt "$TIER2_MAX_FILES" ]; then
+                  gh pr edit "$PR_NUMBER" --repo "$REPO" \
+                      --remove-label safe-tier-2 --add-label needs-review || true
+                  comment_and_skip "safe-tier-2 exceeds size cap (${additions} additions / ${changed_files} files, max ${TIER2_MAX_ADDITIONS}/${TIER2_MAX_FILES})"
+              fi
+
+              diff_text=$(mktemp)
+              gh pr diff "$PR_NUMBER" --repo "$REPO" > "$diff_text"
+              added_lines=$(grep -E '^\+' "$diff_text" | grep -vE '^\+\+\+' || true)
+              rm -f "$diff_text"
+              if echo "$added_lines" | grep -qiE "$FORBIDDEN_DIFF_CONTENT_REGEX"; then
+                  gh pr edit "$PR_NUMBER" --repo "$REPO" \
+                      --remove-label safe-tier-2 --add-label needs-review || true
+                  comment_and_skip "added lines match a forbidden content pattern (secrets/signing/URL-scheme handling) — needs manual review"
+              fi
+          fi
+
+          # ─── Enable auto-merge ────────────────────────────────────
+          # We do NOT poll required checks here. GitHub waits for them via
+          # branch protection (validate-author is the required check on
+          # this repo). --auto requires "Allow auto-merge" enabled in
+          # repo settings.
+          echo "Enabling auto-merge for PR #$PR_NUMBER under $tier"
+          gh pr merge "$PR_NUMBER" --repo "$REPO" --auto --squash --delete-branch
+          gh pr comment "$PR_NUMBER" --repo "$REPO" \
+              --body "auto-merge enabled under tier \`$tier\`. GitHub will merge once required status checks complete."

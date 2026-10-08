@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Questions and discussion
+    url: https://discord.gg/WszujZEBbZ
+    about: For questions and general discussion, rather than a bug report or feature request.
+  - name: ntfy server / protocol issues
+    url: https://github.com/binwiederhier/ntfy/issues
+    about: Issues with the ntfy server, protocol, or Android app belong upstream, not in this iOS-client repo.

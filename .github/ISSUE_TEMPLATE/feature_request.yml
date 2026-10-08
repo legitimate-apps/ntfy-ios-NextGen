@@ -1,0 +1,32 @@
+name: Feature request
+description: Suggest an idea, even a half-formed one
+title: ""
+labels: ["feature-request"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        No checklist, no required sections beyond the one below. A one-liner is fine.
+
+  - type: textarea
+    id: request
+    attributes:
+      label: What would you like?
+    validations:
+      required: true
+
+  - type: textarea
+    id: why
+    attributes:
+      label: Why? (optional)
+      description: What would this help you do?
+    validations:
+      required: false
+
+  - type: textarea
+    id: additional
+    attributes:
+      label: Anything else (optional)
+      description: Screenshots, links, examples, prior art from the Android app.
+    validations:
+      required: false

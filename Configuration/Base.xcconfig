@@ -1,0 +1,27 @@
+// Build identity for the app, its notification extension and the unit tests.
+//
+// These defaults build and run on the simulator with no account. To run on a device or ship your
+// own build, copy Local.xcconfig.example to Local.xcconfig (gitignored) and fill in your values.
+
+// Bundle id of the app. The extension and the tests append .ntfyNSE and .ntfyTests.
+APP_BUNDLE_ID = org.example.ntfy-nextgen
+
+// App Group shared by the app and the extension (Core Data store, attachments, settings).
+APP_GROUP_ID = group.$(APP_BUNDLE_ID)
+
+// Keychain access group shared by the app and the extension (server logins, topic passwords).
+// The team prefix is added by the system.
+APP_KEYCHAIN_GROUP = $(APP_BUNDLE_ID).shared
+
+// Apple developer team used for signing. Empty is fine for the simulator.
+DEVELOPMENT_TEAM =
+
+// App Store id of your listing, for the "Rate the app" link. Empty hides the link.
+APP_STORE_ID =
+
+// Hosts of a server that earlier builds used as the built-in server, whose topics are moved to the
+// current built-in server on first launch (RetiredDefaultServerMigration). Space-separated; the
+// first is the address those builds used. Empty turns the migration off.
+RETIRED_SERVER_HOSTS =
+
+#include? "Local.xcconfig"

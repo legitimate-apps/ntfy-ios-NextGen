@@ -1,0 +1,76 @@
+name: validate-author
+
+# Maintainer branches only: every non-merge commit on a pull request opened from a branch of this
+# repository must be committed by the maintainer account. Author may differ (cherry-picks of
+# upstream PRs keep the original author for credit); what matters is who applied the commit.
+#
+# Pull requests from forks are not checked: a contributor commits as themselves, and their
+# authorship is kept. PRs labeled `community-contribution` are exempt too, for an outside
+# contribution pushed to a branch here.
+
+on:
+  pull_request:
+    branches: [main]
+    # labeled/unlabeled included so applying `community-contribution` re-runs
+    # the check with fresh label data.
+    types: [opened, synchronize, reopened, labeled, unlabeled]
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  check-commit-committer:
+    name: validate-author
+    if: github.event.pull_request.head.repo.full_name == github.repository
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      - name: Verify all commits committed by legitimate-apps (or exempt by label)
+        env:
+          LABELS_JSON: ${{ toJSON(github.event.pull_request.labels.*.name) }}
+          BASE: ${{ github.event.pull_request.base.sha }}
+          HEAD: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          # Operator-applied exemption for genuine outside contributions.
+          # Label names are only settable by users with triage+ access (or
+          # tier-label-guard-equivalent trust), but pass them through env:
+          # rather than inline interpolation regardless.
+          if echo "$LABELS_JSON" | grep -q '"community-contribution"'; then
+            echo "::notice::validate-author exempted by 'community-contribution' label."
+            echo "Operator has accepted the contributor's commits as-is."
+            echo "Auto-merge remains gated by tier label, forbidden paths, and CI green."
+            exit 0
+          fi
+
+          ALLOWED_RE='^309192374\+legitimate-apps@users\.noreply\.github\.com$'
+
+          BAD=""
+          while IFS= read -r line; do
+            sha=$(awk '{print $1}' <<<"$line")
+            ce=$(awk '{print $2}' <<<"$line")
+            if ! [[ "$ce" =~ $ALLOWED_RE ]]; then
+              BAD+=$'\n'"  $sha  committer=$ce"
+            fi
+          done < <(git log --no-merges --format='%H %ce' "$BASE..$HEAD")
+
+          if [ -n "$BAD" ]; then
+            echo "::error::PR contains commits NOT committed by legitimate-apps:"
+            printf '%s\n' "$BAD"
+            echo
+            echo "Two ways forward:"
+            echo "  1. Re-author (fork-internal PRs):"
+            echo "       git -c user.name='legitimate-apps' \\"
+            echo "           -c user.email='309192374+legitimate-apps@users.noreply.github.com' \\"
+            echo "           commit --amend --reset-author --no-edit"
+            echo "  2. Apply 'community-contribution' label (genuine outside PRs;"
+            echo "     operator decision)."
+            exit 1
+          fi
+          echo "All commits committed by legitimate-apps ✓"

@@ -1,0 +1,7 @@
+.DS_Store
+GoogleService-Info.plist
+ntfy.xcodeproj/xcuserdata
+ntfy.xcodeproj/project.xcworkspace/xcuserdata/
+
+# Maintainer build identity (see Configuration/Local.xcconfig.example)
+Configuration/Local.xcconfig

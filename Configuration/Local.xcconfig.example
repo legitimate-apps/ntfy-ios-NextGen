@@ -1,0 +1,8 @@
+// Copy to Local.xcconfig (gitignored) and fill in. Any value set here overrides Base.xcconfig.
+// Changing APP_BUNDLE_ID also changes the App Group and keychain group unless you set them too.
+
+APP_BUNDLE_ID = com.yourname.ntfy-nextgen
+DEVELOPMENT_TEAM = ABCDE12345
+// APP_GROUP_ID = group.com.yourname.ntfy-nextgen
+// APP_KEYCHAIN_GROUP = com.yourname.ntfy-nextgen.shared
+// APP_STORE_ID = 1234567890
