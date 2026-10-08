@@ -9,6 +9,52 @@ struct SubscriptionManager {
     /// The network call behind a poll; a seam so tests can answer without a server.
     var fetch: (PollRequest, @escaping ([Message]?, Error?) -> Void) -> Void = { ApiService.shared.poll($0, completionHandler: $1) }
 
+    /// A hashed upstream topic is public and forgeable. Its payload is only a wake hint: never
+    /// ingest it, including its base_url, sequence_id or event ID. Poll snapshots of our own
+    /// subscriptions instead. Saving the response applies controls/updates without presenting
+    /// new alerts; the background caller allows eight seconds per request and at most one replay.
+    @discardableResult
+    func handleSilentWake(userInfo: [AnyHashable: Any], completion: @escaping (Bool) -> Void) -> Bool {
+        guard let event = userInfo["event"] as? String,
+              event == "message_clear" || event == "message_delete",
+              let topic = userInfo["topic"] as? String else { return false }
+        var requests: [PollRequest] = []
+        store.context.performAndWait {
+            requests = (store.getSubscriptions() ?? []).compactMap { subscription in
+                guard let baseUrl = subscription.baseUrl, let realTopic = subscription.topic,
+                      normalizeBaseUrl(baseUrl) != normalizeBaseUrl(Config.appBaseUrl),
+                      firebaseTopic(baseUrl: baseUrl, topic: realTopic) == topic else { return nil }
+                return store.pollRequest(for: subscription)
+            }
+        }
+        guard !requests.isEmpty else { return false }
+        let group = DispatchGroup()
+        let lock = NSLock()
+        var succeeded = false
+        for request in requests {
+            group.enter()
+            let finish: (Bool) -> Void = { saved in
+                if saved { lock.lock(); succeeded = true; lock.unlock() }
+                group.leave()
+            }
+            fetch(request) { messages, _ in
+                guard let messages, store.save(notificationsFromMessages: messages, polledWith: request) != nil else {
+                    finish(false)
+                    return
+                }
+                if request.since != nil, let ordered = store.reconciliationRequest(after: request) {
+                    fetch(ordered) { messages, _ in
+                        finish(messages.map { store.save(notificationsFromMessages: $0, polledWith: ordered) != nil } ?? false)
+                    }
+                } else {
+                    finish(true)
+                }
+            }
+        }
+        group.notify(queue: .main) { completion(succeeded) }
+        return true
+    }
+
     func subscribe(baseUrl: String, topic: String) {
         let normalizedBaseUrl = normalizeBaseUrl(baseUrl)
         Log.d(tag, "Subscribing to \(topicUrl(baseUrl: normalizedBaseUrl, topic: topic))")

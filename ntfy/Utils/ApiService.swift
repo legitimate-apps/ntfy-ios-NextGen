@@ -65,15 +65,40 @@ class ApiService {
     }
 
     func clear(_ clear: ClearRequest, session: URLSession? = nil, completion: (() -> Void)? = nil) {
-        guard let request = clearRequest(clear) else {
-            completion?()
-            return
-        }
+        action(clear, session: session) { _ in completion?() }
+    }
+
+    /// Only a successful response from the real server permits an upstream wake.
+    func action(_ clear: ClearRequest, session: URLSession? = nil, completion: @escaping (Bool) -> Void) {
+        guard let request = clearRequest(clear) else { completion(false); return }
         runOneShot(request, timeout: 8, baseUrl: clear.baseUrl, session: session) { _, response, error in
-            if error != nil || !(200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0) {
-                Log.w(self.tag, "Clear failed; keeping local read state (HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0))")
+            let succeeded = error == nil && (200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0)
+            if !succeeded {
+                Log.w(self.tag, "Sequence action failed; keeping local state (HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0))")
             }
-            completion?()
+            completion(succeeded)
+        }
+    }
+
+    /// Stock ntfy clear events use silent APNs even with the poll-only Firebase auther patch.
+    /// The fixed sequence is a protocol marker, never an originating message identity. No body,
+    /// real-server authorization or custom headers cross this boundary.
+    func wakeRequest(topic: String) -> URLRequest? {
+        guard topic.range(of: "^[a-f0-9]{64}$", options: .regularExpression) != nil,
+              let url = URL(string: "\(topicUrl(baseUrl: Config.appBaseUrl, topic: topic))/ntfy-sync/clear") else { return nil }
+        var request = URLRequest(url: url)
+        request.httpMethod = "PUT"
+        request.setValue("ntfy", forHTTPHeaderField: "User-Agent")
+        return request
+    }
+
+    func wake(topic: String, session: URLSession? = nil, completion: @escaping () -> Void) {
+        guard let request = wakeRequest(topic: topic) else { completion(); return }
+        runOneShot(request, timeout: 8, baseUrl: Config.appBaseUrl, session: session) { _, response, error in
+            if error != nil || !(200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0) {
+                Log.w(self.tag, "Silent wake failed; other devices will reconcile on their next poll")
+            }
+            completion()
         }
     }
 

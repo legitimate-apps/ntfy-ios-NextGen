@@ -220,6 +220,12 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         Log.d(tag, "Background notification received", userInfo)
         
+        var wakeManager = SubscriptionManager(store: Store.shared)
+        wakeManager.fetch = { ApiService.shared.poll($0, timeout: 8, completionHandler: $1) }
+        if wakeManager.handleSilentWake(userInfo: userInfo, completion: { succeeded in
+            completionHandler(succeeded ? .newData : .failed)
+        }) { return }
+
         if let message = Message.from(userInfo: userInfo), message.isControl {
             let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
             let result = Store.shared.ingest(pushedMessage: message, baseUrl: baseUrl, topic: message.topic)
@@ -348,6 +354,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = notification.request.content.userInfo
         Log.d(tag, "Notification received via userNotificationCenter(willPresent)", userInfo)
+        var wakeManager = SubscriptionManager(store: Store.shared)
+        wakeManager.fetch = { ApiService.shared.poll($0, timeout: 8, completionHandler: $1) }
+        if wakeManager.handleSilentWake(userInfo: userInfo, completion: { _ in }) {
+            completionHandler([])
+            return
+        }
         if let message = Message.from(userInfo: userInfo) {
             let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
             if message.isControl {

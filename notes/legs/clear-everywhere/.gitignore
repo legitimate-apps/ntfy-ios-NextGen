@@ -1,9 +1,0 @@
-*.log
-*.json
-*.jsonl
-*.apns
-LIVE-*.txt
-LIVE-TOPIC.txt
-LIVE-DB.txt
-live-ui.json
-REVIEW-STATE.md

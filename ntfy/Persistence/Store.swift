@@ -63,7 +63,8 @@ class Store: ObservableObject {
     /// `credentialStore`.
     var topicSecrets: TopicSecretStoring
     /// Only local read actions call this; remote ingestion never publishes.
-    var clearPublisher: (ClearRequest, @escaping () -> Void) -> Void = { ApiService.shared.clear($0, completion: $1) }
+    var clearPublisher: (ClearRequest, @escaping (Bool) -> Void) -> Void = { ApiService.shared.action($0, completion: $1) }
+    var wakePublisher: (String, @escaping () -> Void) -> Void = { ApiService.shared.wake(topic: $0, completion: $1) }
     var notificationRemover: (SequenceRemoval) -> Void = { $0.removeDelivered() }
     /// Whether a missing cached key may be re-derived from the password (PBKDF2). Off in the
     /// notification service extension, which has a tight time and memory budget; the app derives it
@@ -502,7 +503,7 @@ class Store: ObservableObject {
             }
             do {
                 try context.save()
-                clears.forEach { sendClear($0) }
+                sendActions(clears)
             } catch {
                 Log.w(Store.tag, "Cannot mark notifications read", error)
                 rollbackAndRefresh()
@@ -529,7 +530,7 @@ class Store: ObservableObject {
             notification.read = read
             do {
                 try context.save()
-                if let clear { sendClear(clear, completion: completion) }
+                if let clear { sendActions([clear], completion: completion) }
                 else { completion?() }
             } catch {
                 Log.w(Store.tag, "Cannot mark notification read", error)
@@ -547,12 +548,16 @@ class Store: ObservableObject {
             let request = Notification.fetchRequest()
             request.predicate = NSPredicate(format: "subscription == %@ AND (sequenceID == %@ OR (sequenceID == nil AND id == %@))", subscription, message.sequence, message.sequence)
             guard let notifications = try? context.fetch(request) else { completion(); return }
-            let group = DispatchGroup()
-            for notification in notifications {
-                group.enter()
-                setRead(true, forNotification: notification) { group.leave() }
+            let unread = notifications.filter { !$0.read }
+            let requests = unread.compactMap { clearRequest(for: $0) }
+            unread.forEach { $0.read = true }
+            do {
+                try context.save()
+                sendActions(requests, completion: completion)
+            } catch {
+                rollbackAndRefresh()
+                completion()
             }
-            group.notify(queue: .main, execute: completion)
         }
     }
 
@@ -581,9 +586,35 @@ class Store: ObservableObject {
                             user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore))
     }
 
-    private func sendClear(_ request: ClearRequest, completion: (() -> Void)? = nil) {
-        notificationRemover(SequenceRemoval(baseUrl: request.baseUrl, topic: request.topic, sequence: request.sequence))
-        clearPublisher(request) { completion?() }
+    /// One read action may clear many sequences. Finish its real-server requests first,
+    /// then wake each successful self-hosted topic once. Incoming ingestion never calls this.
+    private func sendActions(_ requests: [ClearRequest], completion: (() -> Void)? = nil) {
+        guard !requests.isEmpty else { completion?(); return }
+        let publish = clearPublisher
+        let wake = wakePublisher
+        let lock = NSLock()
+        let group = DispatchGroup()
+        var topics: Set<String> = []
+        for request in requests {
+            notificationRemover(SequenceRemoval(baseUrl: request.baseUrl, topic: request.topic, sequence: request.sequence))
+            group.enter()
+            publish(request) { succeeded in
+                if succeeded && normalizeBaseUrl(request.baseUrl) != normalizeBaseUrl(Config.appBaseUrl) {
+                    lock.lock()
+                    topics.insert(firebaseTopic(baseUrl: request.baseUrl, topic: request.topic))
+                    lock.unlock()
+                }
+                group.leave()
+            }
+        }
+        group.notify(queue: .main) {
+            let wakes = DispatchGroup()
+            for topic in topics {
+                wakes.enter()
+                wake(topic) { wakes.leave() }
+            }
+            wakes.notify(queue: .main) { completion?() }
+        }
     }
 
     /// Unread count resolved on the context's own queue, so the push path can call it safely.
@@ -735,9 +766,22 @@ class Store: ObservableObject {
         return request
     }
 
+    /// A cursor poll can overlap a same-second write. Resolve once in server cache order, using
+    /// a fresh credential snapshot; never keep a managed subscription across a network callback.
+    func reconciliationRequest(after request: PollRequest) -> PollRequest? {
+        var reconciliation: PollRequest?
+        context.performAndWait {
+            if let subscription = try? context.existingObject(with: request.subscriptionID) as? Subscription,
+               !subscription.isDeleted, subscription.sequenceReconcile {
+                reconciliation = pollRequest(for: subscription)
+            }
+        }
+        return reconciliation
+    }
+
     /// Stores a poll response against the subscription the request was made for, re-resolved by
     /// object ID on the context's queue. Returns the newly inserted messages, or nil (nothing saved)
-    /// when that subscription no longer exists — it was unsubscribed while the request was out.
+    /// when saving fails or that subscription no longer exists.
     func save(notificationsFromMessages messages: [Message], polledWith request: PollRequest) -> [Message]? {
         var newMessages: [Message]?
         context.performAndWait {
@@ -755,55 +799,46 @@ class Store: ObservableObject {
             } catch let error {
                 Log.w(Store.tag, "Cannot store notifications (fromMessages)", error)
                 rollbackAndRefresh()
-                newMessages = []
+                newMessages = nil
             }
         }
         return newMessages
     }
 
     func delete(notification: Notification) {
-        context.performAndWait {
-            Log.d(Store.tag, "Deleting notification \(notification.id ?? "")")
-            deleteAttachmentLocalFile(for: notification)
-            context.delete(notification)
-            try? context.save()
-        }
+        delete(notifications: [notification])
     }
-    
+
     func delete(notifications: Set<Notification>) {
         context.performAndWait {
-            Log.d(Store.tag, "Deleting \(notifications.count) notification(s)")
+            // Deleting history is local to this device, including its delivered banners. Capture
+            // identities before deleting rows; this path never reads credentials or publishes.
+            let removals = notifications.compactMap { notification -> SequenceRemoval? in
+                guard let subscription = notification.subscription, let baseUrl = subscription.baseUrl,
+                      let topic = subscription.topic, let id = notification.id else { return nil }
+                return SequenceRemoval(baseUrl: baseUrl, topic: topic, sequence: notification.sequenceID ?? id)
+            }
             do {
-                notifications.forEach { notification in
+                for notification in notifications {
                     deleteAttachmentLocalFile(for: notification)
                     context.delete(notification)
                 }
                 try context.save()
-            } catch let error {
-                Log.w(Store.tag, "Cannot delete notification(s)", error)
+                removals.forEach(notificationRemover)
+            } catch {
+                Log.w(Store.tag, "Cannot delete notifications", error)
                 rollbackAndRefresh()
             }
         }
     }
-    
+
     func delete(allNotificationsFor subscription: Subscription) {
         context.performAndWait {
-            guard let notifications = subscription.notifications else { return }
-            Log.d(Store.tag, "Deleting all \(notifications.count) notification(s) for subscription \(subscription.urlString())")
-            do {
-                notifications.forEach { notification in
-                    guard let notification = notification as? Notification else { return }
-                    deleteAttachmentLocalFile(for: notification)
-                    context.delete(notification)
-                }
-                try context.save()
-            } catch let error {
-                Log.w(Store.tag, "Cannot delete notification(s)", error)
-                rollbackAndRefresh()
-            }
+            let notifications = Set(subscription.notifications?.compactMap { $0 as? Notification } ?? [])
+            delete(notifications: notifications)
         }
     }
-    
+
     // MARK: End-to-end encryption
 
     /// `Subscription.encrypted` is the source of truth for whether a topic has a password; the

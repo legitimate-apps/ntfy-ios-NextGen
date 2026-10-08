@@ -6,6 +6,9 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 
 ## Unreleased
 
+- Reading or dismissing notifications on a self-hosted topic now requests a silent wake for your
+  other devices, so they can clear those notifications in the background. Background delivery is
+  best effort; opening the app still catches up when a wake is delayed.
 - Settings → About → Licenses lists the open-source licenses the app is built on.
 
 ## 1.15.0
