@@ -220,6 +220,23 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     func application(_ application: UIApplication, didReceiveRemoteNotification userInfo: [AnyHashable : Any], fetchCompletionHandler completionHandler: @escaping (UIBackgroundFetchResult) -> Void) {
         Log.d(tag, "Background notification received", userInfo)
         
+        if let message = Message.from(userInfo: userInfo), message.isControl {
+            let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
+            let result = Store.shared.ingest(pushedMessage: message, baseUrl: baseUrl, topic: message.topic)
+            if case .reconcile(let request) = result {
+                ApiService.shared.poll(request, timeout: 8) { messages, _ in
+                    guard let messages else { completionHandler(.failed); return }
+                    let presentations = Store.shared.save(notificationsFromMessages: messages, polledWith: request) ?? []
+                    self.showNotificationsSequentially(baseUrl: baseUrl, messages: presentations) {
+                        completionHandler(.newData)
+                    }
+                }
+            } else {
+                completionHandler(result == nil ? .noData : .newData)
+            }
+            return
+        }
+
         // Exit out early if this message is not expected
         let topic = userInfo["topic"] as? String ?? ""
         if topic != pollTopic {
@@ -292,6 +309,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     private func showNotification(baseUrl: String, _ message: Message, completionHandler: (() -> Void)? = nil) {
         let user = Store.shared.getBasicUser(baseUrl: baseUrl)
         let displayName = Store.shared.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
+        Store.shared.recordPresentation(message: message, baseUrl: baseUrl)
         let content = UNMutableNotificationContent()
         content.modify(message: message, baseUrl: baseUrl, displayName: displayName)
         content.attachImageIfNeeded(message: message, baseUrl: baseUrl, user: user) {
@@ -330,7 +348,20 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = notification.request.content.userInfo
         Log.d(tag, "Notification received via userNotificationCenter(willPresent)", userInfo)
-        completionHandler([[.banner, .sound]])
+        if let message = Message.from(userInfo: userInfo) {
+            let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
+            if message.isControl {
+                let result = Store.shared.ingest(pushedMessage: message, baseUrl: baseUrl, topic: message.topic)
+                if case .reconcile(let request) = result {
+                    ApiService.shared.poll(request, timeout: 8) { messages, _ in
+                        if let messages { _ = Store.shared.save(notificationsFromMessages: messages, polledWith: request) }
+                    }
+                }
+                completionHandler([])
+                return
+            }
+        }
+        completionHandler(notification.request.content.sound == nil ? [.list] : [.banner, .sound])
     }
     
     /// Executed when the user clicks on the notification.
@@ -348,6 +379,11 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         
         let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
+        if response.actionIdentifier == UNNotificationDismissActionIdentifier {
+            Store.shared.read(message: message, baseUrl: baseUrl, completion: completionHandler)
+            return
+        }
+        Store.shared.read(message: message, baseUrl: baseUrl)
         let action = message.actions?.first { $0.id == response.actionIdentifier }
         
         // Show current topic

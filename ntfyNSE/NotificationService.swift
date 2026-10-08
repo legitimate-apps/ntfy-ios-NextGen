@@ -33,7 +33,7 @@ class NotificationService: UNNotificationServiceExtension {
             switch message.event {
             case "poll_request":
                 handlePollRequest(request, bestAttemptContent, message)
-            case "message":
+            case "message", "message_clear", "message_delete":
                 let baseUrl = userInfo["base_url"]  as? String ?? Config.appBaseUrl // messages only come for the main server
                 handleMessage(request, bestAttemptContent, baseUrl, message)
             default:
@@ -78,6 +78,22 @@ class NotificationService: UNNotificationServiceExtension {
             deliver(fallbackContent(request))
             return
         }
+        if case .reconcile(let poll) = result {
+            ApiService.shared.poll(poll, timeout: NotificationServiceTiming.pollTimeout) { messages, _ in
+                guard let messages else { self.deliver(self.fallbackContent(request)); return }
+                let presentations = Store.shared.save(notificationsFromMessages: messages, polledWith: poll) ?? []
+                if let latest = presentations.last(where: { $0.sequence == received.sequence }) {
+                    self.handlePresentation(request, content, baseUrl, latest, reconciled: true)
+                } else {
+                    self.deliverSynchronizationReceipt(content, baseUrl, received)
+                }
+            }
+            return
+        }
+        if case .handled = result {
+            deliverSynchronizationReceipt(content, baseUrl, received)
+            return
+        }
         guard case .stored(let message) = result else {
             // A re-posted copy of an encrypted message this topic already has: it is not stored again.
             // Empty content would NOT hide the banner (that needs the filtering entitlement, which this
@@ -87,6 +103,27 @@ class NotificationService: UNNotificationServiceExtension {
             deliver(UNNotificationContent.replayedEncryptedMessage(request.content))
             return
         }
+        handlePresentation(request, content, baseUrl, message)
+    }
+
+    private func deliverSynchronizationReceipt(_ content: UNMutableNotificationContent, _ baseUrl: String, _ received: Message) {
+        // A custom relay may wrap a control in an alert. Suppressing that alert entirely needs
+        // the filtering entitlement; use a passive receipt instead of the original placeholder.
+        content.title = "ntfy"
+        content.body = "Notification state synchronized"
+        content.subtitle = ""
+        content.attachments = []
+        content.categoryIdentifier = ""
+        content.sound = nil
+        content.interruptionLevel = .passive
+        content.badge = NSNumber(value: Store.shared.totalUnreadCount())
+        content.userInfo = received.toUserInfo()
+        content.userInfo["base_url"] = baseUrl
+        deliver(content)
+    }
+
+    private func handlePresentation(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ message: Message, reconciled: Bool = false) {
+        Store.shared.recordPresentation(message: message, baseUrl: baseUrl)
         let user = store?.getBasicUser(baseUrl: baseUrl)
         let displayName = store?.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
         content.modify(
@@ -99,7 +136,7 @@ class NotificationService: UNNotificationServiceExtension {
             message: message,
             baseUrl: baseUrl,
             user: user,
-            timeout: NotificationServiceTiming.attachmentTimeout
+            timeout: reconciled ? NotificationServiceTiming.reconciliationAttachmentTimeout : NotificationServiceTiming.attachmentTimeout
         ) {
             self.deliver(content)
         }

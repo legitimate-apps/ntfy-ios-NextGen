@@ -370,6 +370,12 @@ struct Message: Decodable {
     var attachment: MessageAttachment?
     var contentType: String?
     var icon: String?
+    var sequenceID: String?
+    /// Local presentation decision; never trusted from the wire.
+    var isUpdate = false
+
+    var sequence: String { sequenceID.flatMap { $0.isEmpty ? nil : $0 } ?? id }
+    var isControl: Bool { event == "message_clear" || event == "message_delete" }
     /// Not on the wire: set by `TopicEncryption.ingest` so banners can mark how the message arrived.
     var encryption: NotificationEncryption = .none
 
@@ -378,6 +384,7 @@ struct Message: Decodable {
         case pollId = "poll_id"
         case contentType = "content_type"
         case icon
+        case sequenceID = "sequence_id"
     }
 
     init(
@@ -394,7 +401,8 @@ struct Message: Decodable {
         pollId: String? = nil,
         attachment: MessageAttachment? = nil,
         contentType: String? = nil,
-        icon: String? = nil
+        icon: String? = nil,
+        sequenceID: String? = nil
     ) {
         self.id = id
         self.time = time
@@ -410,6 +418,7 @@ struct Message: Decodable {
         self.attachment = attachment
         self.contentType = contentType
         self.icon = icon
+        self.sequenceID = sequenceID
     }
 
     init(from decoder: Decoder) throws {
@@ -428,6 +437,7 @@ struct Message: Decodable {
         attachment = try container.decodeIfPresent(MessageAttachment.self, forKey: .attachment)
         contentType = try container.decodeIfPresent(String.self, forKey: .contentType)
         icon = try container.decodeIfPresent(String.self, forKey: .icon)
+        sequenceID = try container.decodeIfPresent(String.self, forKey: .sequenceID)
     }
     
     func toUserInfo() -> [AnyHashable: Any] {
@@ -447,7 +457,8 @@ struct Message: Decodable {
             "click": click ?? "",
             "poll_id": pollId ?? "",
             "content_type": contentType ?? "",
-            "icon": icon ?? ""
+            "icon": icon ?? "",
+            "sequence_id": sequenceID ?? ""
         ]
         if let attachment {
             userInfo["attachment_name"] = attachment.name
@@ -504,7 +515,8 @@ struct Message: Decodable {
             pollId: pollId,
             attachment: attachment,
             contentType: contentType,
-            icon: icon
+            icon: icon,
+            sequenceID: userInfo["sequence_id"] as? String
         )
     }
 }

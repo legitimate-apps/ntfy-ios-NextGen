@@ -169,6 +169,7 @@
 		9474F1FA2830830700CDE4DD /* Model 2.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 2.xcdatamodel"; sourceTree = "<group>"; };
 		9474F1FB2830830700CDE4DD /* Model 3.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 3.xcdatamodel"; sourceTree = "<group>"; };
 		9474F1FC2830830700CDE4DD /* Model 4.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 4.xcdatamodel"; sourceTree = "<group>"; };
+		C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 6.xcdatamodel"; sourceTree = "<group>"; };
 		9474F1FD2830830700CDE4DD /* Model 5.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 5.xcdatamodel"; sourceTree = "<group>"; };
 		9474F1F82830835400CDE4DD /* Store.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Store.swift; sourceTree = "<group>"; };
 		9474F1FE28316ACE00CDE4DD /* Subscription.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Subscription.swift; sourceTree = "<group>"; };
@@ -1007,8 +1008,9 @@
 				9474F1FB2830830700CDE4DD /* Model 3.xcdatamodel */,
 				9474F1FC2830830700CDE4DD /* Model 4.xcdatamodel */,
 				9474F1FD2830830700CDE4DD /* Model 5.xcdatamodel */,
+				C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */,
 			);
-			currentVersion = 9474F1FD2830830700CDE4DD /* Model 5.xcdatamodel */;
+			currentVersion = C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */;
 			path = ntfy.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

@@ -149,6 +149,8 @@ final class ntfyTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
+        Store.shared.clearPublisher = { _, done in done() }
+        Store.shared.notificationRemover = { _ in }
         credentialStore = InMemoryCredentialStore()
         Store.shared.credentialStore = credentialStore
         topicSecrets = InMemoryTopicSecretStore()
@@ -874,6 +876,400 @@ final class ntfyTests: XCTestCase {
     func testHttpActionResultSuccessWhenNoHttpResponseAndNoError() {
         // Non-HTTP response with no transport error: nothing to assess → treat as success.
         XCTAssertEqual(ActionExecutor.httpActionResult(response: nil, error: nil), .success)
+    }
+
+    // MARK: Clear everywhere — wire events and store regressions
+
+    private func sequenceEvent(_ id: String, _ event: String = "message", sequence: String = "job", time: Int64 = 100, body: String = "first") throws -> Message {
+        let data = try JSONSerialization.data(withJSONObject: ["id": id, "time": time, "event": event, "topic": "sequence-tests", "sequence_id": sequence, "message": body])
+        return try JSONDecoder().decode(Message.self, from: data)
+    }
+
+    private func sequenceSubscription() -> Subscription {
+        let sub = Store.shared.saveSubscription(baseUrl: "https://sequence.invalid", topic: "sequence-tests")
+        addTeardownBlock { Store.shared.delete(subscription: sub) }
+        return sub
+    }
+
+    private func sequenceRows(_ sub: Subscription) -> [ntfy.Notification] {
+        let request = ntfy.Notification.fetchRequest()
+        request.predicate = NSPredicate(format: "subscription == %@", sub)
+        return (try? Store.shared.context.fetch(request)) ?? []
+    }
+
+    func testSequenceWireRoundTripIncludesControls() throws {
+        for event in ["message", "message_clear", "message_delete"] {
+            let parsed = try sequenceEvent("event-" + event, event)
+            XCTAssertEqual(parsed.toUserInfo()["sequence_id"] as? String, "job")
+            XCTAssertEqual(Message.from(userInfo: parsed.toUserInfo())?.toUserInfo()["sequence_id"] as? String, "job")
+        }
+    }
+
+    func testSequenceClearMarksReadWithoutAddingRow() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        let result = Store.shared.save(notificationsFromMessages: [try sequenceEvent("clear", "message_clear", time: 101)], withSubscription: sub)
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertEqual(sequenceRows(sub).count, 1)
+        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).read)
+        XCTAssertEqual(sub.lastNotificationId, "clear")
+    }
+
+    func testSequenceDeleteRemovesStoreRow() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        let result = Store.shared.save(notificationsFromMessages: [try sequenceEvent("delete", "message_delete", time: 101)], withSubscription: sub)
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertTrue(sequenceRows(sub).isEmpty)
+        XCTAssertEqual(sub.lastNotificationId, "delete")
+    }
+
+    func testSequenceUpdateReplacesObjectInPlace() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        let original = try XCTUnwrap(sequenceRows(sub).first)
+        let objectID = original.objectID
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("updated", time: 101, body: "replacement")], withSubscription: sub)
+        XCTAssertEqual(sequenceRows(sub).count, 1)
+        XCTAssertEqual(sequenceRows(sub).first?.objectID, objectID)
+        XCTAssertEqual(sequenceRows(sub).first?.message, "replacement")
+        XCTAssertEqual(sequenceRows(sub).first?.id, "updated")
+    }
+
+    func testSequencePollBatchDoesNotAlertClearedOrDeletedMessages() throws {
+        let sub = sequenceSubscription()
+        let result = Store.shared.save(notificationsFromMessages: [try sequenceEvent("a"), try sequenceEvent("b", "message_clear", time: 101), try sequenceEvent("c", "message_delete", time: 102)], withSubscription: sub)
+        XCTAssertTrue(result.isEmpty)
+        XCTAssertTrue(sequenceRows(sub).isEmpty)
+    }
+
+    func testSequenceControlsAreScopedToSubscriptionAndIgnoreKeepalive() throws {
+        let sub = sequenceSubscription()
+        let other = Store.shared.saveSubscription(baseUrl: "https://other-sequence.invalid", topic: "sequence-tests")
+        addTeardownBlock { Store.shared.delete(subscription: other) }
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("other")], withSubscription: other)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("clear", "message_clear", time: 101), try sequenceEvent("keep", "keepalive", time: 102)], withSubscription: sub)
+        XCTAssertEqual(sequenceRows(sub).count, 1)
+        XCTAssertTrue(sequenceRows(sub).first?.read == true)
+        XCTAssertFalse(try XCTUnwrap(sequenceRows(other).first).read)
+    }
+
+    func testSequenceReceivedClearNeverRepublishesEvenWhenTopicIsReadAgain() throws {
+        let sub = sequenceSubscription()
+        var clears: [ClearRequest] = []
+        Store.shared.clearPublisher = { request, done in clears.append(request); done() }
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        _ = Store.shared.ingest(pushedMessage: try sequenceEvent("clear", "message_clear", time: 101), baseUrl: sub.baseUrl!, topic: sub.topic!)
+        Store.shared.setRead(true, forSubscription: sub)
+        XCTAssertTrue(clears.isEmpty)
+        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).read)
+    }
+
+    func testSequenceLocalReadPublishesOnceWithSubscriptionCredentials() throws {
+        let sub = sequenceSubscription()
+        Store.shared.saveUser(baseUrl: sub.baseUrl!, username: "reader", password: "password")
+        let user = try XCTUnwrap(Store.shared.getUser(baseUrl: sub.baseUrl!))
+        addTeardownBlock { Store.shared.delete(user: user) }
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        var clears: [ClearRequest] = []
+        Store.shared.clearPublisher = { request, done in clears.append(request); done() }
+        Store.shared.setRead(true, forSubscription: sub)
+        Store.shared.setRead(true, forSubscription: sub)
+        XCTAssertEqual(clears.count, 1)
+        XCTAssertEqual(clears.first?.sequence, "job")
+        XCTAssertEqual(clears.first?.topic, "sequence-tests")
+        XCTAssertEqual(clears.first?.baseUrl, sub.baseUrl)
+        XCTAssertEqual(clears.first?.user?.username, "reader")
+        XCTAssertEqual(clears.first?.user?.password, "password")
+    }
+
+    func testSequenceDismissCompletionWaitsForBestEffortSend() throws {
+        let sub = sequenceSubscription()
+        let original = try sequenceEvent("original")
+        Store.shared.save(notificationsFromMessages: [original], withSubscription: sub)
+        var finished: (() -> Void)?
+        Store.shared.clearPublisher = { _, done in finished = done }
+        let completed = expectation(description: "dismiss completion after request")
+        Store.shared.read(message: original, baseUrl: sub.baseUrl!) { completed.fulfill() }
+        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).read)
+        XCTAssertNotNil(finished)
+        finished?()
+        wait(for: [completed], timeout: 2)
+    }
+
+    func testSequenceMarkUnreadDoesNotPublishAndBannerReadFindsUpdatedRow() throws {
+        let sub = sequenceSubscription()
+        let old = try sequenceEvent("old")
+        Store.shared.save(notificationsFromMessages: [old, try sequenceEvent("new", time: 101)], withSubscription: sub)
+        var sequences: [String] = []
+        Store.shared.clearPublisher = { request, done in sequences.append(request.sequence); done() }
+        Store.shared.setRead(false, forNotification: try XCTUnwrap(sequenceRows(sub).first))
+        XCTAssertTrue(sequences.isEmpty)
+        Store.shared.read(message: old, baseUrl: sub.baseUrl!)
+        XCTAssertEqual(sequences, ["job"])
+        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).read)
+    }
+
+    func testSequenceUsesOrdinaryMessageIDAndIgnoresUnrelatedEvents() throws {
+        let sub = sequenceSubscription()
+        let original = Message(id: "legacy-id", time: 100, event: "message", topic: sub.topic!, message: "old server")
+        Store.shared.save(notificationsFromMessages: [original], withSubscription: sub)
+        var ids: [String] = []
+        Store.shared.clearPublisher = { request, done in ids.append(request.sequence); done() }
+        Store.shared.setRead(true, forNotification: try XCTUnwrap(sequenceRows(sub).first))
+        XCTAssertEqual(ids, ["legacy-id"])
+        let clear = try sequenceEvent("clear", "message_clear", sequence: "legacy-id", time: 101)
+        Store.shared.save(notificationsFromMessages: [clear], withSubscription: sub)
+        XCTAssertEqual(sequenceRows(sub).count, 1)
+    }
+
+    func testSequenceDeletedVersionCannotReturnFromOverlappingPollAndCanRevive() throws {
+        let sub = sequenceSubscription()
+        let original = try sequenceEvent("original")
+        let delete = try sequenceEvent("delete", "message_delete", time: 101)
+        Store.shared.save(notificationsFromMessages: [original, delete], withSubscription: sub)
+        Store.shared.save(notificationsFromMessages: [original], withSubscription: sub)
+        XCTAssertTrue(sequenceRows(sub).isEmpty)
+        XCTAssertEqual(sub.lastNotificationId, "delete")
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("revived", time: 102)], withSubscription: sub)
+        XCTAssertEqual(sequenceRows(sub).first?.id, "revived")
+        XCTAssertFalse(try XCTUnwrap(sequenceRows(sub).first).read)
+    }
+
+    func testSequenceClearBeforeMessageRejectsStalePushAndOrderedPollCanReviveSameSecond() throws {
+        let sub = sequenceSubscription()
+        let clear = try sequenceEvent("clear", "message_clear")
+        Store.shared.save(notificationsFromMessages: [clear], withSubscription: sub)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("old", time: 99)], withSubscription: sub)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("ambiguous")], withSubscription: sub)
+        XCTAssertTrue(sequenceRows(sub).isEmpty)
+        let request = try XCTUnwrap(Store.shared.pollRequest(for: sub))
+        let result = Store.shared.save(notificationsFromMessages: [clear, try sequenceEvent("revived")], polledWith: request)
+        XCTAssertEqual(result?.map(\.id), ["revived"])
+        XCTAssertEqual(sub.lastNotificationId, "revived")
+    }
+
+    func testSequenceUpdateDoesNotBuzzAndPreservesReadStateAndAttachmentCleanup() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        let row = try XCTUnwrap(sequenceRows(sub).first)
+        Store.shared.setRead(true, forNotification: row)
+        let file = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent(UUID().uuidString)
+        try Data("attachment".utf8).write(to: file)
+        row.attachmentLocalPath = file.path
+        try Store.shared.context.save()
+        let result = Store.shared.save(notificationsFromMessages: [try sequenceEvent("updated", time: 101)], withSubscription: sub)
+        XCTAssertTrue(row.read)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        let update = try XCTUnwrap(result.first)
+        XCTAssertTrue(update.isUpdate)
+        let content = UNMutableNotificationContent()
+        content.modify(message: update, baseUrl: sub.baseUrl!)
+        XCTAssertNil(content.sound)
+        XCTAssertEqual(content.interruptionLevel, .passive)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        XCTAssertEqual(row.id, "updated")
+    }
+
+    func testSequenceRemovalMatchesAPNSIdentifierAndScopesServerTopicTimeAndVersion() throws {
+        let original = try sequenceEvent("original")
+        func request(_ identifier: String, message: Message, server: String = "https://sequence.invalid") -> UNNotificationRequest {
+            let content = UNMutableNotificationContent()
+            content.userInfo = message.toUserInfo()
+            content.userInfo["base_url"] = server
+            return UNNotificationRequest(identifier: identifier, content: content, trigger: nil)
+        }
+        var otherTopic = original
+        otherTopic.topic = "another-topic"
+        let removal = SequenceRemoval(baseUrl: "https://sequence.invalid/", topic: "sequence-tests", sequence: "job", throughTime: 101, keepingID: "replacement")
+        let requests = [request("apns-uuid", message: original), request("other-server", message: original, server: "https://other.invalid"), request("other-topic", message: otherTopic), request("keep", message: try sequenceEvent("replacement", time: 101)), request("future", message: try sequenceEvent("future", time: 102))]
+        XCTAssertEqual(removal.identifiers(in: requests), ["apns-uuid"])
+        let implicit = Message(id: "implicit", time: 100, event: "message", topic: "sequence-tests")
+        XCTAssertEqual(SequenceRemoval(baseUrl: "https://sequence.invalid", topic: "sequence-tests", sequence: "implicit").identifiers(in: [request("implicit-apns", message: implicit)]), ["implicit-apns"])
+    }
+
+    func testSequenceClearRequestUsesPUTAndServerHeadersRejectsInvalidSequence() throws {
+        let api = ApiService(credentialStore: credentialStore)
+        XCTAssertTrue(credentialStore.setHTTPHeaders(["X-Test-Auth": "value"], baseUrl: "https://sequence.invalid"))
+        let request = try XCTUnwrap(api.clearRequest(ClearRequest(baseUrl: "https://sequence.invalid/", topic: "sequence-tests", sequence: "job-123", user: BasicUser(username: "user", password: "pass"))))
+        XCTAssertEqual(request.httpMethod, "PUT")
+        XCTAssertEqual(request.url?.absoluteString, "https://sequence.invalid/sequence-tests/job-123/clear")
+        XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), BasicUser(username: "user", password: "pass").toHeader())
+        XCTAssertEqual(request.value(forHTTPHeaderField: "X-Test-Auth"), "value")
+        XCTAssertNil(request.httpBody)
+        XCTAssertNil(api.clearRequest(ClearRequest(baseUrl: "https://sequence.invalid", topic: "sequence-tests", sequence: "../evil", user: nil)))
+    }
+
+    func testSequenceClearForbiddenOldServerAndNetworkFailuresCompleteQuietly() {
+        for status in [403, 404, 200] {
+            let done = expectation(description: "clear status \(status)")
+            ApiService.shared.clear(ClearRequest(baseUrl: "https://sequence.invalid", topic: "sequence-tests", sequence: "job", user: nil), session: StubURLProtocol.session(status: status, body: Data())) { done.fulfill() }
+            wait(for: [done], timeout: 2)
+        }
+        let done = expectation(description: "offline clear")
+        ApiService.shared.clear(ClearRequest(baseUrl: "https://sequence.invalid", topic: "sequence-tests", sequence: "job", user: nil), session: StubURLProtocol.session(failWith: URLError(.notConnectedToInternet))) { done.fulfill() }
+        wait(for: [done], timeout: 2)
+    }
+
+    func testSequenceEveryNotificationRegistersDismissCategory() {
+        let content = UNMutableNotificationContent()
+        let done = expectation(description: "category")
+        DispatchQueue.global(qos: .userInitiated).async {
+            content.modify(message: Message(id: "dismiss", time: 100, event: "message", topic: "sequence-tests"), baseUrl: "https://sequence.invalid")
+            XCTAssertEqual(content.categoryIdentifier, UNMutableNotificationContent.categoryPrefix + "dismiss")
+            UNUserNotificationCenter.current().getNotificationCategories { categories in
+                XCTAssertTrue(categories.first { $0.identifier == content.categoryIdentifier }?.options.contains(.customDismissAction) == true)
+                done.fulfill()
+            }
+        }
+        wait(for: [done], timeout: 2)
+    }
+
+    func testSequenceDelayedSameSecondUpdateAndControlRequestAuthoritativeOrder() throws {
+        let sub = sequenceSubscription()
+        let a = try sequenceEvent("a")
+        let clear = try sequenceEvent("clear", "message_clear")
+        let b = try sequenceEvent("b", body: "latest")
+        _ = Store.shared.ingest(pushedMessage: b, baseUrl: sub.baseUrl!, topic: sub.topic!)
+        for stale in [a, clear] {
+            guard case .reconcile(let poll) = Store.shared.ingest(pushedMessage: stale, baseUrl: sub.baseUrl!, topic: sub.topic!) else {
+                return XCTFail("ambiguous push must request ordered poll")
+            }
+            XCTAssertNil(poll.since)
+            XCTAssertEqual(sequenceRows(sub).first?.id, "b")
+            Store.shared.save(notificationsFromMessages: [a, clear, b], polledWith: poll)
+            XCTAssertEqual(sequenceRows(sub).first?.id, "b")
+            XCTAssertFalse(try XCTUnwrap(sequenceRows(sub).first).read)
+            XCTAssertFalse(sub.sequenceReconcile)
+        }
+    }
+
+    func testSequenceDelayedSameSecondPollDoesNotOverwriteLatestOrMoveCursor() throws {
+        let sub = sequenceSubscription()
+        let staleRequest = try XCTUnwrap(Store.shared.pollRequest(for: sub))
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("b", body: "latest")], withSubscription: sub)
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("a")], polledWith: staleRequest)
+        XCTAssertEqual(sequenceRows(sub).first?.id, "b")
+        XCTAssertEqual(sub.lastNotificationId, "b")
+        XCTAssertTrue(sub.sequenceReconcile)
+    }
+
+    func testSequenceForegroundStoredCustomSequenceStillGetsFirstPushSound() throws {
+        let sub = sequenceSubscription()
+        let first = try sequenceEvent("first")
+        Store.shared.save(notificationsFromMessages: [first], withSubscription: sub)
+        sub.sequenceReconcile = true // another sequence's failed reconciliation cannot swallow this first push
+        try Store.shared.context.save()
+        guard case .stored(let delivered) = Store.shared.ingest(pushedMessage: first, baseUrl: sub.baseUrl!, topic: sub.topic!) else { return XCTFail("first push must present") }
+        XCTAssertFalse(delivered.isUpdate)
+        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).presented)
+        guard case .stored(let repeated) = Store.shared.ingest(pushedMessage: first, baseUrl: sub.baseUrl!, topic: sub.topic!) else { return XCTFail("repeat may replace silently") }
+        XCTAssertTrue(repeated.isUpdate)
+    }
+
+    func testSequenceControlRemovalSideEffectsOccurWithoutPublishing() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        var removals: [SequenceRemoval] = []
+        Store.shared.notificationRemover = { removals.append($0) }
+        Store.shared.clearPublisher = { _, _ in XCTFail("received controls cannot publish") }
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("clear", "message_clear", time: 101), try sequenceEvent("delete", "message_delete", time: 102)], withSubscription: sub)
+        XCTAssertEqual(removals.map(\.sequence), ["job", "job"])
+        XCTAssertEqual(removals.map(\.throughTime), [101, 102])
+    }
+
+    func testSequenceStateUniquenessAcrossIndependentContexts() throws {
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: Store.shared.context.persistentStoreCoordinator!.managedObjectModel)
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("sequence-race-\(UUID().uuidString).sqlite")
+        let store = try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url)
+        defer { try? coordinator.remove(store); try? FileManager.default.removeItem(at: url) }
+        let contexts = (0..<2).map { _ -> NSManagedObjectContext in
+            let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+            context.persistentStoreCoordinator = coordinator
+            context.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+            return context
+        }
+        // Both transactions observe no state, just as separate app/NSE contexts can.
+        for (i, context) in contexts.enumerated() {
+            let state = NSEntityDescription.insertNewObject(forEntityName: "SequenceState", into: context)
+            state.setValue("https://sequence.invalid/sequence-tests/job", forKey: "key")
+            state.setValue("job", forKey: "sequenceID")
+            state.setValue("event-\(i)", forKey: "eventID")
+            state.setValue("message_clear", forKey: "event")
+        }
+        for context in contexts { try context.save() }
+        let reader = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        reader.persistentStoreCoordinator = coordinator
+        XCTAssertEqual(try reader.count(for: NSFetchRequest<NSManagedObject>(entityName: "SequenceState")), 1)
+    }
+
+    func testSequenceModel5MigrationPreservesReadAndDefaultIdentity() throws {
+        let oldURL = try XCTUnwrap(try compiledModelVersionURLs().first { $0.lastPathComponent == "Model 5.mom" })
+        let oldModel = try XCTUnwrap(NSManagedObjectModel(contentsOf: oldURL))
+        // Generic objects avoid registering another generated entity description in this process.
+        oldModel.entities.forEach { $0.managedObjectClassName = "NSManagedObject" }
+        let current = Store.shared.context.persistentStoreCoordinator!.managedObjectModel
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("sequence-migration-\(UUID().uuidString).sqlite")
+        defer { try? FileManager.default.removeItem(at: url) }
+        let oldCoordinator = NSPersistentStoreCoordinator(managedObjectModel: oldModel)
+        let oldStore = try oldCoordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url)
+        let writer = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        writer.persistentStoreCoordinator = oldCoordinator
+        let sub = NSEntityDescription.insertNewObject(forEntityName: "Subscription", into: writer)
+        sub.setValue("https://sequence.invalid", forKey: "baseUrl")
+        sub.setValue("sequence-tests", forKey: "topic")
+        let row = NSEntityDescription.insertNewObject(forEntityName: "Notification", into: writer)
+        row.setValue("old", forKey: "id")
+        row.setValue("survives", forKey: "message")
+        row.setValue(false, forKey: "read")
+        row.setValue(sub, forKey: "subscription")
+        try writer.save()
+        try oldCoordinator.remove(oldStore)
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: current)
+        let store = try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url, options: [NSMigratePersistentStoresAutomaticallyOption: true, NSInferMappingModelAutomaticallyOption: true])
+        defer { try? coordinator.remove(store) }
+        let reader = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        reader.persistentStoreCoordinator = coordinator
+        let rows = try reader.fetch(NSFetchRequest<NSManagedObject>(entityName: "Notification"))
+        XCTAssertEqual(rows.first?.value(forKey: "message") as? String, "survives")
+        XCTAssertEqual(rows.first?.value(forKey: "read") as? Bool, false)
+        XCTAssertNil(rows.first?.value(forKey: "sequenceID"))
+        XCTAssertEqual(rows.first?.value(forKey: "presented") as? Bool, false)
+        XCTAssertEqual(try reader.count(for: NSFetchRequest<NSManagedObject>(entityName: "SequenceState")), 0)
+    }
+
+    func testSequenceUnrelatedMessageStillPresentsWhileReconciliationIsPending() throws {
+        let sub = sequenceSubscription()
+        Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
+        _ = Store.shared.ingest(pushedMessage: try sequenceEvent("ambiguous", "message_clear"), baseUrl: sub.baseUrl!, topic: sub.topic!)
+        XCTAssertTrue(sub.sequenceReconcile)
+        guard case .stored(let message) = Store.shared.ingest(pushedMessage: try sequenceEvent("unrelated", sequence: "another"), baseUrl: sub.baseUrl!, topic: sub.topic!) else { return XCTFail("unrelated message must present") }
+        XCTAssertEqual(message.id, "unrelated")
+        XCTAssertFalse(message.isUpdate)
+    }
+
+    func testSequenceConcurrentDifferentVersionsCannotInsertTwoRows() throws {
+        let coordinator = NSPersistentStoreCoordinator(managedObjectModel: Store.shared.context.persistentStoreCoordinator!.managedObjectModel)
+        let url = URL(fileURLWithPath: NSTemporaryDirectory()).appendingPathComponent("sequence-rows-\(UUID().uuidString).sqlite")
+        let store = try coordinator.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url)
+        defer { try? coordinator.remove(store); try? FileManager.default.removeItem(at: url) }
+        let contexts = (0..<2).map { _ -> NSManagedObjectContext in
+            let context = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+            context.persistentStoreCoordinator = coordinator
+            context.mergePolicy = NSMergePolicy.mergeByPropertyStoreTrump
+            return context
+        }
+        for (i, context) in contexts.enumerated() {
+            let row = NSEntityDescription.insertNewObject(forEntityName: "Notification", into: context)
+            row.setValue("event-\(i)", forKey: "id")
+            row.setValue("version-\(i)", forKey: "message")
+            row.setValue("https://sequence.invalid/sequence-tests/job", forKey: "sequenceKey")
+        }
+        for context in contexts { try context.save() }
+        let reader = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+        reader.persistentStoreCoordinator = coordinator
+        XCTAssertEqual(try reader.count(for: NSFetchRequest<NSManagedObject>(entityName: "Notification")), 1)
     }
 
     // MARK: UNMutableNotificationContent.actionCategoryIdentifier — per-action-set banner category

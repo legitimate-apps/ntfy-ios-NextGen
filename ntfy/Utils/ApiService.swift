@@ -14,10 +14,10 @@ class ApiService {
     
     /// Polls from `request.since` using only the snapshot's values, never the managed `Subscription`,
     /// so it is safe to call and complete on any queue.
-    func poll(_ request: PollRequest, completionHandler: @escaping ([Message]?, Error?) -> Void) {
+    func poll(_ request: PollRequest, timeout: TimeInterval = 30, completionHandler: @escaping ([Message]?, Error?) -> Void) {
         let urlString = "\(request.topicUrl)/json?poll=1&since=\(request.since ?? "all")"
         Log.d(tag, "Polling from \(urlString) with user \(request.user?.username ?? "anonymous")")
-        fetchJsonData(urlString: urlString, baseUrl: request.baseUrl, user: request.user, completionHandler: completionHandler)
+        fetchJsonData(urlString: urlString, baseUrl: request.baseUrl, user: request.user, timeout: timeout, completionHandler: completionHandler)
     }
     
     func poll(subscription: Subscription, messageId: String, user: BasicUser?, completionHandler: @escaping (Message?, Error?) -> Void) {
@@ -51,6 +51,29 @@ class ApiService {
             } catch {
                 completionHandler(nil, error)
             }
+        }
+    }
+
+    /// Clear endpoints exist on sequence-aware servers; older servers reject this path. There is
+    /// no fallback publish, retry, or user-facing error (read-only subscriptions remain useful).
+    func clearRequest(_ clear: ClearRequest) -> URLRequest? {
+        guard clear.sequence.range(of: "^[-_A-Za-z0-9]{1,64}$", options: .regularExpression) != nil,
+              let url = URL(string: "\(topicUrl(baseUrl: clear.baseUrl, topic: clear.topic))/\(clear.sequence)/clear") else { return nil }
+        var request = newRequest(url: url, baseUrl: clear.baseUrl, user: clear.user)
+        request.httpMethod = "PUT"
+        return request
+    }
+
+    func clear(_ clear: ClearRequest, session: URLSession? = nil, completion: (() -> Void)? = nil) {
+        guard let request = clearRequest(clear) else {
+            completion?()
+            return
+        }
+        runOneShot(request, timeout: 8, baseUrl: clear.baseUrl, session: session) { _, response, error in
+            if error != nil || !(200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0) {
+                Log.w(self.tag, "Clear failed; keeping local read state (HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0))")
+            }
+            completion?()
         }
     }
 
@@ -214,13 +237,13 @@ class ApiService {
         }
     }
 
-    private func fetchJsonData<T: Decodable>(urlString: String, baseUrl: String, user: BasicUser?, completionHandler: @escaping ([T]?, Error?) -> ()) {
+    private func fetchJsonData<T: Decodable>(urlString: String, baseUrl: String, user: BasicUser?, timeout: TimeInterval = 30, completionHandler: @escaping ([T]?, Error?) -> ()) {
         guard let url = URL(string: urlString) else {
             completionHandler(nil, URLError(.badURL))
             return
         }
         let request = newRequest(url: url, baseUrl: baseUrl, user: user)
-        runOneShot(request, timeout: 30, baseUrl: baseUrl) { (data, response, error) in
+        runOneShot(request, timeout: timeout, baseUrl: baseUrl) { (data, response, error) in
             if let error {
                 Log.e(self.tag, "Error fetching data", error)
                 completionHandler(nil, error)
@@ -338,4 +361,12 @@ struct AuthCheckResponse: Codable {
         self.http = try container.decodeIfPresent(Int.self, forKey: .http)
         self.error = try container.decodeIfPresent(String.self, forKey: .error)
     }
+}
+
+/// Snapshot captured on the store queue. Safe to use after the row is changed or deleted.
+struct ClearRequest {
+    let baseUrl: String
+    let topic: String
+    let sequence: String
+    let user: BasicUser?
 }

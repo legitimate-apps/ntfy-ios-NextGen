@@ -7,13 +7,15 @@ enum NotificationServiceTiming {
     static let pollTimeout: TimeInterval = 8
     static let categoryRegistrationTimeout: TimeInterval = 2
     static let attachmentTimeout: TimeInterval = 8
+    static let reconciliationAttachmentTimeout: TimeInterval = 6
     /// The NSE is publisher-triggered and cannot expose progress or cancellation. Five MiB needs
     /// roughly 5.25 Mbps to complete inside the eight-second attachment window, while larger files
     /// remain available for an explicit in-app download.
     static let attachmentSizeCeiling: Int64 = 5 * 1024 * 1024
 
     static var worstCaseDuration: TimeInterval {
-        pollTimeout + categoryRegistrationTimeout + attachmentTimeout
+        max(pollTimeout + categoryRegistrationTimeout + attachmentTimeout,
+            2 * pollTimeout + categoryRegistrationTimeout + reconciliationAttachmentTimeout)
     }
 }
 
@@ -164,6 +166,11 @@ extension UNMutableNotificationContent {
             self.relevanceScore = 0.5
         }
         
+        if message.isUpdate {
+            self.sound = nil
+            self.interruptionLevel = .passive
+        }
+
         // Carry the unread total on the badge (ntfy#1462). Both delivery paths — the notification
         // service extension and the app's own background poll — persist the message before calling
         // us, so this count already includes it. Setting it on the content is the only thing that
@@ -299,13 +306,10 @@ extension UNMutableNotificationContent {
         }
 
         let categoryId = UNMutableNotificationContent.actionCategoryIdentifier(for: userActions)
-        guard !actions.isEmpty, !categoryId.isEmpty else {
-            categoryIdentifier = ""
-            return
-        }
-        self.categoryIdentifier = categoryId
+        let identifier = categoryId.isEmpty ? UNMutableNotificationContent.categoryPrefix + "dismiss" : categoryId
+        self.categoryIdentifier = identifier
 
-        let category = UNNotificationCategory(identifier: categoryId, actions: Array(actions), intentIdentifiers: [])
+        let category = UNNotificationCategory(identifier: identifier, actions: Array(actions), intentIdentifiers: [], options: [.customDismissAction])
         UNMutableNotificationContent.registerCategorySynchronously(category, timeout: timeout)
     }
 
@@ -423,4 +427,33 @@ private func fallbackAttachmentSummary(attachment: MessageAttachment) -> String 
         parts.append("expired")
     }
     return "Attachment: " + parts.joined(separator: ", ")
+}
+
+/// Select using server + topic + sequence, never request identifiers alone: APNs identifiers do
+/// not equal ntfy ids, and independent servers may mint identical ids.
+struct SequenceRemoval {
+    let baseUrl: String
+    let topic: String
+    let sequence: String
+    var throughTime: Int64? = nil
+    var keepingID: String? = nil
+
+    func matches(userInfo: [AnyHashable: Any]) -> Bool {
+        guard let message = Message.from(userInfo: userInfo), message.event == "message",
+              normalizeBaseUrl(userInfo["base_url"] as? String ?? Config.appBaseUrl) == normalizeBaseUrl(baseUrl),
+              message.topic == topic, message.sequence == sequence, message.id != keepingID else { return false }
+        return throughTime.map { message.time <= $0 } ?? true
+    }
+
+    func identifiers(in requests: [UNNotificationRequest]) -> [String] {
+        requests.filter { matches(userInfo: $0.content.userInfo) }.map(\.identifier)
+    }
+
+    func removeDelivered() {
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { notifications in
+            let ids = self.identifiers(in: notifications.map(\.request))
+            if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+        }
+    }
 }

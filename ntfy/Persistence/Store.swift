@@ -62,6 +62,9 @@ class Store: ObservableObject {
     /// Per-topic end-to-end encryption passwords and keys. Injected for the same reason as
     /// `credentialStore`.
     var topicSecrets: TopicSecretStoring
+    /// Only local read actions call this; remote ingestion never publishes.
+    var clearPublisher: (ClearRequest, @escaping () -> Void) -> Void = { ApiService.shared.clear($0, completion: $1) }
+    var notificationRemover: (SequenceRemoval) -> Void = { $0.removeDelivered() }
     /// Whether a missing cached key may be re-derived from the password (PBKDF2). Off in the
     /// notification service extension, which has a tight time and memory budget; the app derives it
     /// the next time it reads the topic, and `retryLockedMessages` then opens what arrived meanwhile.
@@ -70,6 +73,8 @@ class Store: ObservableObject {
         return container.viewContext
     }
     private var cancellables: Set<AnyCancellable> = []
+    /// Confined to the context queue; identifies the event deferred by this ingestion.
+    private var deferredPushID: String?
 
     static func persistentStoreURL(
         inMemory: Bool,
@@ -491,10 +496,17 @@ class Store: ObservableObject {
             guard let notifications = try? context.fetch(request), !notifications.isEmpty else {
                 return // don't churn the context or bump observers for a no-op
             }
+            let clears = read ? notifications.compactMap { clearRequest(for: $0) } : []
             for notification in notifications {
                 notification.read = read
             }
-            try? context.save()
+            do {
+                try context.save()
+                clears.forEach { sendClear($0) }
+            } catch {
+                Log.w(Store.tag, "Cannot mark notifications read", error)
+                rollbackAndRefresh()
+            }
         }
     }
 
@@ -510,12 +522,68 @@ class Store: ObservableObject {
         }
     }
 
-    func setRead(_ read: Bool, forNotification notification: Notification) {
+    func setRead(_ read: Bool, forNotification notification: Notification, completion: (() -> Void)? = nil) {
         context.performAndWait {
-            guard notification.read != read else { return }
+            guard notification.read != read else { completion?(); return }
+            let clear = read ? clearRequest(for: notification) : nil
             notification.read = read
+            do {
+                try context.save()
+                if let clear { sendClear(clear, completion: completion) }
+                else { completion?() }
+            } catch {
+                Log.w(Store.tag, "Cannot mark notification read", error)
+                rollbackAndRefresh()
+                completion?()
+            }
+        }
+    }
+
+    /// A tapped/dismissed banner may predate an update to the row. Resolve by sequence, not id.
+    func read(message: Message, baseUrl: String, completion: @escaping () -> Void = {}) {
+        context.performAndWait {
+            guard message.event == "message",
+                  let subscription = try? fetchSubscription(baseUrl: baseUrl, topic: message.topic) else { completion(); return }
+            let request = Notification.fetchRequest()
+            request.predicate = NSPredicate(format: "subscription == %@ AND (sequenceID == %@ OR (sequenceID == nil AND id == %@))", subscription, message.sequence, message.sequence)
+            guard let notifications = try? context.fetch(request) else { completion(); return }
+            let group = DispatchGroup()
+            for notification in notifications {
+                group.enter()
+                setRead(true, forNotification: notification) { group.leave() }
+            }
+            group.notify(queue: .main, execute: completion)
+        }
+    }
+
+    /// Called by both alert delivery paths, including a full-order reconciliation.
+    func recordPresentation(message: Message, baseUrl: String) {
+        context.performAndWait {
+            if let subscription = try? fetchSubscription(baseUrl: baseUrl, topic: message.topic) {
+                markPresented(id: message.id, on: subscription)
+            }
+        }
+    }
+
+    private func markPresented(id: String, on subscription: Subscription) {
+        let request = Notification.fetchRequest()
+        request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, id)
+        if let row = try? context.fetch(request).first {
+            row.presented = true
             try? context.save()
         }
+    }
+
+    private func clearRequest(for notification: Notification) -> ClearRequest? {
+        guard let subscription = notification.subscription, let baseUrl = subscription.baseUrl,
+              let topic = subscription.topic, let id = notification.id else { return nil }
+        return ClearRequest(baseUrl: baseUrl, topic: topic, sequence: notification.sequenceID ?? id,
+                            user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore))
+    }
+
+    private func sendClear(_ request: ClearRequest, completion: (() -> Void)? = nil) {
+        notificationRemover(SequenceRemoval(baseUrl: request.baseUrl, topic: request.topic, sequence: request.sequence))
+        clearPublisher(request) { completion?() }
     }
 
     /// Unread count resolved on the context's own queue, so the push path can call it safely.
@@ -597,8 +665,30 @@ class Store: ObservableObject {
                     stored = .replay
                     return
                 }
-                try saveNotifications(ingested, withSubscription: subscription)
-                stored = ingested.first.map { .stored($0.message) }
+                let changed = try saveNotifications(ingested, withSubscription: subscription, isPush: true)
+                if let updated = changed.first {
+                    markPresented(id: updated.id, on: subscription)
+                    stored = .stored(updated)
+                } else if deferredPushID == message.id, let request = pollRequest(for: subscription) {
+                    stored = .reconcile(request)
+                } else if message.isControl {
+                    stored = .handled
+                } else if let item = ingested.first, message.event == "message" {
+                    // Preserve first-banner delivery for a message already inserted by a foreground
+                    // poll, but never re-alert an obsolete version of a sequence.
+                    let request = Notification.fetchRequest()
+                    request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, message.id)
+                    if let row = try context.fetch(request).first {
+                        var presentation = item.message
+                        presentation.isUpdate = row.read || row.presented
+                        markPresented(id: row.id ?? "", on: subscription)
+                        stored = .stored(presentation)
+                    } else {
+                        stored = .handled
+                    }
+                } else {
+                    stored = .handled
+                }
             } catch let error {
                 Log.w(Store.tag, "Cannot store notifications (fromMessages)", error)
                 rollbackAndRefresh()
@@ -638,7 +728,7 @@ class Store: ObservableObject {
                 subscriptionID: subscription.objectID,
                 baseUrl: baseUrl,
                 topicUrl: topicUrl(baseUrl: baseUrl, topic: topic),
-                since: subscription.lastNotificationId,
+                since: subscription.sequenceReconcile ? nil : subscription.lastNotificationId,
                 user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore)
             )
         }
@@ -1361,86 +1451,160 @@ class Store: ObservableObject {
         return min(5, max(1, priority))
     }
 
-    /// Inserts the messages that are not already stored and returns exactly those, so callers can tell
-    /// a genuinely new message from one an overlapping poll re-delivered.
+    /// Apply the ordered server stream transactionally. Controls are metadata, never message rows.
+    /// Seen event ids and tombstones survive row deletion, preventing overlapping polls from reviving
+    /// a deleted version. States belong to the subscription and are cascaded on unsubscribe.
     @discardableResult
-    private func saveNotifications(_ ingested: [IngestedMessage], withSubscription subscription: Subscription, polledSince: String? = nil) throws -> [Message] {
-        let messages = ingested.map(\.message)
-        let ids = messages.map(\.id)
-        let existingRequest = Notification.fetchRequest()
-        existingRequest.predicate = NSPredicate(format: "id IN %@", ids)
-        let existingNotifications = try context.fetch(existingRequest)
-        let existingIDs = Set(existingNotifications.compactMap(\.id))
-        // Drop replays: an authenticated ciphertext whose IV this topic has already stored under
-        // another id, or that appears twice in this batch.
+    private func saveNotifications(_ ingested: [IngestedMessage], withSubscription subscription: Subscription, polledSince: String? = nil, isPush: Bool = false) throws -> [Message] {
+        if isPush { deferredPushID = nil }
+        let request = Notification.fetchRequest()
+        request.predicate = NSPredicate(format: "subscription == %@", subscription)
+        var rows = try context.fetch(request)
+        let stateRequest = NSFetchRequest<NSManagedObject>(entityName: "SequenceState")
+        stateRequest.predicate = NSPredicate(format: "subscription == %@", subscription)
+        var states: [String: NSManagedObject] = [:]
+        for state in try context.fetch(stateRequest) {
+            refreshFromStore(state)
+            if let sequence = state.value(forKey: "sequenceID") as? String { states[sequence] = state }
+        }
+        let initialCursor = subscription.lastNotificationId
+        let positions = Dictionary(ingested.enumerated().map { ($0.element.message.id, $0.offset) }, uniquingKeysWith: { _, last in last })
+        if !isPush { subscription.sequenceReconcile = false }
+        var presentations: [Message] = []
+        var removals: [SequenceRemoval] = []
+        var traversed = Set<String>()
         var batchIVs = Set<String>()
-        let newIngested = ingested.filter { item in
-            guard !existingIDs.contains(item.message.id) else { return false }
-            guard let iv = item.iv else { return true }
-            guard batchIVs.insert(iv).inserted, !isReplay(iv: iv, id: item.message.id, on: subscription) else {
-                Log.w(Store.tag, "Dropping a replayed encrypted message (\(item.message.id))")
-                return false
-            }
-            return true
-        }
-        let newMessages = newIngested.map(\.message)
 
-        guard !newMessages.isEmpty else {
-            if let lastMessage = messages.last {
-                try advanceCursor(of: subscription, to: lastMessage, polledSince: polledSince)
-                try context.save()
+        for item in ingested {
+            var message = item.message
+            guard message.topic == subscription.topic, message.event == "message" || message.isControl else { continue }
+            let sequence = message.sequence
+            let row = rows.first { !$0.isDeleted && (($0.sequenceID ?? $0.id) == sequence || $0.id == message.id) }
+            let sequenceKey = topicUrl(baseUrl: subscription.baseUrl ?? "", topic: message.topic) + "/" + sequence
+            // Backfill identity when the cached original was stored before this model existed.
+            if row?.id == message.id {
+                row?.sequenceID = message.sequenceID.flatMap { $0.isEmpty ? nil : $0 }
+                row?.sequenceKey = sequenceKey
             }
-            return []
-        }
+            let state = states[sequence]
+            let seen = Set((state?.value(forKey: "seenIDs") as? String ?? "").split(separator: ",").map(String.init))
+            let lastID = state?.value(forKey: "eventID") as? String
+            let lastTime = state?.value(forKey: "time") as? Int64 ?? row?.time ?? 0
+            let lastEvent = state?.value(forKey: "event") as? String
+            let orderedAfterState = lastID.map { $0 == polledSince || traversed.contains($0) } == true
+                || (!isPush && polledSince != nil && polledSince == initialCursor)
+            traversed.insert(message.id)
+            guard message.id != lastID, message.time >= lastTime else { continue }
+            if seen.contains(message.id) && !orderedAfterState { continue }
+            if row?.id == message.id && lastEvent != "message_clear" && lastEvent != "message_delete" { continue }
+            if message.time == lastTime, let lastID {
+                if let currentPosition = positions[lastID], let position = positions[message.id], position < currentPosition { continue }
+                if isPush || (!orderedAfterState && positions[lastID] == nil) {
+                    subscription.sequenceReconcile = true
+                    if isPush { deferredPushID = message.id }
+                    continue
+                }
+            }
+            // APNs can arrive out of order, and seconds do not order two event ids. A tombstone wins
+            // an ambiguous same-second push; an ordered poll can explicitly revive the sequence.
+            if message.event == "message", message.time == lastTime,
+               lastEvent == "message_clear" || lastEvent == "message_delete", !orderedAfterState { continue }
+            if message.event == "message", let iv = item.iv {
+                guard batchIVs.insert(iv).inserted, !isReplay(iv: iv, id: message.id, on: subscription) else { continue }
+            }
+            let next = state ?? NSEntityDescription.insertNewObject(forEntityName: "SequenceState", into: context)
+            next.setValue(topicUrl(baseUrl: subscription.baseUrl ?? "", topic: message.topic) + "/" + sequence, forKey: "key")
+            next.setValue(subscription, forKey: "subscription")
+            next.setValue(sequence, forKey: "sequenceID")
+            next.setValue(message.id, forKey: "eventID")
+            next.setValue(message.time, forKey: "time")
+            next.setValue(message.event, forKey: "event")
+            next.setValue((message.time == lastTime ? seen.union([message.id]) : Set([message.id])).sorted().joined(separator: ","), forKey: "seenIDs")
+            states[sequence] = next
 
-        for item in newIngested {
-            let message = item.message
-            let notification = Notification(context: context)
-            notification.encryption = item.encryption.rawValue
-            notification.ciphertext = item.ciphertext
-            notification.jweIV = item.iv
-            notification.read = false // arrives unread; the model default is YES so upgrades don't
-                                      // retroactively mark a user's whole history unread
-            notification.id = message.id
-            notification.time = message.time
-            notification.message = message.message ?? ""
-            notification.contentType = message.contentType
-            notification.icon = message.icon
-            notification.title = message.title ?? ""
-            notification.priority = Store.clampPriority(message.priority)
-            notification.tags = message.tags?.joined(separator: ",") ?? ""
-            notification.actions = Actions.shared.encode(message.actions)
-            notification.click = message.click ?? ""
-            notification.attachmentName = message.attachment?.name
-            notification.attachmentType = message.attachment?.type
-            notification.attachmentSize = message.attachment?.size ?? 0
-            notification.attachmentExpires = message.attachment?.expires ?? 0
-            notification.attachmentUrl = message.attachment?.url
-            if
-                let attachment = message.attachment,
-                let remoteUrl = URL(string: attachment.url),
-                let localFileUrl = AttachmentFileStore.existingLocalFileUrl(
-                    notificationID: message.id,
-                    remoteUrl: remoteUrl,
-                    attachment: attachment,
-                    mimeType: attachment.type
-                )
-            {
-                notification.attachmentLocalPath = localFileUrl.path
-                notification.attachmentProgress = AttachmentProgressState.done.persistedValue
+            if message.isControl {
+                if let row {
+                    if message.event == "message_clear" { row.read = true }
+                    else {
+                        deleteAttachmentLocalFile(for: row)
+                        context.delete(row)
+                    }
+                }
+                removals.append(SequenceRemoval(baseUrl: subscription.baseUrl ?? "", topic: message.topic,
+                                                sequence: sequence, throughTime: message.time))
             } else {
-                notification.attachmentProgress = message.attachment == nil ? 0 : AttachmentProgressState.none.persistedValue
+                let notification = row ?? Notification(context: context)
+                message.isUpdate = row != nil
+                if row == nil { notification.read = false }
+                else {
+                    deleteAttachmentLocalFile(for: notification)
+                    removals.append(SequenceRemoval(baseUrl: subscription.baseUrl ?? "", topic: message.topic,
+                                                    sequence: sequence, throughTime: message.time, keepingID: message.id))
+                }
+                notification.sequenceKey = sequenceKey
+                populate(notification, from: item)
+                notification.subscription = subscription
+                subscription.addToNotifications(notification)
+                if row == nil { rows.append(notification) }
+                presentations.append(message)
             }
-            notification.subscription = subscription
-            subscription.addToNotifications(notification)
-            Log.d(Store.tag, "Storing notification with ID \(notification.id ?? "<unknown>")")
         }
-        if let lastMessage = messages.last {
-            try advanceCursor(of: subscription, to: lastMessage, polledSince: polledSince)
+        if !subscription.sequenceReconcile, let last = ingested.last(where: { $0.message.topic == subscription.topic && ($0.message.event == "message" || $0.message.isControl) })?.message {
+            var orderedSince = polledSince
+            if !isPush, let current = subscription.lastNotificationId,
+               let currentPosition = positions[current], let lastPosition = positions[last.id], lastPosition > currentPosition {
+                orderedSince = current
+            }
+            try advanceCursor(of: subscription, to: last, polledSince: orderedSince)
         }
         try context.save()
-        return newMessages
+        removals.forEach(notificationRemover)
+        // A single poll can contain create -> update -> clear/delete. Only the final unread version
+        // may alert; intermediate versions must never produce a second notification.
+        return presentations.filter { message in
+            rows.contains { !$0.isDeleted && $0.id == message.id && (!$0.read || message.isUpdate) }
+                && states[message.sequence]?.value(forKey: "event") as? String == "message"
+        }
     }
+
+    private func populate(_ notification: Notification, from item: IngestedMessage) {
+        let message = item.message
+        notification.encryption = item.encryption.rawValue
+        notification.ciphertext = item.ciphertext
+        notification.jweIV = item.iv
+        notification.sequenceID = message.sequenceID.flatMap { $0.isEmpty ? nil : $0 }
+        notification.id = message.id
+        notification.time = message.time
+        notification.message = message.message ?? ""
+        notification.contentType = message.contentType
+        notification.icon = message.icon
+        notification.title = message.title ?? ""
+        notification.priority = Store.clampPriority(message.priority)
+        notification.tags = message.tags?.joined(separator: ",") ?? ""
+        notification.actions = Actions.shared.encode(message.actions)
+        notification.click = message.click ?? ""
+        notification.attachmentName = message.attachment?.name
+        notification.attachmentType = message.attachment?.type
+        notification.attachmentSize = message.attachment?.size ?? 0
+        notification.attachmentExpires = message.attachment?.expires ?? 0
+        notification.attachmentUrl = message.attachment?.url
+        if
+            let attachment = message.attachment,
+            let remoteUrl = URL(string: attachment.url),
+            let localFileUrl = AttachmentFileStore.existingLocalFileUrl(
+                notificationID: message.id,
+                remoteUrl: remoteUrl,
+                attachment: attachment,
+                mimeType: attachment.type
+            )
+        {
+            notification.attachmentLocalPath = localFileUrl.path
+            notification.attachmentProgress = AttachmentProgressState.done.persistedValue
+        } else {
+            notification.attachmentProgress = message.attachment == nil ? 0 : AttachmentProgressState.none.persistedValue
+        }
+    }
+
 
     /// Moves the poll cursor (`since=`) to `candidate`, but never backward. Polls and pushes can
     /// land out of order (a slow poll started earlier lands after a push the extension stored), and a
@@ -1461,7 +1625,11 @@ class Store: ObservableObject {
                 if candidate.time == current.time, currentId != polledSince { return }
             }
         }
+        if candidate.time < subscription.lastEventTime { return }
+        if candidate.time == subscription.lastEventTime, let current = subscription.lastNotificationId,
+           current != candidate.id, current != polledSince { return }
         subscription.lastNotificationId = candidate.id
+        subscription.lastEventTime = candidate.time
     }
 
     private func deleteAttachmentLocalFile(for notification: Notification) {

@@ -53,6 +53,10 @@ enum PushedMessageResult {
     case stored(Message)
     /// An authenticated ciphertext this topic has already received under another id: not stored.
     case replay
+    /// A control event or obsolete sequence version. No message presentation.
+    case handled
+    /// Same-second events need the server cache order, not APNs arrival order.
+    case reconcile(PollRequest)
 
     var message: Message? {
         if case .stored(let message) = self { return message }
@@ -112,7 +116,7 @@ extension TopicEncryption {
     /// to dress up a message. Outer attachments are dropped rather than shown: the draft doesn't
     /// encrypt them, so one next to an encrypted message is server-asserted and unauthenticated.
     private static func envelope(of outer: Message) -> Message {
-        Message(id: outer.id, time: outer.time, event: outer.event, topic: outer.topic, pollId: outer.pollId)
+        Message(id: outer.id, time: outer.time, event: outer.event, topic: outer.topic, pollId: outer.pollId, sequenceID: outer.sequenceID)
     }
 
     static func merge(_ payload: EncryptedPayload, into outer: Message) -> Message {
