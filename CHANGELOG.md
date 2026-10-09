@@ -10,6 +10,10 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
   other devices, so they can clear those notifications in the background. Background delivery is
   best effort; opening the app still catches up when a wake is delayed.
 - Settings → About → Licenses lists the open-source licenses the app is built on.
+- On a Mac, notification buttons such as Approve now work from the banner. macOS sometimes handed the
+  tap to the app's notification extension instead of the app, and the tap was lost.
+- A double tap on an action button sends the request once. A request the server turns away for
+  being busy (rate limit) is retried, and a failed repeat no longer replaces the success message.
 
 ## 1.15.0
 

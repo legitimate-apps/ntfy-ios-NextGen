@@ -15,6 +15,8 @@ class NotificationService: UNNotificationServiceExtension {
     private var deliveryGate: NotificationDeliveryGate?
     
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
+        // On a Mac this process can outlive the banner and receive its taps; pass them to the app.
+        NotificationResponseRelay.installInExtensionIfNeeded()
         self.store = Store.shared
         self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)

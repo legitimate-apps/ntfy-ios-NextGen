@@ -70,6 +70,8 @@
 		948671472841B0B20093C7A4 /* NotificationContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948671462841B0B20093C7A4 /* NotificationContent.swift */; };
 		948671482841B1430093C7A4 /* NotificationContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948671462841B0B20093C7A4 /* NotificationContent.swift */; };
 		9486714A2841D0CE0093C7A4 /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948671492841D0CE0093C7A4 /* ActionExecutor.swift */; };
+		2E1C0B022FF0000100A52946 /* NotificationResponseRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */; };
+		2E1C0B032FF0000100A52946 /* NotificationResponseRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */; };
 		94A3F7C8283734D900C48E79 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */; };
 		94A3F7D1283734D900C48E79 /* FcmSubscriptionReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */; };
 		A1B2C3D4E5F6A7B8C9D0E1F3 /* RetiredDefaultServerMigration.swift in Sources */ = {isa = PBXBuildFile; fileRef = A1B2C3D4E5F6A7B8C9D0E1F2 /* RetiredDefaultServerMigration.swift */; };
@@ -88,6 +90,7 @@
 		2E1C0A022FF0000100A52946 /* LicensesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0A012FF0000100A52946 /* LicensesView.swift */; };
 		2E1C0A042FF0000100A52946 /* OpenSourceLicenses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */; };
 		2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0A052FF0000100A52946 /* LicensesTests.swift */; };
+		2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -181,6 +184,7 @@
 		94867142283EC9950093C7A4 /* Actions.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Actions.swift; sourceTree = "<group>"; };
 		948671462841B0B20093C7A4 /* NotificationContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationContent.swift; sourceTree = "<group>"; };
 		948671492841D0CE0093C7A4 /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
+		2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationResponseRelay.swift; sourceTree = "<group>"; };
 		94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
 		94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FcmSubscriptionReconciler.swift; sourceTree = "<group>"; };
 		A1B2C3D4E5F6A7B8C9D0E1F2 /* RetiredDefaultServerMigration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetiredDefaultServerMigration.swift; sourceTree = "<group>"; };
@@ -195,6 +199,7 @@
 		2E1C0A012FF0000100A52946 /* LicensesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesView.swift; sourceTree = "<group>"; };
 		2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSourceLicenses.swift; sourceTree = "<group>"; };
 		2E1C0A052FF0000100A52946 /* LicensesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesTests.swift; sourceTree = "<group>"; };
+		2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationResponseRelayTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -386,6 +391,7 @@
 				94867142283EC9950093C7A4 /* Actions.swift */,
 				948671462841B0B20093C7A4 /* NotificationContent.swift */,
 				948671492841D0CE0093C7A4 /* ActionExecutor.swift */,
+				2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */,
 			);
 			path = Utils;
 			sourceTree = "<group>";
@@ -414,6 +420,7 @@
 			children = (
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
+				2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */,
 			);
 			name = ntfyTests;
 			path = ntfyTests;
@@ -587,6 +594,7 @@
 				9474F20C283321C300CDE4DD /* Notification.swift in Sources */,
 				E27008122AF1030A006E33BA /* NotificationsObservable.swift in Sources */,
 				9486714A2841D0CE0093C7A4 /* ActionExecutor.swift in Sources */,
+				2E1C0B022FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				9474F1FF28316ACE00CDE4DD /* Subscription.swift in Sources */,
 				94CD196A283E666900973B93 /* EmojiManager.swift in Sources */,
 				9474F1C1282F2AA700CDE4DD /* AppMain.swift in Sources */,
@@ -625,6 +633,7 @@
 				94867145284058C60093C7A4 /* ApiService.swift in Sources */,
 				2968F2AE2FBA530200480665 /* AttachmentProgressState.swift in Sources */,
 				9474F2052831D51500CDE4DD /* Store.swift in Sources */,
+				2E1C0B032FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				29C6D8322FBD1B750057C9AC /* DownloadDelegate.swift in Sources */,
 				29F001032FB560E300F927E4 /* AttachmentFileStore.swift in Sources */,
 				29AA10032FC0000100F927E4 /* CredentialStore.swift in Sources */,
@@ -641,6 +650,7 @@
 			files = (
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
+				2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

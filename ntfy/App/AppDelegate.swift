@@ -48,6 +48,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     @Published var selectedBaseUrl: String? = nil
     @Published private(set) var criticalAlertSetting: UNNotificationSetting = .notSupported
 
+    /// Taps the extension received in the app's place (on a Mac), and the guard that runs each tap once.
+    private let responseRelay = NotificationResponseRelay(defaults: UserDefaults(suiteName: Store.appGroup) ?? .standard)
+    private var responseDeduper = NotificationResponseDeduper()
+    private var relayActivationObserver: NSObjectProtocol?
+
     func application(_ application: UIApplication, didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]? = nil) -> Bool {
         Log.d(tag, "Launching AppDelegate")
 
@@ -84,8 +89,46 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         application.registerForRemoteNotifications()
 
         startBadgeSync()
+        observeRelayedNotificationResponses()
 
         return true
+    }
+
+    // MARK: Banner taps relayed by the extension
+
+    /// On a Mac the system can hand a banner tap to the extension instead of the app (see
+    /// `NotificationResponseRelay`). Pick those up at launch, whenever the app becomes active (the
+    /// system brings it forward for the tap) and when the extension says it queued one.
+    private func observeRelayedNotificationResponses() {
+        CFNotificationCenterAddObserver(
+            CFNotificationCenterGetDarwinNotifyCenter(),
+            Unmanaged.passUnretained(self).toOpaque(),
+            { _, observer, _, _, _ in
+                guard let observer else { return }
+                let delegate = Unmanaged<AppDelegate>.fromOpaque(observer).takeUnretainedValue()
+                DispatchQueue.main.async { delegate.handleRelayedNotificationResponses() }
+            },
+            NotificationResponseRelay.darwinNotificationName as CFString,
+            nil,
+            .deliverImmediately
+        )
+        relayActivationObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
+        ) { [weak self] _ in
+            self?.handleRelayedNotificationResponses()
+        }
+        handleRelayedNotificationResponses()
+    }
+
+    private func handleRelayedNotificationResponses() {
+        for relayed in responseRelay.drain() {
+            Log.d(tag, "Handling a notification response relayed by the extension", relayed.actionIdentifier)
+            handleNotificationResponse(
+                userInfo: relayed.userInfo,
+                actionIdentifier: relayed.actionIdentifier,
+                notificationId: relayed.notificationId
+            )
+        }
     }
 
     // MARK: App icon badge
@@ -384,6 +427,27 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         let userInfo = response.notification.request.content.userInfo
         Log.d(tag, "Notification received via userNotificationCenter(didReceive)", userInfo)
+        handleNotificationResponse(
+            userInfo: userInfo,
+            actionIdentifier: response.actionIdentifier,
+            notificationId: response.notification.request.identifier,
+            completionHandler: completionHandler
+        )
+    }
+
+    /// Acts on a tap (the body, a button, or a dismiss), whether the app's own delegate received it
+    /// or the extension relayed it. Each tap runs once.
+    func handleNotificationResponse(
+        userInfo: [AnyHashable: Any],
+        actionIdentifier: String,
+        notificationId: String,
+        completionHandler: @escaping () -> Void = {}
+    ) {
+        guard responseDeduper.shouldHandle(notificationId: notificationId, actionIdentifier: actionIdentifier) else {
+            Log.d(tag, "Ignoring a notification response that was already handled", actionIdentifier)
+            completionHandler()
+            return
+        }
         guard let message = Message.from(userInfo: userInfo) else {
             Log.w(tag, "Cannot convert userInfo to message", userInfo)
             completionHandler()
@@ -391,12 +455,12 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         
         let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
-        if response.actionIdentifier == UNNotificationDismissActionIdentifier {
+        if actionIdentifier == UNNotificationDismissActionIdentifier {
             Store.shared.read(message: message, baseUrl: baseUrl, completion: completionHandler)
             return
         }
         Store.shared.read(message: message, baseUrl: baseUrl)
-        let action = message.actions?.first { $0.id == response.actionIdentifier }
+        let action = message.actions?.first { $0.id == actionIdentifier }
         
         // Show current topic
         if message.topic != "" {
@@ -407,7 +471,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         if let action = action {
             ActionExecutor.execute(
                 action,
-                notificationId: response.notification.request.identifier,
+                notificationId: notificationId,
                 baseUrl: baseUrl
             )
         } else if let click = message.click, click != "", let url = URL(string: click) {

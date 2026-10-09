@@ -25,6 +25,10 @@ struct ActionExecutor {
         credentialStore: CredentialStoring = KeychainCredentialStore.shared
     ) {
         Log.d(tag, "Executing user action", action)
+        guard registerTap(actionId: action.id) else {
+            Log.d(tag, "Ignoring a repeat tap on an action that just ran", action.id)
+            return
+        }
         switch action.action {
         case "view":
             if let url = URL(string: action.url ?? "") {
@@ -62,9 +66,13 @@ struct ActionExecutor {
             Log.w(tag, "Unable to execute HTTP action, no or invalid URL", action)
             return
         }
-        let method = action.method ?? "POST" // POST is the default!!
+        perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: 1)
+    }
 
-        Log.d(tag, "Performing HTTP \(method) \(request.url?.absoluteString ?? "?")")
+    private static func perform(_ request: URLRequest, action: Action, baseUrl: String?,
+                                credentialStore: CredentialStoring, attempt: Int) {
+        let method = request.httpMethod ?? "POST"
+        Log.d(tag, "Performing HTTP \(method) \(request.url?.absoluteString ?? "?") (attempt \(attempt))")
 
         let session: URLSession
         if let baseUrl {
@@ -74,12 +82,24 @@ struct ActionExecutor {
             session = .shared
         }
         session.dataTask(with: request) { (data, response, error) in
+            if let delay = retryDelay(response: response, error: error, attempt: attempt) {
+                Log.w(self.tag, "HTTP \(method) action not processed, retrying in \(delay)s")
+                DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
+                    perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: attempt + 1)
+                }
+                return
+            }
             switch httpActionResult(response: response, error: error) {
             case .success:
                 Log.d(self.tag, "HTTP \(method) action succeeded", response)
+                recordOutcome(actionId: action.id, success: true)
                 notifyActionResult(action, success: true, detail: nil)
             case .failure(let reason):
                 Log.e(self.tag, "HTTP \(method) action failed: \(reason)")
+                guard recordOutcome(actionId: action.id, success: false) else {
+                    Log.d(self.tag, "Keeping the earlier success for this action on screen")
+                    return
+                }
                 notifyActionResult(action, success: false, detail: reason)
             }
         }.resume()
@@ -87,6 +107,74 @@ struct ActionExecutor {
         if session !== URLSession.shared {
             session.finishTasksAndInvalidate()
         }
+    }
+
+    // MARK: Repeat taps and retries
+
+    /// A second tap on the same button within this window is the same intent (a double click, or
+    /// the banner and the in-app row both tapped). Running it again sent a duplicate request, and
+    /// when the duplicate failed its "⚠️ failed" replaced the first request's ✅.
+    static let repeatTapWindow: TimeInterval = 2
+    private static var lastTapByActionId: [String: Date] = [:]
+    private static let tapLock = NSLock()
+
+    private static func registerTap(actionId: String) -> Bool {
+        tapLock.lock()
+        defer { tapLock.unlock() }
+        return shouldRun(actionId: actionId, at: Date(), lastTaps: &lastTapByActionId)
+    }
+
+    /// Pure decision for `registerTap`: records the tap and says whether it should run.
+    static func shouldRun(actionId: String, at now: Date, lastTaps: inout [String: Date]) -> Bool {
+        lastTaps = lastTaps.filter { now.timeIntervalSince($0.value) < repeatTapWindow }
+        guard lastTaps[actionId] == nil else { return false }
+        lastTaps[actionId] = now
+        return true
+    }
+
+    /// Once an action has gone through, a later failure of the same action (a second tap, say) is a
+    /// duplicate the server didn't need. Reporting it would replace the ✅ with "⚠️ failed" and tell
+    /// the user the thing they asked for didn't happen when it did.
+    static let successMemory: TimeInterval = 10 * 60
+    private static var lastSuccessByActionId: [String: Date] = [:]
+
+    @discardableResult
+    private static func recordOutcome(actionId: String, success: Bool) -> Bool {
+        tapLock.lock()
+        defer { tapLock.unlock() }
+        return shouldReport(actionId: actionId, success: success, at: Date(), lastSuccesses: &lastSuccessByActionId)
+    }
+
+    /// Pure decision for `recordOutcome`: records a success and says whether to show this outcome.
+    static func shouldReport(actionId: String, success: Bool, at now: Date, lastSuccesses: inout [String: Date]) -> Bool {
+        lastSuccesses = lastSuccesses.filter { now.timeIntervalSince($0.value) < successMemory }
+        if success {
+            lastSuccesses[actionId] = now
+            return true
+        }
+        return lastSuccesses[actionId] == nil
+    }
+
+    static let maxAttempts = 3
+    static let maxRetryDelay: TimeInterval = 10
+
+    /// How long to wait before sending an `http` action again, or nil to report the outcome now.
+    /// Only retries what the request can't have done: the server refused it before processing (429
+    /// rate limit, 503), or the connection never reached a server. A timeout or a dropped
+    /// connection may have delivered a non-idempotent request, so those are reported, not repeated.
+    static func retryDelay(response: URLResponse?, error: Error?, attempt: Int) -> TimeInterval? {
+        guard attempt < maxAttempts else { return nil }
+        let backoff = TimeInterval(1 << (attempt - 1)) // 1s, 2s
+        if let error {
+            let notSent: Set<URLError.Code> = [.notConnectedToInternet, .cannotConnectToHost, .cannotFindHost, .dnsLookupFailed]
+            guard let urlError = error as? URLError, notSent.contains(urlError.code) else { return nil }
+            return backoff
+        }
+        guard let http = response as? HTTPURLResponse, [429, 503].contains(http.statusCode) else { return nil }
+        if let header = http.value(forHTTPHeaderField: "Retry-After"), let seconds = TimeInterval(header.trimmingCharacters(in: .whitespaces)) {
+            return min(max(seconds, 0), maxRetryDelay)
+        }
+        return backoff
     }
 
     static func makeHTTPRequest(
