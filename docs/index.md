@@ -28,8 +28,8 @@ Recipes for Windows PowerShell, Python, cron, GitHub Actions and Home Assistant 
 
 **How is NTFY me different from the official ntfy iOS app?**
 Both speak the ntfy protocol. NTFY me is a fork that ships frequent updates. It adds end-to-end
-encrypted topics, pinned topics, display names, a guided first-run setup with a "Send a test
-notification" button, and many reliability fixes from ntfy's iOS issue backlog. See the
+encrypted topics, pinned topics, display names, a guided first-run setup with copy-ready commands,
+and many reliability fixes from ntfy's iOS issue backlog. See the
 [changelog](https://github.com/legitimate-apps/ntfy-ios-NextGen/blob/main/CHANGELOG.md).
 
 **Does it work with ntfy.sh or my own server?**
