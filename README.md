@@ -1,8 +1,25 @@
 # NTFY me (ntfy iOS NextGen)
 
-A community-maintained iOS client for [ntfy](https://github.com/binwiederhier/ntfy) ([ntfy.sh](https://ntfy.sh)), the push-notification service. On the App Store as **NTFY me - Next Gen**.
+Get a push notification on your iPhone or iPad from any computer, script, server or cron job with one HTTP request. NTFY me is an actively maintained iOS app for [ntfy](https://github.com/binwiederhier/ntfy) ([ntfy.sh](https://ntfy.sh)), the open-source push-notification service. It's free on the App Store as **[NTFY me - Next Gen](https://apps.apple.com/us/app/id6787782178)**.
 
-This is a fork of the official [ntfy-ios](https://github.com/binwiederhier/ntfy-ios) app. It works through upstream's backlog of iOS issues: reliability and security fixes, end-to-end encrypted topics, display names, pinned topics, a simpler first-run setup, and general UX work.
+```sh
+# Subscribe to a topic in the app, then from any terminal:
+curl -d "Backup finished" https://ntfy-me.com/your-secret-topic
+
+# Get notified when a long command ends
+make build; curl -d "make finished: exit $?" https://ntfy-me.com/your-secret-topic
+```
+
+No account or API key: the topic name is the password, so pick a long random one. More recipes (Windows PowerShell, Python, GitHub Actions, Home Assistant, SSH login alerts) are on [ntfy-me.com](https://ntfy-me.com).
+
+This is a fork of the official [ntfy-ios](https://github.com/binwiederhier/ntfy-ios) app. It works through upstream's backlog of iOS issues: reliability and security fixes, end-to-end encrypted topics, display names, pinned topics, a simpler first-run setup, and general UX work. See [CHANGELOG.md](CHANGELOG.md) for each release.
+
+## How it relates to ntfy
+
+- **ntfy** is the server and protocol, plus the official Android, iOS and web apps, by Philipp C. Heckel. NTFY me is an independent iOS app that speaks the same protocol. It is not affiliated with ntfy.sh or the ntfy project.
+- **Servers:** NTFY me works with any ntfy server. Its default is ntfy-me.com, a free public server. Self-hosted servers get instant push with one config line (below).
+- **ntfy.sh topics** work too, but without instant banners. ntfy.sh relays iOS push only to the official app, so in NTFY me those messages show up when you open or refresh the app. For instant banners, use ntfy-me.com or your own server.
+- **Android, desktop or browser:** use the official ntfy Android app or the [web app](https://ntfy-me.com/app), pointed at the same server and topic.
 
 ## Using the app
 
