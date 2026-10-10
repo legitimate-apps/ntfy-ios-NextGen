@@ -5632,6 +5632,43 @@ final class ntfyTests: XCTestCase {
 /// so every command the app shows must carry the full URL.
 final class NewcomerSetupTests: XCTestCase {
 
+    // Both footers must distinguish ntfy.sh's official-app push project from a configurable server.
+    func testNtfyShVariantsExplainForegroundDeliveryAndMigration() {
+        let hint = "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open "
+            + "the app or refresh. For banners, move your topic to ntfy-me.com. "
+            + "See https://ntfy-me.com/docs/migrate."
+        let prefix = "When subscribing to new topics, this server will be used as a default. Leave it empty "
+            + "to use \(Config.appServerDescription). "
+        for url in ["https://ntfy.sh", "http://ntfy.sh", "https://ntfy.sh/", "http://ntfy.sh///",
+                    "HTTPS://NTFY.SH/", "http://Ntfy.Sh", "  https://NTFY.SH/\n"] {
+            let normalized = normalizeBaseUrl(url)
+            XCTAssertEqual(Config.ntfyShDeliveryHint(baseUrl: normalized), hint, url)
+            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: normalized, useAnother: true), hint, url)
+            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: normalized, useAnother: false), hint, url)
+            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), prefix + hint, url)
+        }
+    }
+
+    func testOtherServersKeepExistingDeliveryAdvice() {
+        let ownServerHint = "For instant delivery from your own server, add \"upstream-base-url: https://ntfy-me.com\" "
+            + "to its config. Without it, messages may arrive with significant delay."
+        let defaultHint = "When subscribing to new topics, this server will be used as a default. Leave it empty "
+            + "to use \(Config.appServerDescription). If you pick your own ntfy server, add "
+            + "\"upstream-base-url: https://ntfy-me.com\" to its config to receive instant push notifications."
+        for url in ["https://ntfy-me.com", "http://ntfy.home.lan:8080", "https://ntfy.sh.example.com",
+                    "https://example.com/ntfy.sh"] {
+            XCTAssertNil(Config.ntfyShDeliveryHint(baseUrl: url), url)
+            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: url, useAnother: true), ownServerHint, url)
+            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), defaultHint, url)
+        }
+        XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false),
+                       "New topics use \(Config.appServerDescription). Any ntfy server works: turn on "
+                        + "\"Use another server\" or change the default in Settings.")
+        XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "http://ntfy.home.lan:8080", useAnother: false),
+                       "New topics use your default server, ntfy.home.lan:8080.")
+        XCTAssertEqual(Config.defaultServerFooter(baseUrl: ""), defaultHint)
+    }
+
     func testPublishUrlAlwaysCarriesTheScheme() {
         XCTAssertEqual(PublishCommand.publishUrl(baseUrl: "https://ntfy-me.com", topic: "alerts"),
                        "https://ntfy-me.com/alerts")

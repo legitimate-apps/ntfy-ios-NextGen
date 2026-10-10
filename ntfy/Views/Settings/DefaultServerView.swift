@@ -43,7 +43,7 @@ struct DefaultServerView: View {
             NavigationView {
                 Form {
                     Section(
-                        footer: Text("When subscribing to new topics, this server will be used as a default. Leave it empty to use \(Config.appServerDescription). If you pick your own ntfy server, add \"\(Config.upstreamConfigLine)\" to its config to receive instant push notifications.")
+                        footer: Text(Config.defaultServerFooter(baseUrl: newDefaultBaseUrl))
                     ) {
                         HStack {
                             TextField(Config.appBaseUrl, text: $newDefaultBaseUrl)

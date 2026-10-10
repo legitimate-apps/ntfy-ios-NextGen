@@ -285,8 +285,9 @@ struct SubscriptionAddView: View {
                 Text("Get notified")
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
-                Text("Allow notifications so each message sent to \(shortUrl(url: url)) shows up on your "
-                     + "lock screen, even when the app is closed. iOS will ask you next.")
+                Text(Config.ntfyShDeliveryHint(baseUrl: selectedBaseUrl)
+                     ?? "Allow notifications so each message sent to \(shortUrl(url: url)) shows up on your "
+                        + "lock screen, even when the app is closed. iOS will ask you next.")
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -323,15 +324,7 @@ struct SubscriptionAddView: View {
     }
     
     private var serverFooterText: String {
-        if useAnother {
-            return "For instant delivery from your own server, add \"\(Config.upstreamConfigLine)\" to its "
-                + "config. Without it, messages may arrive with significant delay."
-        }
-        if selectedBaseUrl == normalizeBaseUrl(Config.appBaseUrl) {
-            return "New topics use \(Config.appServerDescription). Any ntfy server works: turn on "
-                + "\"Use another server\" or change the default in Settings."
-        }
-        return "New topics use your default server, \(shortUrl(url: selectedBaseUrl))."
+        Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
     }
 
     private var selectedBaseUrl: String {

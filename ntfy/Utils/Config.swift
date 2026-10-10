@@ -38,6 +38,34 @@ enum Config {
         "upstream-base-url: \(normalizeBaseUrl(appBaseUrl))"
     }
 
+    /// ntfy.sh pushes to the official app's Firebase project, not this app's.
+    static func ntfyShDeliveryHint(baseUrl: String) -> String? {
+        guard URL(string: normalizeBaseUrl(baseUrl))?.host?.lowercased() == "ntfy.sh" else { return nil }
+        return "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open "
+            + "the app or refresh. For banners, move your topic to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))). "
+            + "See \(migrateUrl)."
+    }
+
+    static func subscriptionServerFooter(baseUrl: String, useAnother: Bool) -> String {
+        if let hint = ntfyShDeliveryHint(baseUrl: baseUrl) { return hint }
+        if useAnother {
+            return "For instant delivery from your own server, add \"\(upstreamConfigLine)\" to its "
+                + "config. Without it, messages may arrive with significant delay."
+        }
+        if baseUrl == normalizeBaseUrl(appBaseUrl) {
+            return "New topics use \(appServerDescription). Any ntfy server works: turn on "
+                + "\"Use another server\" or change the default in Settings."
+        }
+        return "New topics use your default server, \(shortUrl(url: baseUrl))."
+    }
+
+    static func defaultServerFooter(baseUrl: String) -> String {
+        let deliveryHint = ntfyShDeliveryHint(baseUrl: baseUrl)
+            ?? "If you pick your own ntfy server, add \"\(upstreamConfigLine)\" to its config to receive instant push notifications."
+        return "When subscribing to new topics, this server will be used as a default. Leave it empty "
+            + "to use \(appServerDescription). \(deliveryHint)"
+    }
+
     static var build: String {
         string(for: "CFBundleVersion")
     }
@@ -77,6 +105,9 @@ enum Config {
     static var reviewUrl: String? {
         appStoreId.map { "https://apps.apple.com/app/id\($0)?action=write-review" }
     }
+
+    /// Moving a topic from the official app or keeping it on ntfy.sh.
+    static let migrateUrl = "https://ntfy-me.com/docs/migrate"
 
     /// Where OUR users report OUR bugs. Reports about this fork must not land
     /// on upstream's tracker; they are a different project with a different

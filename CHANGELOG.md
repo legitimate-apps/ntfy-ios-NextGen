@@ -6,6 +6,9 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 
 ## Unreleased
 
+- Adding a topic on ntfy.sh now says plainly that ntfy.sh topics get no instant banners in this
+  app (messages appear when you open it or refresh) and points to moving the topic to ntfy-me.com.
+  It used to suggest editing a server config that ntfy.sh users don't control.
 - Reading or dismissing notifications on a self-hosted topic now requests a silent wake for your
   other devices, so they can clear those notifications in the background. Background delivery is
   best effort; opening the app still catches up when a wake is delayed.
