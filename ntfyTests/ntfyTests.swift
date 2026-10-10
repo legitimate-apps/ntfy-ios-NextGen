@@ -5649,12 +5649,13 @@ final class NewcomerSetupTests: XCTestCase {
         }
     }
 
-    func testOtherServersKeepExistingDeliveryAdvice() {
+    func testSelfHostedFootersExplainTheOfficialAppTradeoff() {
         let ownServerHint = "For instant delivery from your own server, add \"upstream-base-url: https://ntfy-me.com\" "
-            + "to its config. Without it, messages may arrive with significant delay."
+            + "to its config. Without it, messages may arrive with significant delay. A server has one upstream; using "
+            + "ntfy-me.com stops instant delivery to the official ntfy iOS app on that server. "
+            + "See https://ntfy-me.com/docs/self-hosting."
         let defaultHint = "When subscribing to new topics, this server will be used as a default. Leave it empty "
-            + "to use \(Config.appServerDescription). If you pick your own ntfy server, add "
-            + "\"upstream-base-url: https://ntfy-me.com\" to its config to receive instant push notifications."
+            + "to use \(Config.appServerDescription). " + ownServerHint
         for url in ["https://ntfy-me.com", "http://ntfy.home.lan:8080", "https://ntfy.sh.example.com",
                     "https://example.com/ntfy.sh"] {
             XCTAssertNil(Config.ntfyShDeliveryHint(baseUrl: url), url)
@@ -5663,10 +5664,55 @@ final class NewcomerSetupTests: XCTestCase {
         }
         XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false),
                        "New topics use \(Config.appServerDescription). Any ntfy server works: turn on "
-                        + "\"Use another server\" or change the default in Settings.")
+                        + "\"Use another server\" or change the default in Settings. "
+                        + "Your scripts must send to ntfy-me.com; the same topic name on ntfy.sh is a different topic.")
         XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "http://ntfy.home.lan:8080", useAnother: false),
                        "New topics use your default server, ntfy.home.lan:8080.")
         XCTAssertEqual(Config.defaultServerFooter(baseUrl: ""), defaultHint)
+    }
+
+    /// Typing a name with the toggle off creates a topic on the built-in server, not ntfy.sh.
+    func testBuiltInServerWarnsScriptsMustMoveAndTopicNamesAreSeparate() {
+        let warning = "Your scripts must send to ntfy-me.com; the same topic name on ntfy.sh is a different topic."
+        XCTAssertTrue(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false)
+            .hasSuffix(warning))
+        for (url, useAnother) in [("https://ntfy-me.com", true), ("https://ntfy.sh", false),
+                                  ("https://ntfy.home.io", false)] {
+            XCTAssertFalse(Config.subscriptionServerFooter(baseUrl: url, useAnother: useAnother)
+                .contains(warning), "Only the built-in default should show this warning: \(url)")
+        }
+    }
+
+    /// Exercise the actual UIKit renderer: link attributes alone are inert if editing/selection is wrong.
+    func testBothFootersRenderInteractiveDocumentationLinksAndClearStaleLinks() {
+        for (url, documentation) in [("https://ntfy.sh", "https://ntfy-me.com/docs/migrate"),
+                                      ("https://ntfy.home.io", "https://ntfy-me.com/docs/self-hosting")] {
+            for copy in [Config.subscriptionServerFooter(baseUrl: url, useAnother: true),
+                         Config.defaultServerFooter(baseUrl: url)] {
+                let footer = ServerFooterText(text: copy)
+                let view = footer.makeTextView()
+                view.frame = CGRect(x: 0, y: 0, width: 320, height: 1)
+                view.layoutIfNeeded()
+                XCTAssertEqual(view.attributedText.string, copy)
+                XCTAssertFalse(view.isEditable)
+                XCTAssertTrue(view.isSelectable)
+                XCTAssertTrue(view.isUserInteractionEnabled)
+                XCTAssertFalse(view.isScrollEnabled)
+                let range = (copy as NSString).range(of: documentation)
+                XCTAssertNotEqual(range.location, NSNotFound, copy)
+                guard range.location != NSNotFound else { continue }
+                var linkRange = NSRange()
+                XCTAssertEqual(view.attributedText.attribute(.link, at: range.location,
+                    effectiveRange: &linkRange) as? URL, URL(string: documentation))
+                XCTAssertEqual(linkRange, range, "The sentence's trailing period must not be part of the URL")
+                XCTAssertGreaterThan(view.intrinsicContentSize.height, 1, "Footer must expand to show its text")
+                ServerFooterText(text: "New topics use your default server, ntfy.home.io.").updateText(view)
+                view.attributedText.enumerateAttribute(.link,
+                    in: NSRange(location: 0, length: view.attributedText.length)) { link, _, _ in
+                    XCTAssertNil(link, "Changing servers must remove the previous documentation link")
+                }
+            }
+        }
     }
 
     func testPublishUrlAlwaysCarriesTheScheme() {

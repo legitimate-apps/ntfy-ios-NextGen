@@ -49,21 +49,28 @@ enum Config {
     static func subscriptionServerFooter(baseUrl: String, useAnother: Bool) -> String {
         if let hint = ntfyShDeliveryHint(baseUrl: baseUrl) { return hint }
         if useAnother {
-            return "For instant delivery from your own server, add \"\(upstreamConfigLine)\" to its "
-                + "config. Without it, messages may arrive with significant delay."
+            return selfHostedDeliveryHint
         }
         if baseUrl == normalizeBaseUrl(appBaseUrl) {
             return "New topics use \(appServerDescription). Any ntfy server works: turn on "
-                + "\"Use another server\" or change the default in Settings."
+                + "\"Use another server\" or change the default in Settings. "
+                + "Your scripts must send to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))); the same topic name on ntfy.sh is a different topic."
         }
         return "New topics use your default server, \(shortUrl(url: baseUrl))."
     }
 
     static func defaultServerFooter(baseUrl: String) -> String {
         let deliveryHint = ntfyShDeliveryHint(baseUrl: baseUrl)
-            ?? "If you pick your own ntfy server, add \"\(upstreamConfigLine)\" to its config to receive instant push notifications."
+            ?? selfHostedDeliveryHint
         return "When subscribing to new topics, this server will be used as a default. Leave it empty "
             + "to use \(appServerDescription). \(deliveryHint)"
+    }
+
+    static var selfHostedDeliveryHint: String {
+        "For instant delivery from your own server, add \"\(upstreamConfigLine)\" to its config. "
+            + "Without it, messages may arrive with significant delay. A server has one upstream; using "
+            + "\(shortUrl(url: normalizeBaseUrl(appBaseUrl))) stops instant delivery to the official ntfy iOS app on that server. "
+            + "See \(selfHostingUrl)."
     }
 
     static var build: String {
@@ -108,6 +115,8 @@ enum Config {
 
     /// Moving a topic from the official app or keeping it on ntfy.sh.
     static let migrateUrl = "https://ntfy-me.com/docs/migrate"
+
+    static let selfHostingUrl = "https://ntfy-me.com/docs/self-hosting"
 
     /// Where OUR users report OUR bugs. Reports about this fork must not land
     /// on upstream's tracker; they are a different project with a different

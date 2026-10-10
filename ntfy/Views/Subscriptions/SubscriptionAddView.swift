@@ -75,7 +75,8 @@ struct SubscriptionAddView: View {
                         .accessibilityHint("Fills in a hard-to-guess topic name")
                     }
                 }
-                Section(footer: Text(serverFooterText)) {
+                Section(footer: ServerFooterText(text: serverFooterText)
+                    .fixedSize(horizontal: false, vertical: true)) {
                     Toggle("Use another server", isOn: $useAnother)
                     if useAnother {
                         TextField("Service URL, e.g. https://ntfy.home.io", text: $baseUrl)
@@ -350,6 +351,40 @@ struct SubscriptionAddView: View {
             useAnother = false
             primingTopicUrl = nil
         }
+    }
+}
+
+/// UIKit links work on iOS 14 too; reuse the message renderer's wrapping and sizing.
+struct ServerFooterText: UIViewRepresentable {
+    let text: String
+
+    func makeUIView(context: Context) -> MessageTextView {
+        makeTextView()
+    }
+
+    func updateUIView(_ textView: MessageTextView, context: Context) {
+        updateText(textView)
+    }
+
+    func makeTextView() -> MessageTextView {
+        let textView = MessageTextView(frame: .zero, textContainer: nil)
+        configureMessageTextView(textView, isInteractionEnabled: true)
+        updateText(textView)
+        return textView
+    }
+
+    func updateText(_ textView: MessageTextView) {
+        let attributed = NSMutableAttributedString(string: text, attributes: [
+            .font: UIFont.preferredFont(forTextStyle: .footnote),
+            .foregroundColor: UIColor.secondaryLabel
+        ])
+        for url in [Config.migrateUrl, Config.selfHostingUrl] {
+            let range = (text as NSString).range(of: url)
+            if range.location != NSNotFound {
+                attributed.addAttribute(.link, value: URL(string: url)!, range: range)
+            }
+        }
+        textView.setMessageText(attributed)
     }
 }
 

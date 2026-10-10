@@ -43,7 +43,8 @@ struct DefaultServerView: View {
             NavigationView {
                 Form {
                     Section(
-                        footer: Text(Config.defaultServerFooter(baseUrl: newDefaultBaseUrl))
+                        footer: ServerFooterText(text: Config.defaultServerFooter(baseUrl: newDefaultBaseUrl))
+                            .fixedSize(horizontal: false, vertical: true)
                     ) {
                         HStack {
                             TextField(Config.appBaseUrl, text: $newDefaultBaseUrl)

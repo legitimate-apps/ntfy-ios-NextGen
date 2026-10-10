@@ -9,6 +9,11 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 - Adding a topic on ntfy.sh now says plainly that ntfy.sh topics get no instant banners in this
   app (messages appear when you open it or refresh) and points to moving the topic to ntfy-me.com.
   It used to suggest editing a server config that ntfy.sh users don't control.
+- Adding a topic on ntfy-me.com now reminds you that your scripts must send to ntfy-me.com, since the
+  same topic name on ntfy.sh is a different topic.
+- The self-hosting hint now explains that pointing your server's upstream at ntfy-me.com stops instant
+  delivery to the official ntfy iOS app on that server, and the setup and migration guide links in
+  these hints can be tapped.
 - Reading or dismissing notifications on a self-hosted topic now requests a silent wake for your
   other devices, so they can clear those notifications in the background. Background delivery is
   best effort; opening the app still catches up when a wake is delayed.
