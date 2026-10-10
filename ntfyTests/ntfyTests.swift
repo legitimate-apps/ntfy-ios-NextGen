@@ -6489,3 +6489,11 @@ extension ntfyTests {
         XCTAssertTrue(RetiredDefaultServerMigration.pendingNoticeTopics(defaults: defaults).isEmpty)
     }
 }
+
+final class FirstTopicTestTests: XCTestCase {
+    func testFirstNotificationUsesDefaultPriorityAndPlainAppCopy() {
+        XCTAssertEqual(FirstTopicTest.priority, 3)
+        XCTAssertEqual(FirstTopicTest.title, "NTFY me test")
+        XCTAssertEqual(FirstTopicTest.body, "This is a test notification from NTFY me. Your topic is ready.")
+    }
+}

@@ -31,6 +31,7 @@ struct NotificationListView: View {
     @State private var showCopiedConfirmation = false
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
+    @State private var sendingTest = false
     @State private var publishError = ""
     @State private var draftDisplayName = ""
     
@@ -255,6 +256,8 @@ struct NotificationListView: View {
                 topic: subscription.topicName(),
                 encrypted: subscription.encrypted,
                 auth: publishAuth(baseUrl: baseUrl),
+                sendingTest: sendingTest,
+                onTest: { sendTestNotification(firstRun: true) },
                 onCopy: showCopyConfirmation
             )
             .listRowSeparator(.hidden)
@@ -312,15 +315,16 @@ struct NotificationListView: View {
         }
     }
     
-    private func sendTestNotification() {
+    private func sendTestNotification(firstRun: Bool = false) {
+        guard !sendingTest else { return }
         guard let baseUrl = subscription.baseUrl else {
             Log.w(tag, "Cannot send test notification: subscription base URL is missing")
             return
         }
 
         let possibleTags: Array<String> = ["warning", "skull", "success", "triangular_flag_on_post", "de", "us", "dog", "cat", "rotating_light", "bike", "backup", "rsync", "this-s-a-tag", "ios"]
-        let priority = Int.random(in: 1..<6)
-        let tags = Array(possibleTags.shuffled().prefix(Int.random(in: 0..<4)))
+        let priority = firstRun ? FirstTopicTest.priority : Int.random(in: 1..<6)
+        let tags = firstRun ? [] : Array(possibleTags.shuffled().prefix(Int.random(in: 0..<4)))
 
         // Never fall back to plaintext on an encrypted topic whose key can't be read right now.
         let keyState = store.topicKeyState(for: subscription)
@@ -330,11 +334,12 @@ struct NotificationListView: View {
             return
         }
         let user = store.getBasicUser(baseUrl: baseUrl)
+        sendingTest = true
         ApiService.shared.publish(
             subscription: subscription,
             user: user,
-            message: "This is a test notification from the ntfy iOS app. It has a priority of \(priority). If you send another one, it may look different.",
-            title: "Test: You can set a title if you like",
+            message: firstRun ? FirstTopicTest.body : "This is a test notification from NTFY me. It has a priority of \(priority). If you send another one, it may look different.",
+            title: firstRun ? FirstTopicTest.title : "Test: You can set a title if you like",
             priority: priority,
             tags: tags,
             // A topic with a password gets an encrypted test message, so this button also proves the
@@ -342,11 +347,13 @@ struct NotificationListView: View {
             encryptionKey: keyState.key,
             completionHandler: {
                 DispatchQueue.main.async {
+                    sendingTest = false
                     subscriptionManager.poll(subscription)
                 }
             },
             failureHandler: { error in
                 DispatchQueue.main.async {
+                    sendingTest = false
                     publishError = error.userMessage
                     activeAlert = .publishFailed
                     showAlert = true
@@ -415,12 +422,27 @@ struct TopicPublishHelpView: View {
     let topic: String
     let encrypted: Bool
     var auth: PublishCommand.Auth = .none
+    var sendingTest = false
+    var onTest: () -> Void = {}
     let onCopy: () -> Void
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
             Text("No messages yet")
                 .font(.title3.bold())
+            Button(action: onTest) {
+                Text("Send a test notification")
+                    .font(.headline)
+                    .multilineTextAlignment(.center)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .frame(maxWidth: .infinity)
+                    .padding()
+                    .foregroundColor(.white)
+                    .background(Color.accentColor.cornerRadius(10))
+            }
+            .buttonStyle(.borderless)
+            .disabled(sendingTest)
+            .opacity(sendingTest ? 0.5 : 1)
             Text("Send a message to this topic from any computer, server or script. Copy a command and "
                  + "run it in a terminal:")
                 .foregroundColor(.secondary)
@@ -518,4 +540,11 @@ struct NotificationListView_Previews: PreviewProvider {
                 .environmentObject(store)
         }
     }
+}
+
+/// A first notification should use the default priority, so it does not arrive silently.
+enum FirstTopicTest {
+    static let priority = 3
+    static let title = "NTFY me test"
+    static let body = "This is a test notification from NTFY me. Your topic is ready."
 }

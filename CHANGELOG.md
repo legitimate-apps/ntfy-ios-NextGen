@@ -6,6 +6,11 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 
 ## Unreleased
 
+- A new topic has a "Send a test notification" button, so you can see a notification arrive without a
+  computer. It uses normal priority, so the first test shows a banner.
+
+## 1.16.0
+
 - Adding a topic on ntfy.sh now says plainly that ntfy.sh topics get no instant banners in this
   app (messages appear when you open it or refresh) and points to moving the topic to ntfy-me.com.
   It used to suggest editing a server config that ntfy.sh users don't control.
