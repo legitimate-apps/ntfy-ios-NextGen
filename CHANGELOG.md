@@ -6,6 +6,7 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 
 ## Unreleased
 
+- After an update, a short "What's new" sheet lists what changed since the version you last used.
 - A new topic has a "Send a test notification" button, so you can see a notification arrive without a
   computer. It uses normal priority, so the first test shows a banner.
 

@@ -57,6 +57,10 @@ struct NotificationListView: View {
                 // stays unread, which is what you want — it hadn't arrived when you opened.
                 store.setRead(true, forSubscription: subscription)
             }
+            .task {
+                do { try await Task.sleep(nanoseconds: 1_000_000_000) } catch { return }
+                LaunchExperience.shared.requestReview(store: store, subscription: subscription)
+            }
             // While this topic is on screen and the app is active, check for new messages: once right
             // away (opening a topic, or coming back to the app), then every 10 s, each check starting
             // only after the previous one ended, backing off while the server fails. A push normally

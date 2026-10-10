@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		117A00012FD0000100F927E4 /* LaunchExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117A00022FD0000100F927E4 /* LaunchExperience.swift */; };
 		29EE00142FD0000100F927E4 /* TopicEncryptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00042FD0000100F927E4 /* TopicEncryptionView.swift */; };
 		29EE00132FD0000100F927E4 /* TopicEncryptionSnippets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00032FD0000100F927E4 /* TopicEncryptionSnippets.swift */; };
 		29EE00222FD0000100F927E4 /* TopicEncryption+Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00022FD0000100F927E4 /* TopicEncryption+Message.swift */; };
@@ -125,6 +126,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		117A00022FD0000100F927E4 /* LaunchExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchExperience.swift; sourceTree = "<group>"; };
 		2F0C0F1A2FF0000100A52946 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = Configuration/Base.xcconfig; sourceTree = SOURCE_ROOT; };
 		29EE00042FD0000100F927E4 /* TopicEncryptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicEncryptionView.swift; sourceTree = "<group>"; };
 		29EE00032FD0000100F927E4 /* TopicEncryptionSnippets.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicEncryptionSnippets.swift; sourceTree = "<group>"; };
@@ -251,6 +253,7 @@
 			isa = PBXGroup;
 			children = (
 				29E841982FB417E400F927E4 /* SubscriptionAddView.swift */,
+				117A00022FD0000100F927E4 /* LaunchExperience.swift */,
 				29E841992FB417E400F927E4 /* SubscriptionListView.swift */,
 			);
 			path = Subscriptions;
@@ -587,6 +590,7 @@
 				94A3F7D1283734D900C48E79 /* FcmSubscriptionReconciler.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* RetiredDefaultServerMigration.swift in Sources */,
 				9474F1D2282F2D2C00CDE4DD /* AppDelegate.swift in Sources */,
+				117A00012FD0000100F927E4 /* LaunchExperience.swift in Sources */,
 				29E8419B2FB417E400F927E4 /* SubscriptionListView.swift in Sources */,
 				29E8419C2FB417E400F927E4 /* SubscriptionAddView.swift in Sources */,
 				94A3F7CA28386B2100C48E79 /* Config.swift in Sources */,

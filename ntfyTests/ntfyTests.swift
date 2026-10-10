@@ -6497,3 +6497,100 @@ final class FirstTopicTestTests: XCTestCase {
         XCTAssertEqual(FirstTopicTest.body, "This is a test notification from NTFY me. Your topic is ready.")
     }
 }
+
+final class LaunchExperiencePolicyTests: XCTestCase {
+    private let current = "1.17.0"
+    private let now = Date(timeIntervalSince1970: 2_000_000_000)
+
+    func testUpdateRangesAreNumericNewestFirstAndCapped() {
+        let entries = ["1.8", "1.9", "1.10", "1.11", "1.12"].map {
+            ReleaseNotes(version: $0, bullets: ["Change \($0)"])
+        }
+        let result = LaunchExperiencePolicy.update(current: "1.11", lastSeen: "1.9",
+                                                  hasSubscriptions: true, entries: entries)
+        XCTAssertEqual(result.entries.map(\.version), ["1.11", "1.10"])
+        XCTAssertFalse(result.recordNow)
+        XCTAssertEqual(LaunchExperiencePolicy.update(current: "1.12", lastSeen: "1.8",
+            hasSubscriptions: true, entries: entries).entries.map(\.version), ["1.12", "1.11"])
+        XCTAssertFalse(LaunchExperiencePolicy.isNewer("1.17.0", than: "1.17"))
+        XCTAssertTrue(LaunchExperiencePolicy.isNewer("1.10", than: "1.9.99"))
+    }
+
+    func testFreshInstallLegacyUpdateSameVersionDowngradeAndMissingEntries() {
+        let fresh = LaunchExperiencePolicy.update(current: current, lastSeen: nil, hasSubscriptions: false)
+        XCTAssertTrue(fresh.entries.isEmpty)
+        XCTAssertTrue(fresh.recordNow)
+        let legacy = LaunchExperiencePolicy.update(current: current, lastSeen: nil, hasSubscriptions: true)
+        XCTAssertEqual(legacy.entries.map(\.version), [current, "1.16.0"],
+                       "an update from before the card existed shows the two newest releases")
+        XCTAssertFalse(legacy.recordNow)
+        let update = LaunchExperiencePolicy.update(current: current, lastSeen: "1.15.0", hasSubscriptions: true)
+        XCTAssertEqual(update.entries.map(\.version), ["1.17.0", "1.16.0"])
+        for version in [current, "1.18.0", "1.17"] {
+            let result = LaunchExperiencePolicy.update(current: current, lastSeen: version, hasSubscriptions: true)
+            XCTAssertTrue(result.entries.isEmpty)
+            XCTAssertFalse(result.recordNow)
+        }
+        let missing = LaunchExperiencePolicy.update(current: "1.18.0", lastSeen: current, hasSubscriptions: true)
+        XCTAssertTrue(missing.entries.isEmpty)
+        XCTAssertTrue(missing.recordNow)
+    }
+
+    func testReviewEligibilityCoversEveryGateAndTwoDayBoundary() {
+        func eligible(topic: Int = 1, total: Int = 3, prompted: String? = nil,
+                      age: TimeInterval? = 172800, hasSubscriptions: Bool = true,
+                      notice: Bool = false, active: Bool = true) -> Bool {
+            LaunchExperiencePolicy.shouldRequestReview(current: current, lastPrompted: prompted,
+                topicCount: topic, totalCount: total, firstLaunch: age.map { now.addingTimeInterval(-$0) },
+                hasSubscriptions: hasSubscriptions, now: now, noticeShown: notice, foregroundActive: active)
+        }
+        XCTAssertTrue(eligible())
+        XCTAssertFalse(eligible(topic: 0))
+        XCTAssertFalse(eligible(total: 2))
+        XCTAssertFalse(eligible(prompted: current))
+        XCTAssertTrue(eligible(prompted: "1.16.0"))
+        XCTAssertFalse(eligible(age: 172799))
+        XCTAssertFalse(eligible(age: -1))
+        XCTAssertTrue(eligible(age: nil)) // Existing subscriber before first-launch tracking.
+        XCTAssertFalse(eligible(age: nil, hasSubscriptions: false))
+        XCTAssertFalse(eligible(notice: true)) // Both launch notices share session suppression.
+        XCTAssertFalse(eligible(active: false))
+    }
+
+    func testSessionPersistsFirstLaunchAndSuppressesReviewAfterEitherNotice() {
+        let suite = "LaunchExperienceTests-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let session = LaunchExperience(defaults: defaults, current: current)
+        session.prepare(hasSubscriptions: false, movedTopicsPending: false, now: now)
+        XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date, now)
+        XCTAssertEqual(defaults.string(forKey: LaunchExperience.seenKey), session.current)
+        XCTAssertTrue(session.entries.isEmpty)
+        XCTAssertFalse(session.noticeShown)
+
+        defaults.removeObject(forKey: LaunchExperience.seenKey)
+        defaults.removeObject(forKey: LaunchExperience.firstLaunchKey)
+        let moved = LaunchExperience(defaults: defaults, current: current)
+        moved.prepare(hasSubscriptions: true, movedTopicsPending: true, now: now)
+        XCTAssertTrue(moved.noticeShown)
+        XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date,
+                       now.addingTimeInterval(-172800))
+        moved.dismissWhatsNew()
+        XCTAssertEqual(defaults.string(forKey: LaunchExperience.seenKey), moved.current)
+        XCTAssertTrue(moved.noticeShown)
+
+        defaults.removeObject(forKey: LaunchExperience.seenKey)
+        let updated = LaunchExperience(defaults: defaults, current: current)
+        updated.prepare(hasSubscriptions: true, movedTopicsPending: false, now: now)
+        updated.presentWhatsNew()
+        XCTAssertTrue(updated.showingWhatsNew)
+        XCTAssertTrue(updated.noticeShown)
+        updated.dismissWhatsNew()
+        XCTAssertTrue(updated.entries.isEmpty)
+        XCTAssertTrue(updated.noticeShown)
+        updated.prepare(hasSubscriptions: true, movedTopicsPending: false, now: now.addingTimeInterval(100))
+        XCTAssertTrue(updated.entries.isEmpty)
+        XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date,
+                       now.addingTimeInterval(-172800))
+    }
+}

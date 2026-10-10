@@ -14,6 +14,8 @@ struct SubscriptionListView: View {
     // (and its delegate registration) mid-flight. @StateObject makes the view the owner, so exactly
     // one controller is created for the view's lifetime.
     @StateObject private var subscriptionsModel = SubscriptionsObservable()
+    @ObservedObject private var launchExperience = LaunchExperience.shared
+    @Environment(\.scenePhase) private var scenePhase
     @State private var showingAddDialog = false
     /// Topics `RetiredDefaultServerMigration` moved to ntfy-me.com that the user hasn't been told about.
     @State private var movedTopicsNotice: [String] = []
@@ -44,6 +46,20 @@ struct SubscriptionListView: View {
             }
         }
         .navigationViewStyle(StackNavigationViewStyle())
+        .sheet(isPresented: $launchExperience.showingWhatsNew,
+               onDismiss: launchExperience.dismissWhatsNew) {
+            WhatsNewView(entries: launchExperience.entries) {
+                launchExperience.showingWhatsNew = false
+            }
+        }
+        .task(id: scenePhase) {
+            guard scenePhase == .active else { return }
+            launchExperience.prepare(hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty,
+                movedTopicsPending: !RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults).isEmpty)
+            do { try await Task.sleep(nanoseconds: 600_000_000) } catch { return }
+            guard movedTopicsNotice.isEmpty, !showingAddDialog else { return }
+            launchExperience.presentWhatsNew()
+        }
     }
     
     private var subscriptionList: some View {
