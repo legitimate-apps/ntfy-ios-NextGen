@@ -17,6 +17,7 @@ class NotificationService: UNNotificationServiceExtension {
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         // On a Mac this process can outlive the banner and receive its taps; pass them to the app.
         NotificationResponseRelay.installInExtensionIfNeeded()
+        NotificationExtensionLifetime.shared.requestStarted()
         self.store = Store.shared
         self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)
@@ -66,9 +67,11 @@ class NotificationService: UNNotificationServiceExtension {
     }
 
     private func deliver(_ content: UNNotificationContent) {
-        if deliveryGate?.deliver(content) == false {
+        guard deliveryGate?.deliver(content) == true else {
             Log.w(tag, "Ignoring late notification delivery after the content handler already fired")
+            return
         }
+        NotificationExtensionLifetime.shared.requestFinished()
     }
     
     private func handleMessage(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ received: Message) {

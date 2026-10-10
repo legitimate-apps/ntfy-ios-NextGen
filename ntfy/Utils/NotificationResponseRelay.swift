@@ -108,6 +108,69 @@ final class NotificationResponseRelay: NSObject, UNUserNotificationCenterDelegat
         } else if let data = try? JSONEncoder().encode(responses) {
             defaults.set(data, forKey: Self.defaultsKey)
         }
+        // The extension may end its process right after a tap (see `NotificationExtensionLifetime`).
+        defaults.synchronize()
+    }
+}
+
+/// Ends the extension process on a Mac shortly after its last notification is delivered.
+///
+/// macOS keeps the extension process alive but suspended after it delivers a banner, and
+/// usernoted still routes that banner's taps to it. Observed 2026-10-09 on build 27: an Approve
+/// tap was relayed only when the next push woke the extension, minutes later; with the extension
+/// process gone, the same tap reached the app in the same second. So once nothing is in flight,
+/// the extension exits and taps go to the app. A tap that arrives before the exit still goes
+/// through `NotificationResponseRelay`. iPhone and iPad route taps to the app already, so there
+/// the process is left to the system.
+final class NotificationExtensionLifetime {
+    static let shared = NotificationExtensionLifetime()
+    /// Long enough for usernoted to take the delivered content; far shorter than a human tap.
+    static let exitDelay: TimeInterval = 1
+
+    private let enabled: Bool
+    private let schedule: (TimeInterval, @escaping () -> Void) -> Void
+    private let exitProcess: () -> Void
+    private let lock = NSLock()
+    private var inFlight = 0
+    private var generation = 0
+
+    init(
+        enabled: Bool = ProcessInfo.processInfo.isiOSAppOnMac,
+        schedule: @escaping (TimeInterval, @escaping () -> Void) -> Void = { delay, work in
+            DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: work)
+        },
+        exitProcess: @escaping () -> Void = { exit(0) }
+    ) {
+        self.enabled = enabled
+        self.schedule = schedule
+        self.exitProcess = exitProcess
+    }
+
+    /// A notification request arrived; any scheduled exit is off until it is delivered.
+    func requestStarted() {
+        lock.lock()
+        defer { lock.unlock() }
+        inFlight += 1
+        generation += 1
+    }
+
+    /// A request's content was delivered. The last one schedules the exit.
+    func requestFinished() {
+        guard enabled else { return }
+        lock.lock()
+        inFlight = max(0, inFlight - 1)
+        guard inFlight == 0 else { lock.unlock(); return }
+        generation += 1
+        let scheduled = generation
+        lock.unlock()
+        schedule(Self.exitDelay) { [self] in
+            lock.lock()
+            defer { lock.unlock() }
+            // Held through the exit so a request starting on another thread can't slip in between.
+            if inFlight == 0 && generation == scheduled {
+                exitProcess()
+            }
+        }
     }
 }
 
