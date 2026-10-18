@@ -3215,6 +3215,20 @@ final class ntfyTests: XCTestCase {
                              "sanity: the dataset must contain multi-alias entries for this to be meaningful")
     }
 
+    // MARK: Firebase config — a fresh clone's placeholder must let the app launch
+
+    func testBundledFirebaseApiKeyHasTheShapeFirebaseInstallationsRequires() {
+        // +[FIRInstallations validateAPIKey:] aborts the app at launch unless the key is 39
+        // characters starting with "A". CI and a fresh clone bundle the placeholder from
+        // GoogleService-Info.plist.example, so this pins that the placeholder (or a real key) passes.
+        let url = Bundle.main.url(forResource: "GoogleService-Info", withExtension: "plist")
+        XCTAssertNotNil(url, "GoogleService-Info.plist must be bundled into the test host")
+        let plist = NSDictionary(contentsOf: url!)
+        let key = plist?["API_KEY"] as? String ?? ""
+        XCTAssertEqual(key.count, 39, "API_KEY must be 39 characters, got \(key.count)")
+        XCTAssertTrue(key.hasPrefix("A"), "API_KEY must start with \"A\"")
+    }
+
     // MARK: tag parsing over the real dataset — the user-visible half of the alias bug
 
     func testParseEmojiTagsResolvesNonFirstAlias() {

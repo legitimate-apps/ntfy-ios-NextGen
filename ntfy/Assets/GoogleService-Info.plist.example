@@ -8,9 +8,11 @@
   is fake. `scripts/bootstrap.sh` copies this file into place as GoogleService-Info.plist
   when a real one is absent.
 
-  With these placeholders the app BUILDS and the unit tests RUN (they use an in-memory Core
-  Data store and never reach Firebase). Push notifications do NOT work: FCM registration
-  fails against a project that does not exist.
+  With these placeholders the app BUILDS, LAUNCHES on the simulator and the unit tests RUN
+  (they use an in-memory Core Data store and never reach Firebase). Push notifications do NOT
+  work: FCM registration fails against a project that does not exist. API_KEY is fake but
+  shaped like a real key (39 characters, starting with "A"): Firebase Installations checks
+  that shape when the app starts and crashes the app on anything else.
 
   To get working push, replace it with the real GoogleService-Info.plist from the Firebase
   console for your own project, matching BUNDLE_ID to your bundle identifier. The real file
@@ -19,7 +21,7 @@
 <plist version="1.0">
 <dict>
 	<key>API_KEY</key>
-	<string>PLACEHOLDER-NOT-A-REAL-KEY</string>
+	<string>AIzaSyPLACEHOLDER-not-a-real-key-000000</string>
 	<key>GCM_SENDER_ID</key>
 	<string>000000000000</string>
 	<key>PLIST_VERSION</key>
