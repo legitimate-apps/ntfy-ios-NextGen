@@ -20,6 +20,15 @@ struct NotificationRowView: View {
     
     var body: some View {
         notificationRow
+            .swipeActions(edge: .leading) {
+                Button {
+                    store.setRead(!notification.read, forNotification: notification)
+                } label: {
+                    Label(notification.read ? "Mark unread" : "Mark read",
+                          systemImage: notification.read ? "envelope.badge" : "envelope.open")
+                }
+                .tint(.blue)
+            }
             .swipeActions(edge: .trailing) {
                 Button(role: .destructive) {
                     store.delete(notification: notification)
@@ -229,6 +238,12 @@ struct NotificationRowView: View {
         Menu {
             Button("Copy message") {
                 copyMessage()
+            }
+            Button {
+                store.setRead(!notification.read, forNotification: notification)
+            } label: {
+                Label(notification.read ? "Mark unread" : "Mark read",
+                      systemImage: notification.read ? "envelope.badge" : "envelope.open")
             }
         } label: {
             Image(systemName: "ellipsis.circle")
