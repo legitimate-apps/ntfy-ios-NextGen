@@ -68,7 +68,7 @@ struct NotificationListView: View {
                 guard scenePhase == .active else { return }
                 var failures = 0
                 while !Task.isCancelled {
-                    failures = await pollOnce(skipIfInFlight: true) ? 0 : failures + 1
+                    failures = LivePollSchedule.failures(after: await pollOutcome(skipIfInFlight: true), previous: failures)
                     let delay = LivePollSchedule.delay(afterConsecutiveFailures: failures)
                     do {
                         try await Task.sleep(nanoseconds: UInt64(delay * 1_000_000_000))
@@ -82,9 +82,13 @@ struct NotificationListView: View {
     /// One poll; true unless it failed. The live loop skips while its previous poll is still out
     /// (see `PollGuard`); pull to refresh always polls.
     private func pollOnce(skipIfInFlight: Bool = false) async -> Bool {
+        await pollOutcome(skipIfInFlight: skipIfInFlight).succeeded
+    }
+
+    private func pollOutcome(skipIfInFlight: Bool) async -> PollOutcome {
         await withCheckedContinuation { continuation in
-            subscriptionManager.pollWithOutcome(subscription, skipIfInFlight: skipIfInFlight) { outcome in
-                continuation.resume(returning: outcome.succeeded)
+            subscriptionManager.pollWithOutcome(subscription, skipIfInFlight: skipIfInFlight, manual: !skipIfInFlight) {
+                continuation.resume(returning: $0)
             }
         }
     }

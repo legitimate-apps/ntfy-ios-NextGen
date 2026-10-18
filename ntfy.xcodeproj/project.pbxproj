@@ -92,6 +92,10 @@
 		2E1C0A042FF0000100A52946 /* OpenSourceLicenses.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */; };
 		2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0A052FF0000100A52946 /* LicensesTests.swift */; };
 		2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */; };
+		E2DA5F6493F7477AA23CFA63 /* DeliveryHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */; };
+		0D9D3DDEF2C741D39A7F355C /* DeliveryHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */; };
+		7C6C8829170C43C2A5BA01C5 /* PollCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */; };
+		A70264F2C0E04C0ABEB04DE4 /* NotificationStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -202,6 +206,9 @@
 		2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = OpenSourceLicenses.swift; sourceTree = "<group>"; };
 		2E1C0A052FF0000100A52946 /* LicensesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LicensesTests.swift; sourceTree = "<group>"; };
 		2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationResponseRelayTests.swift; sourceTree = "<group>"; };
+		F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryHealth.swift; sourceTree = "<group>"; };
+		6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollCoordinator.swift; sourceTree = "<group>"; };
+		DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStatusView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -239,6 +246,7 @@
 				18A28C5B2FBCF00000A52946 /* AttachmentAutoDownloadView.swift */,
 				2939B2102F8F293C00A52946 /* DefaultServerView.swift */,
 				2939B2112F8F293C00A52946 /* SettingsView.swift */,
+				DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */,
 				29B4EB052FD7C5C1005CA516 /* CriticalAlertsSettingView.swift */,
 				37AB10012FE0000100F927E4 /* ServerHeadersView.swift */,
 				C66C8F6A6B9A4307967D1B47 /* TopicSortOrderView.swift */,
@@ -359,6 +367,7 @@
 				29E8419F2FB417EA00F927E4 /* NotificationAttachmentImageLoader.swift */,
 				E27008112AF1030A006E33BA /* NotificationsObservable.swift */,
 				94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */,
+				6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */,
 				94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */,
 				A1B2C3D4E5F6A7B8C9D0E1F2 /* RetiredDefaultServerMigration.swift */,
 				E270080F2AF0F64B006E33BA /* SubscriptionsObservable.swift */,
@@ -393,6 +402,7 @@
 				29C6D8302FBD1B750057C9AC /* DownloadDelegate.swift */,
 				94867142283EC9950093C7A4 /* Actions.swift */,
 				948671462841B0B20093C7A4 /* NotificationContent.swift */,
+				F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */,
 				948671492841D0CE0093C7A4 /* ActionExecutor.swift */,
 				2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */,
 			);
@@ -578,15 +588,18 @@
 				2939B2192F8F293C00A52946 /* DefaultServerView.swift in Sources */,
 				29C6D8312FBD1B750057C9AC /* DownloadDelegate.swift in Sources */,
 				2939B21A2F8F293C00A52946 /* SettingsView.swift in Sources */,
+				A70264F2C0E04C0ABEB04DE4 /* NotificationStatusView.swift in Sources */,
 				2939B21B2F8F293C00A52946 /* UserTableView.swift in Sources */,
 				E27008102AF0F64B006E33BA /* SubscriptionsObservable.swift in Sources */,
 				02024E60283D7CBB0064224A /* Extensions.swift in Sources */,
 				20158E94B11143EDB4B529A7 /* LazyView.swift in Sources */,
 				948671472841B0B20093C7A4 /* NotificationContent.swift in Sources */,
+				E2DA5F6493F7477AA23CFA63 /* DeliveryHealth.swift in Sources */,
 				9474F1F92830835400CDE4DD /* Store.swift in Sources */,
 				9474F212283327C200CDE4DD /* Helpers.swift in Sources */,
 				9474F217283531A300CDE4DD /* Log.swift in Sources */,
 				94A3F7C8283734D900C48E79 /* SubscriptionManager.swift in Sources */,
+				7C6C8829170C43C2A5BA01C5 /* PollCoordinator.swift in Sources */,
 				94A3F7D1283734D900C48E79 /* FcmSubscriptionReconciler.swift in Sources */,
 				A1B2C3D4E5F6A7B8C9D0E1F3 /* RetiredDefaultServerMigration.swift in Sources */,
 				9474F1D2282F2D2C00CDE4DD /* AppDelegate.swift in Sources */,
@@ -644,6 +657,7 @@
 				9474F2062831D73C00CDE4DD /* ntfy.xcdatamodeld in Sources */,
 				94A3F7CB28386B2100C48E79 /* Config.swift in Sources */,
 				948671482841B1430093C7A4 /* NotificationContent.swift in Sources */,
+				0D9D3DDEF2C741D39A7F355C /* DeliveryHealth.swift in Sources */,
 				9474F2142834755E00CDE4DD /* Subscription.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

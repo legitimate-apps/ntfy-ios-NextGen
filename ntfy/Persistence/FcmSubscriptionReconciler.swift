@@ -68,6 +68,7 @@ final class FcmSubscriptionReconciler {
     private let defaults: UserDefaults
     private let lock = NSLock()
     private var inFlight = false
+    private var completions: [() -> Void] = []
     /// Set when a reconcile is asked for while a round is in flight, so the request is
     /// honoured after that round instead of being dropped.
     private var rerunRequested = false
@@ -125,20 +126,29 @@ final class FcmSubscriptionReconciler {
         return true
     }
 
+    var isPushSetupComplete: Bool {
+        subscriber.hasApnsToken && defaults.bool(forKey: Self.defaultsKeyPollSubscribed)
+            && store.getSubscriptionsPendingFcmSubscribe().isEmpty
+    }
+
     /// Re-subscribe every topic FCM has not confirmed for the current token.
     ///
     /// Safe and cheap to call repeatedly: with nothing pending it is a fetch and
     /// a return. Callers do not need to know whether the APNs token has landed —
     /// if it hasn't, this no-ops and the APNs callback drives the retry.
-    func reconcile(reason: String) {
+    func reconcile(reason: String, completion: (() -> Void)? = nil) {
         guard subscriber.hasApnsToken else {
             // Not an error: `didReceiveRegistrationToken` routinely beats
             // `didRegisterForRemoteNotifications...`. Whichever lands second
             // re-drives us, so we just wait rather than burning a failed round.
             Log.d(tag, "reconcile(\(reason)) deferred — APNs token not associated with Firebase yet")
+            completion?()
             return
         }
 
+        if let completion {
+            lock.lock(); completions.append(completion); lock.unlock()
+        }
         drainObsoleteTopicNames()
 
         // Rename first: a round that bound names derived from a different app base URL would only
@@ -376,9 +386,13 @@ final class FcmSubscriptionReconciler {
         inFlight = false
         let shouldRerun = rerunRequested
         rerunRequested = false
+        let settled = shouldRerun ? [] : completions
+        if !shouldRerun { completions = [] }
         lock.unlock()
         if shouldRerun {
             reconcile(reason: "queued while a round was in flight")
+        } else {
+            settled.forEach { $0() }
         }
     }
 }

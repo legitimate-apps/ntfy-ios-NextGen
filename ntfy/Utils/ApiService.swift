@@ -38,7 +38,9 @@ class ApiService {
                 return
             }
             guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
-                completionHandler(nil, URLError(.badServerResponse))
+                let http = response as? HTTPURLResponse
+                completionHandler(nil, PollHTTPError(status: http?.statusCode ?? 0,
+                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After")))
                 return
             }
             guard let data = data else {
@@ -79,7 +81,7 @@ class ApiService {
                 Log.w(self.tag, "Sequence action failed; keeping local state (HTTP \(status))")
             }
             if status == 429 {
-                completion(.rateLimited(retryAfter: TimeInterval(http?.value(forHTTPHeaderField: "Retry-After") ?? "") ?? 60))
+                completion(.rateLimited(retryAfter: PollTiming.retryDelay(http?.value(forHTTPHeaderField: "Retry-After"), now: Date()) ?? 60))
             } else {
                 completion((200..<300).contains(status) ? .sent : .failed)
             }
@@ -281,7 +283,9 @@ class ApiService {
                 return
             }
             guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
-                completionHandler(nil, URLError(.badServerResponse))
+                let http = response as? HTTPURLResponse
+                completionHandler(nil, PollHTTPError(status: http?.statusCode ?? 0,
+                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After")))
                 return
             }
             guard let data = data else {
@@ -420,7 +424,10 @@ final class ClearPacer {
     private var pending: [Item] = []
     private var busy = false
     private var lastStart = Date.distantPast
-    private var pausedUntil: [String: Date] = [:]
+    private let injectedCooldown: ServerCooldown?
+    private lazy var cooldown = injectedCooldown ?? ServerCooldown(defaults: nil, now: { [weak self] in self?.now() ?? Date() })
+
+    init(cooldown: ServerCooldown? = nil) { injectedCooldown = cooldown }
 
     /// `first` puts these ahead of the backlog: a notification response holds iOS's completion
     /// handler until its clear is sent, so it can't wait behind a topic's worth of clears.
@@ -442,9 +449,8 @@ final class ClearPacer {
     private func pump() {
         lock.lock()
         let now = now()
-        pausedUntil = pausedUntil.filter { $0.value > now }
-        let paused = pending.filter { pausedUntil[$0.server] != nil }
-        pending.removeAll { pausedUntil[$0.server] != nil }
+        let paused = pending.filter { !cooldown.claim(server: $0.server, manual: false) }
+        pending.removeAll { !cooldown.claim(server: $0.server, manual: false) }
         guard !busy, !pending.isEmpty else { lock.unlock(); paused.forEach { $0.done(false) }; return }
         busy = true
         let wait = lastStart.addingTimeInterval(Self.spacing).timeIntervalSince(now)
@@ -463,7 +469,8 @@ final class ClearPacer {
             busy = false
             var dropped: [Item] = []
             if case .rateLimited(let retryAfter) = outcome {
-                pausedUntil[item.server] = self.now().addingTimeInterval(min(max(retryAfter, 1), 3600))
+                let header = retryAfter.isFinite && retryAfter >= 0 ? String(Int(min(retryAfter, 3600))) : nil
+                cooldown.limit(server: item.server, retryAfter: header)
                 dropped = pending.filter { $0.server == item.server }
                 pending.removeAll { $0.server == item.server }
             }

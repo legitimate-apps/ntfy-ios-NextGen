@@ -1,8 +1,6 @@
 import SwiftUI
 import Firebase
 
-// TODO: Errors are not shown to the user, but instead just logged
-
 @main
 struct AppMain: App {
     private let tag = "AppMain"
@@ -31,6 +29,9 @@ struct AppMain: App {
                     // first unlock, a Keychain hiccup, or a key the extension couldn't derive).
                     store.retryLockedMessages()
                     delegate.refreshNotificationSettings()
+                    // Catch up once per foreground transition. Returning to the topic list or
+                    // switching tabs does not poll again; explicit refresh is available there.
+                    SubscriptionManager(store: store).pollAll(store.getSubscriptions() ?? [], manual: false) {}
                     // Self-heal a desynced device (ntfy#1305). Before this, a
                     // topic whose FCM binding failed stayed dead until the user
                     // reinstalled the app — which is exactly what the upstream

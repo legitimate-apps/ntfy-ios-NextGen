@@ -83,7 +83,10 @@ final class LaunchExperience: ObservableObject {
     private(set) var entries: [ReleaseNotes] = []
     private var prepared = false
     /// Seam for per-topic delivery health (feat/delivery-health): false while any topic is failing.
-    static var topicsHealthy: () -> Bool = { true }
+    static var topicsHealthy: () -> Bool = {
+        let keys = (Store.shared.getSubscriptions() ?? []).map { $0.objectID.uriRepresentation().absoluteString }
+        return FcmSubscriptionReconciler.shared.isPushSetupComplete && DeliveryHealthMonitor.shared.healthy(keys: keys)
+    }
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard,

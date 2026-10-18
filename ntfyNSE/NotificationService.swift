@@ -11,7 +11,11 @@ class NotificationService: UNNotificationServiceExtension {
     private let tag = "NotificationService"
     private var store: Store?
     
-    var bestAttemptContent: UNMutableNotificationContent?
+    private let attempt = NotificationBestAttempt(UNMutableNotificationContent())
+    var bestAttemptContent: UNMutableNotificationContent? {
+        get { attempt.content }
+        set { if let newValue { attempt.replace(with: newValue) } }
+    }
     private var deliveryGate: NotificationDeliveryGate?
     
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
@@ -84,8 +88,10 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
         if case .reconcile(let poll) = result {
+            let placeholder = NotificationHealth.fetchFailureContent(request.content, topic: received.topic, baseUrl: baseUrl, event: received.event)
+            bestAttemptContent = placeholder
             ApiService.shared.poll(poll, timeout: NotificationServiceTiming.pollTimeout) { messages, _ in
-                guard let messages else { self.deliver(self.fallbackContent(request)); return }
+                guard let messages else { self.deliver(placeholder); return }
                 let presentations = Store.shared.save(notificationsFromMessages: messages, polledWith: poll) ?? []
                 if let latest = presentations.last(where: { $0.sequence == received.sequence }) {
                     self.handlePresentation(request, content, baseUrl, latest, reconciled: true)
@@ -129,6 +135,7 @@ class NotificationService: UNNotificationServiceExtension {
 
     private func handlePresentation(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ message: Message, reconciled: Bool = false) {
         Store.shared.recordPresentation(message: message, baseUrl: baseUrl)
+        bestAttemptContent = content
         let user = store?.getBasicUser(baseUrl: baseUrl)
         let displayName = store?.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
         content.modify(
@@ -137,6 +144,7 @@ class NotificationService: UNNotificationServiceExtension {
             displayName: displayName,
             categoryRegistrationTimeout: NotificationServiceTiming.categoryRegistrationTimeout
         )
+        bestAttemptContent = content
         content.attachImageIfNeeded(
             message: message,
             baseUrl: baseUrl,
@@ -160,6 +168,9 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
         
+        // Install the safe topic-named fallback before starting the fetch, including expiry.
+        let placeholder = NotificationHealth.fetchFailureContent(request.content, topic: subscription.topic, baseUrl: subscription.baseUrl)
+        bestAttemptContent = placeholder
         // Poll original server
         let user = store?.getBasicUser(baseUrl: subscription.baseUrl)
         // The extension only needs contentHandler to be called from the async callback
@@ -172,7 +183,7 @@ class NotificationService: UNNotificationServiceExtension {
         ) { message, error in
             guard let message = message else {
                 Log.w(self.tag, "Error fetching poll request message topic=\(pollRequest.topic), pollId=\(pollId), subscription=\(topicUrl(baseUrl: subscription.baseUrl, topic: subscription.topic))", error)
-                self.deliver(self.fallbackContent(request))
+                self.deliver(placeholder)
                 return
             }
             self.handleMessage(request, content, subscription.baseUrl, message)

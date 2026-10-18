@@ -8,6 +8,7 @@ struct SubscriptionListView: View {
     let tag = "SubscriptionList"
     
     @EnvironmentObject private var store: Store
+    @EnvironmentObject private var delegate: AppDelegate
     // @StateObject, not @ObservedObject: `SubscriptionsObservable()` is constructed here, and
     // @ObservedObject does not own what it is given — SwiftUI is free to rebuild this view's struct
     // and hand it a freshly constructed observable, throwing away the live NSFetchedResultsController
@@ -31,14 +32,14 @@ struct SubscriptionListView: View {
             if #available(iOS 15.0, *) {
                 subscriptionList
                     .refreshable {
-                        pollSubscriptions()
+                        await pollSubscriptions(manual: true)
                     }
             } else {
                 subscriptionList
                     .toolbar {
                         ToolbarItem(placement: .navigationBarLeading) {
                             Button {
-                                pollSubscriptions()
+                                Task { await pollSubscriptions(manual: true) }
                             } label: {
                                 Image(systemName: "arrow.clockwise")
                             }
@@ -66,6 +67,15 @@ struct SubscriptionListView: View {
     }
     
     private var subscriptionList: some View {
+        VStack(spacing: 0) {
+            if NotificationHealth.showsBanner(for: delegate.notificationAuthorizationStatus) {
+                NotificationPermissionBanner()
+            }
+            topicList
+        }
+    }
+
+    private var topicList: some View {
         List {
             ForEach(subscriptionsModel.subscriptions) { subscription in
                 SubscriptionItemNavView(subscription: subscription,
@@ -109,8 +119,6 @@ struct SubscriptionListView: View {
         .onDisappear { listVisible = false }
         .onAppear {
             listVisible = true
-            // Ensures subscription count stays up to date, so a pull to refresh isn't required
-            pollSubscriptions()
             movedTopicsNotice = RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults)
         }
         .alert(isPresented: Binding(
@@ -130,10 +138,9 @@ struct SubscriptionListView: View {
         movedTopicsNotice = []
     }
 
-    private func pollSubscriptions() {
-        subscriptionsModel.subscriptions.forEach { subscription in
-            subscriptionManager.poll(subscription)
-        }
+    @MainActor
+    private func pollSubscriptions(manual: Bool) async {
+        await subscriptionManager.pollAll(store.getSubscriptions() ?? [], manual: manual)
     }
 }
 
@@ -240,8 +247,14 @@ struct SubscriptionItemNavView: View {
 }
 
 struct SubscriptionItemRowView: View {
+    @ObservedObject private var deliveryHealth = DeliveryHealthMonitor.shared
     @ObservedObject var subscription: Subscription
     let summary: Store.SubscriptionSummary?
+
+    init(subscription: Subscription, summary: Store.SubscriptionSummary?) {
+        self.subscription = subscription
+        self.summary = summary
+    }
 
     var body: some View {
         // Three lines, most-identifying first: a long hostname used to consume the whole headline
@@ -310,6 +323,17 @@ struct SubscriptionItemRowView: View {
                     .font(.caption)
                     .foregroundColor(Color(UIColor.tertiaryLabel))
                 Spacer(minLength: 0)
+            }
+            if let health = deliveryHealth.topics[subscription.objectID.uriRepresentation().absoluteString], let label = health.label {
+                HStack(alignment: .firstTextBaseline, spacing: 5) {
+                    if health.needsAttention {
+                        Image(systemName: "exclamationmark.triangle")
+                            .accessibilityHidden(true)
+                    }
+                    Text(label).fixedSize(horizontal: false, vertical: true)
+                }
+                .font(.subheadline)
+                .foregroundColor(.secondary)
             }
         }
         .padding(.vertical, 6)

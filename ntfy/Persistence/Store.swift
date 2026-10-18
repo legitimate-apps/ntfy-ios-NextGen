@@ -64,7 +64,7 @@ class Store: ObservableObject {
     var topicSecrets: TopicSecretStoring
     /// Only local read actions call this; remote ingestion never publishes.
     var clearPublisher: ClearPacer.Publish = { ApiService.shared.action($0, completion: $1) }
-    var clearPacer = ClearPacer()
+    var clearPacer = ClearPacer(cooldown: .shared)
     var wakePublisher: (String, @escaping () -> Void) -> Void = { ApiService.shared.wake(topic: $0, completion: $1) }
     var notificationRemover: (SequenceRemoval) -> Void = { $0.removeDelivered() }
     /// Whether a missing cached key may be re-derived from the password (PBKDF2). Off in the
@@ -746,6 +746,10 @@ class Store: ObservableObject {
                 Log.w(Store.tag, "Cannot store notifications (fromMessages)", error)
                 rollbackAndRefresh()
             }
+        }
+        switch stored {
+        case .stored, .handled: DeliveryReceipt.record(baseUrl: baseUrl, topic: topic)
+        default: break // A deferred reconciliation has not demonstrated recovery yet.
         }
         return stored
     }

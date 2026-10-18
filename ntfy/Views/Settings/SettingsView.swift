@@ -23,6 +23,7 @@ struct SettingsView: View {
                 ) {
                     AttachmentAutoDownloadView()
                 }
+                NotificationStatusView()
                 UrgentAlertsSettingView()
                 Section(
                     header: Text("Users"),

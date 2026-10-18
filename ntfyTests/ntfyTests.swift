@@ -6081,7 +6081,7 @@ final class NewcomerSetupTests: XCTestCase {
         var skipped: PollOutcome?
         manager.pollWithOutcome(subscription, skipIfInFlight: true) { skipped = $0 }
         XCTAssertNotNil(skipped, "the second caller is answered synchronously, not queued")
-        XCTAssertEqual(skipped?.succeeded, true, "a skip isn't a failure, so the live loop doesn't back off")
+        XCTAssertEqual(skipped?.attempted, false, "a skip is not a fresh success or failure")
         XCTAssertTrue(Store.shared.delete(subscription: subscription))
         wait(for: [first], timeout: 35)
         XCTAssertTrue(PollGuard.shared.begin(key: key), "the guard is released after the request ends")
@@ -6851,5 +6851,537 @@ final class UrgentAlertsStateTests: XCTestCase {
 
     func testExplanationNamesPrioritiesAndBothSystemControlsWithPermissionCondition() {
         XCTAssertEqual(UrgentAlertsState.explanation, "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings.")
+    }
+}
+
+final class DeliveryHealthPolicyTests: XCTestCase {
+    func testPermissionBannerOnlyWhenDenied() {
+        XCTAssertTrue(NotificationHealth.showsBanner(for: .denied))
+        for state: UNAuthorizationStatus in [.notDetermined, .authorized, .provisional, .ephemeral] {
+            XCTAssertFalse(NotificationHealth.showsBanner(for: state))
+        }
+    }
+
+    func testFailureLabelsAndSuccessClearsState() {
+        var state = TopicDeliveryHealth()
+        state.record(.unreachable)
+        XCTAssertEqual(state.label, "Can't reach the server")
+        XCTAssertFalse(state.needsAttention)
+        state.record(.unreachable)
+        XCTAssertFalse(state.needsAttention)
+        state.record(.unreachable)
+        XCTAssertTrue(state.needsAttention)
+        state.record(nil)
+        XCTAssertNil(state.label)
+        XCTAssertEqual(state.consecutiveFailures, 0)
+        state.record(.unauthorized)
+        XCTAssertEqual(state.label, "Sign-in failed")
+        state.record(.rateLimited)
+        XCTAssertEqual(state.label, "The server is limiting requests")
+    }
+
+    func testHTTPClassificationRetainsStatusAndRetryAfter() {
+        XCTAssertEqual(PollFailure.classify(PollHTTPError(status: 401, retryAfter: nil)), .unauthorized)
+        XCTAssertEqual(PollFailure.classify(PollHTTPError(status: 403, retryAfter: nil)), .unauthorized)
+        XCTAssertEqual(PollFailure.classify(PollHTTPError(status: 429, retryAfter: "120")), .rateLimited)
+        XCTAssertEqual(PollFailure.classify(URLError(.timedOut)), .unreachable)
+        XCTAssertEqual(PollFailure.classify(PollHTTPError(status: 500, retryAfter: nil)), .other)
+    }
+
+    func testMinimumIntervalAndRateLimitEvenForManualRefresh() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        var policy = PollTiming()
+        policy.record(failure: nil, retryAfter: nil, now: now)
+        XCTAssertFalse(policy.allowsPoll(now: now.addingTimeInterval(29), manual: false))
+        XCTAssertTrue(policy.allowsPoll(now: now.addingTimeInterval(30), manual: false))
+        XCTAssertTrue(policy.allowsPoll(now: now, manual: true))
+        policy.record(failure: .rateLimited, retryAfter: "120", now: now)
+        XCTAssertFalse(policy.allowsPoll(now: now.addingTimeInterval(119), manual: true))
+        XCTAssertTrue(policy.allowsPoll(now: now.addingTimeInterval(120), manual: true))
+        policy.record(failure: .rateLimited, retryAfter: nil, now: now.addingTimeInterval(120))
+        XCTAssertEqual(policy.nextAllowed, now.addingTimeInterval(240))
+    }
+
+    func testRetryAfterSecondsDateAndInvalidValues() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        XCTAssertEqual(PollTiming.retryDelay(" 90 ", now: now), 90)
+        XCTAssertEqual(PollTiming.retryDelay("Tue, 14 Nov 2023 22:15:20 GMT", now: now), 120)
+        for input in ["-2", "nonsense", "NaN", "inf", "1.2"] {
+            XCTAssertNil(PollTiming.retryDelay(input, now: now))
+        }
+        XCTAssertEqual(PollTiming.retryDelay("Tue, 14 Nov 2023 22:00:00 GMT", now: now), 0)
+    }
+
+    func testNSEFailureContentNamesTopicAndRemovesUntrustedText() {
+        let incoming = UNMutableNotificationContent()
+        incoming.title = "untrusted title"
+        incoming.subtitle = "untrusted subtitle"
+        incoming.body = "ciphertext or generic server text"
+        incoming.userInfo = ["topic": "wake-hash", "base_url": "https://example.org", "click": "https://untrusted.example.org", "actions": "unfetched"]
+        let content = NotificationHealth.fetchFailureContent(incoming, topic: "garden", baseUrl: "https://garden.example.org")
+        XCTAssertEqual(content.title, "garden")
+        XCTAssertEqual(content.body, "New message on garden. Open the app to load it.")
+        XCTAssertEqual(content.subtitle, "")
+        XCTAssertTrue(content.attachments.isEmpty)
+        XCTAssertEqual(content.userInfo["topic"] as? String, "garden")
+        XCTAssertEqual(content.userInfo["base_url"] as? String, "https://garden.example.org")
+        XCTAssertNil(content.userInfo["click"])
+        XCTAssertNil(content.userInfo["actions"])
+    }
+}
+
+final class DeliveryHealthRefreshTests: XCTestCase {
+    func testPollAllWaitsForEveryFetchAndPublishesFailure() {
+        let store = Store(inMemory: true)
+        let first = store.saveSubscription(baseUrl: "https://health.example.org", topic: "one")
+        let second = store.saveSubscription(baseUrl: "https://health.example.org", topic: "two")
+        let polling = PollCoordinator(defaults: nil)
+        var manager = SubscriptionManager(store: store, polling: polling)
+        var replies: [([Message]?, Error?) -> Void] = []
+        manager.fetch = { _, reply in replies.append(reply) }
+        var finished = false
+        manager.pollAll([first, second], manual: true) { finished = true }
+        XCTAssertEqual(replies.count, 2)
+        XCTAssertFalse(finished)
+        replies[0]([], nil)
+        XCTAssertFalse(finished)
+        replies[1](nil, PollHTTPError(status: 403, retryAfter: nil))
+        let done = expectation(description: "all callbacks settled")
+        DispatchQueue.main.async {
+            XCTAssertTrue(finished)
+            XCTAssertEqual(DeliveryHealthMonitor.shared.topics[second.objectID.uriRepresentation().absoluteString]?.failure, .unauthorized)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2)
+    }
+
+    func testAutomaticCooldownManualOverrideAndServerWide429() {
+        let store = Store(inMemory: true)
+        let one = store.saveSubscription(baseUrl: "https://limits.example.org", topic: "one")
+        let two = store.saveSubscription(baseUrl: "https://limits.example.org", topic: "two")
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let polling = PollCoordinator(defaults: nil, now: { now })
+        var manager = SubscriptionManager(store: store, polling: polling)
+        var requests = 0
+        manager.fetch = { _, reply in requests += 1; reply([], nil) }
+        manager.pollWithOutcome(one, automaticList: true) { _ in }
+        manager.pollWithOutcome(one, automaticList: true) { _ in }
+        XCTAssertEqual(requests, 1)
+        manager.pollWithOutcome(one, manual: true) { _ in }
+        XCTAssertEqual(requests, 2)
+        manager.fetch = { _, reply in requests += 1; reply(nil, PollHTTPError(status: 429, retryAfter: "120")) }
+        manager.pollWithOutcome(one, manual: true) { _ in }
+        manager.pollWithOutcome(two) { outcome in
+            XCTAssertEqual(outcome.failure, .rateLimited)
+        }
+        XCTAssertEqual(requests, 3)
+        now = now.addingTimeInterval(120)
+        manager.pollWithOutcome(two) { _ in }
+        XCTAssertEqual(requests, 4)
+    }
+
+    func testManualRefreshJoinsExistingRequest() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://join.example.org", topic: "one")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var reply: (([Message]?, Error?) -> Void)?
+        var requests = 0
+        var completions = 0
+        manager.fetch = { _, completion in requests += 1; reply = completion }
+        manager.pollWithOutcome(topic) { _ in completions += 1 }
+        manager.pollWithOutcome(topic, manual: true) { _ in completions += 1 }
+        XCTAssertEqual(requests, 1)
+        XCTAssertEqual(completions, 0)
+        reply?([], nil)
+        XCTAssertEqual(completions, 2)
+    }
+}
+
+final class DeliveryHealthRepairTests: XCTestCase {
+    private final class Subscriber: FcmTopicSubscriber {
+        var hasApnsToken = true
+        var replies: [(Error?) -> Void] = []
+        func subscribe(toTopic topic: String, completion: @escaping (Error?) -> Void) { replies.append(completion) }
+        func unsubscribe(fromTopic topic: String, completion: @escaping (Error?) -> Void) { completion(nil) }
+    }
+
+    func testRepairCompletionWaitsForQueuedReconciliationAndReportsPending() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: Config.appBaseUrl, topic: "repair")
+        let defaults = UserDefaults(suiteName: "delivery-repair-\(UUID().uuidString)")!
+        defaults.set(Config.appBaseUrl, forKey: FcmSubscriptionReconciler.defaultsKeyBindingsAppBaseUrl)
+        let subscriber = Subscriber()
+        let reconciler = FcmSubscriptionReconciler(store: store, subscriber: subscriber, defaults: defaults)
+        reconciler.reconcile(reason: "existing round")
+        var finished = false
+        reconciler.reconcile(reason: "repair") { finished = true }
+        XCTAssertFalse(finished)
+        subscriber.replies.forEach { $0(nil) }
+        let done = expectation(description: "repair settled")
+        DispatchQueue.main.async {
+            XCTAssertTrue(finished)
+            XCTAssertTrue(topic.fcmSubscribed)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 2)
+    }
+
+    func testRepairWithoutRegistrationCompletesWithoutClaimingBinding() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: Config.appBaseUrl, topic: "waiting")
+        let subscriber = Subscriber()
+        subscriber.hasApnsToken = false
+        let reconciler = FcmSubscriptionReconciler(store: store, subscriber: subscriber)
+        let done = expectation(description: "no registration")
+        reconciler.reconcile(reason: "repair") { done.fulfill() }
+        wait(for: [done], timeout: 2)
+        XCTAssertFalse(topic.fcmSubscribed)
+        XCTAssertTrue(subscriber.replies.isEmpty)
+    }
+}
+
+final class DeliveryHealthCooldownPersistenceTests: XCTestCase {
+    func testRateLimitSurvivesNewCoordinator() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://persist.example.org", topic: "one")
+        let suite = "delivery-cooldown-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        var first = SubscriptionManager(store: store, polling: PollCoordinator(defaults: defaults, now: { now }))
+        first.fetch = { _, reply in reply(nil, PollHTTPError(status: 429, retryAfter: "600")) }
+        first.pollWithOutcome(topic) { _ in }
+        var relaunched = SubscriptionManager(store: store, polling: PollCoordinator(defaults: defaults, now: { now.addingTimeInterval(100) }))
+        var fetched = false
+        relaunched.fetch = { _, reply in fetched = true; reply([], nil) }
+        relaunched.pollWithOutcome(topic) { outcome in
+            XCTAssertEqual(outcome.failure, .rateLimited)
+        }
+        XCTAssertFalse(fetched, "relaunch must not bypass a server cooldown")
+    }
+}
+
+final class DeliveryHealthHTTPTests: XCTestCase {
+    private final class Service: ApiService {
+        var status = 429
+        override func runOneShot(_ request: URLRequest, timeout: TimeInterval, baseUrl: String,
+                                 session: URLSession? = nil,
+                                 completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) -> URLSession {
+            let response = HTTPURLResponse(url: request.url!, statusCode: status, httpVersion: nil,
+                                           headerFields: ["Retry-After": "120"])!
+            completionHandler(Data(), response, nil)
+            return .shared
+        }
+    }
+
+    func testBothPollAPIsPreserveHTTPStatusAndRetryAfter() throws {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://http.example.org", topic: "one")
+        let request = try XCTUnwrap(store.pollRequest(for: topic))
+        let service = Service(credentialStore: InMemoryCredentialStore())
+        for status in [401, 403, 429, 500] {
+            service.status = status
+            service.poll(request) { messages, error in
+                XCTAssertNil(messages)
+                XCTAssertEqual((error as? PollHTTPError)?.status, status)
+                XCTAssertEqual((error as? PollHTTPError)?.retryAfter, "120")
+            }
+            service.poll(baseUrl: request.baseUrl, topic: "one", messageId: "message", user: nil) { message, error in
+                XCTAssertNil(message)
+                XCTAssertEqual((error as? PollHTTPError)?.status, status)
+                XCTAssertEqual((error as? PollHTTPError)?.retryAfter, "120")
+            }
+        }
+    }
+}
+
+final class DeliveryHealthConcurrencyTests: XCTestCase {
+    func testListRefreshHasAtMostFourRequestsInFlight() {
+        let store = Store(inMemory: true)
+        let topics = (0..<6).map { store.saveSubscription(baseUrl: "https://bounded.example.org", topic: "topic-\($0)") }
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var replies: [([Message]?, Error?) -> Void] = []
+        manager.fetch = { _, reply in replies.append(reply) }
+        let done = expectation(description: "all six settled")
+        manager.pollAll(topics, manual: true) { done.fulfill() }
+        XCTAssertEqual(replies.count, 4)
+        for reply in replies { reply([], nil) }
+        DispatchQueue.main.async {
+            XCTAssertEqual(replies.count, 6)
+            replies[4]([], nil)
+            replies[5]([], nil)
+        }
+        wait(for: [done], timeout: 2)
+    }
+}
+
+final class DeliveryHealthRateLimitBurstTests: XCTestCase {
+    func testConcurrent429ResponsesCountAsOneBackoffRound() {
+        let store = Store(inMemory: true)
+        let topics = (0..<3).map { store.saveSubscription(baseUrl: "https://burst.example.org", topic: "topic-\($0)") }
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil, now: { now }))
+        var replies: [([Message]?, Error?) -> Void] = []
+        manager.fetch = { _, reply in replies.append(reply) }
+        manager.pollWithOutcome(topics[0]) { _ in }
+        manager.pollWithOutcome(topics[1]) { _ in }
+        XCTAssertEqual(replies.count, 2)
+        replies[0](nil, PollHTTPError(status: 429, retryAfter: nil))
+        replies[1](nil, PollHTTPError(status: 429, retryAfter: nil))
+        now = now.addingTimeInterval(60)
+        manager.pollWithOutcome(topics[2]) { _ in }
+        XCTAssertEqual(replies.count, 3, "two already-in-flight failures must not double a single cooldown")
+        replies[2]([], nil)
+    }
+}
+
+final class DeliveryHealthPresentationTests: XCTestCase {
+    func testJoinedBackgroundRefreshesPresentEachMessageOnce() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://presentation.example.org", topic: "one")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var replies: [([Message]?, Error?) -> Void] = []
+        manager.fetch = { _, reply in replies.append(reply) }
+        var liveCount = 0
+        var presentationCounts: [Int] = []
+        manager.pollWithOutcome(topic) { liveCount = $0.newMessages.count }
+        manager.poll(topic) { presentationCounts.append($0.count) }
+        manager.poll(topic) { presentationCounts.append($0.count) }
+        XCTAssertEqual(replies.count, 1)
+        replies[0]([Message(id: "health-message", time: 600, event: "message", topic: "one", message: "hello", title: nil)], nil)
+        XCTAssertEqual(liveCount, 1, "the UI still receives the complete result")
+        XCTAssertEqual(presentationCounts, [1, 0], "joining a request must not create repeat alerts")
+    }
+}
+
+final class DeliveryHealthRepairResultTests: XCTestCase {
+    func testRepairDoesNotClaimSetupIsCompleteWithoutPermissionAndRegistration() {
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .denied, registered: true, bindingsComplete: true),
+                       "Notifications are turned off for this app.")
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .notDetermined, registered: true, bindingsComplete: true),
+                       "Allow notifications to receive alerts.")
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: false, bindingsComplete: true),
+                       "Push registration is not ready. Check your connection and try again.")
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: true, bindingsComplete: false),
+                       "Push setup is still incomplete. Try again later.")
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .provisional, registered: true, bindingsComplete: true),
+                       "Push setup is complete. This does not check delivery from your server.")
+    }
+}
+
+
+final class DeliveryHealthRoundTwoTests: XCTestCase {
+    func testRetryAfterIsBoundedAndPersistedDeadlineHeals() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        XCTAssertEqual(PollTiming.retryDelay("99999999", now: now), 3600)
+        XCTAssertEqual(PollTiming.retryDelay("Wed, 14 Nov 2029 22:15:20 GMT", now: now), 3600)
+        let suite = "bounded-cooldown-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set(["https://old.example.org": now.addingTimeInterval(86400).timeIntervalSince1970], forKey: "deliveryHealthServerCooldowns")
+        let cooldown = ServerCooldown(defaults: defaults, now: { now })
+        XCTAssertEqual(cooldown.deadline(for: "https://old.example.org"), now.addingTimeInterval(3600))
+    }
+
+    func testOnlyAutomaticListPollsUseMinimumAndDeferredIsNotSuccess() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://intent.example.org", topic: "one")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var calls = 0
+        manager.fetch = { _, reply in calls += 1; reply([], nil) }
+        manager.pollWithOutcome(topic, automaticList: true) { _ in }
+        manager.pollWithOutcome(topic, automaticList: true) {
+            XCTAssertFalse($0.attempted)
+            XCTAssertFalse($0.succeeded)
+        }
+        manager.poll(topic) // test notification, initial topic open and background callers need a fetch
+        manager.pollWithOutcome(topic, skipIfInFlight: true) { XCTAssertTrue($0.attempted) }
+        XCTAssertEqual(calls, 3)
+    }
+
+    func testManualProbeIsOnePerServerAndPacedAcrossRelaunch() {
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let suite = "probe-cooldown-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let cooldown = ServerCooldown(defaults: defaults, now: { now })
+        cooldown.limit(server: "https://probe.example.org/", retryAfter: "600")
+        XCTAssertFalse(cooldown.claim(server: "https://probe.example.org", manual: false))
+        XCTAssertTrue(cooldown.claim(server: "https://probe.example.org", manual: true))
+        XCTAssertFalse(cooldown.claim(server: "https://probe.example.org", manual: true))
+        let relaunched = ServerCooldown(defaults: defaults, now: { now })
+        XCTAssertFalse(relaunched.claim(server: "https://probe.example.org", manual: true))
+        now = now.addingTimeInterval(60)
+        XCTAssertTrue(relaunched.claim(server: "https://probe.example.org", manual: true))
+    }
+
+    func testSkippedAttemptsDoNotEscalateOrCompoundLiveBackoff() {
+        var health = TopicDeliveryHealth()
+        health.record(.rateLimited)
+        health.record(.rateLimited, attempted: false)
+        health.record(.rateLimited, attempted: false)
+        XCTAssertEqual(health.consecutiveFailures, 1)
+        XCTAssertFalse(health.needsAttention)
+        XCTAssertEqual(LivePollSchedule.failures(after: PollOutcome(succeeded: false, newMessages: [], failure: .rateLimited, attempted: false), previous: 1), 1)
+    }
+
+    func testFailedControlFallbackIsPassiveAndNeverSaysNewMessage() {
+        let incoming = UNMutableNotificationContent()
+        incoming.body = "untrusted ciphertext"
+        let content = NotificationHealth.fetchFailureContent(incoming, topic: "garden", event: "message_clear")
+        XCTAssertEqual(content.title, "garden")
+        XCTAssertEqual(content.body, "Open the app to update notifications for garden.")
+        XCTAssertNil(content.sound)
+        XCTAssertEqual(content.interruptionLevel, .passive)
+        let attempt = NotificationBestAttempt(content)
+        let loaded = UNMutableNotificationContent()
+        loaded.title = "Decrypted title"
+        loaded.body = "Loaded message"
+        attempt.replace(with: loaded)
+        XCTAssertEqual(attempt.content.body, "Loaded message", "expiry must use the successfully loaded content")
+    }
+
+    func testRepairWaitsForRegistrationBeforeReconciliation() {
+        var ready = false
+        var scheduled: (() -> Void)?
+        var reconciles = 0
+        RegistrationRepair.wait(isReady: { ready }, schedule: { scheduled = $0 }) { reconciles += 1 }
+        XCTAssertEqual(reconciles, 0)
+        ready = true
+        scheduled?()
+        XCTAssertEqual(reconciles, 1)
+    }
+
+    func testHealthRequiresKnownSuccessAndPushReceiptClearsFailure() {
+        let monitor = DeliveryHealthMonitor(defaults: nil)
+        XCTAssertFalse(monitor.healthy(keys: ["one"]))
+        monitor.record(key: "one", failure: nil)
+        XCTAssertTrue(monitor.healthy(keys: ["one"]))
+        monitor.record(key: "one", failure: .unreachable)
+        XCTAssertFalse(monitor.healthy(keys: ["one"]))
+        monitor.received(key: "one")
+        XCTAssertNil(monitor.topics["one"])
+        XCTAssertTrue(monitor.healthy(keys: ["one"]))
+    }
+}
+
+
+final class DeliveryHealthBatchRecoveryTests: XCTestCase {
+    func testDeadServerDoesNotQueueMoreRequestsOrBlockOtherServer() {
+        let store = Store(inMemory: true)
+        let topics = (0..<20).map { store.saveSubscription(baseUrl: "https://dead.example.org", topic: "topic-\($0)") }
+        let healthy = store.saveSubscription(baseUrl: "https://healthy.example.org", topic: "healthy")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var requests: [PollRequest] = []
+        var replies: [([Message]?, Error?) -> Void] = []
+        manager.fetch = { request, reply in requests.append(request); replies.append(reply) }
+        let finished = expectation(description: "dead server batch completes without more timeouts")
+        manager.pollAll(topics + [healthy], manual: true) { finished.fulfill() }
+        XCTAssertEqual(requests.count, 4)
+        XCTAssertTrue(requests.contains { $0.baseUrl == "https://healthy.example.org" })
+        for (index, request) in requests.enumerated() {
+            if request.baseUrl == "https://healthy.example.org" { replies[index]([], nil) }
+            else { replies[index](nil, URLError(.timedOut)) }
+        }
+        wait(for: [finished], timeout: 2)
+        XCTAssertEqual(requests.count, 4)
+        XCTAssertEqual(DeliveryHealthMonitor.shared.topics[topics.last!.objectID.uriRepresentation().absoluteString]?.consecutiveFailures, 0)
+    }
+
+    func testSilentWakeFetchesEvenAfterRecentListRefresh() {
+        let store = Store(inMemory: true)
+        let base = "https://wake-health.example.org"
+        let topic = store.saveSubscription(baseUrl: base, topic: "one")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+        var calls = 0
+        manager.fetch = { _, reply in calls += 1; reply([], nil) }
+        manager.pollWithOutcome(topic, automaticList: true) { _ in }
+        let done = expectation(description: "wake saved")
+        XCTAssertTrue(manager.handleSilentWake(userInfo: ["event": "message_clear", "topic": firebaseTopic(baseUrl: base, topic: "one")]) {
+            XCTAssertTrue($0)
+            done.fulfill()
+        })
+        wait(for: [done], timeout: 2)
+        XCTAssertGreaterThan(calls, 1)
+    }
+
+    func testCrossProcessPushReceiptClearsOnlyRecoveredTopic() {
+        let suite = "receipt-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let monitor = DeliveryHealthMonitor(defaults: defaults)
+        let store = Store(inMemory: true)
+        let one = store.saveSubscription(baseUrl: "https://receipt.example.org", topic: "one")
+        let two = store.saveSubscription(baseUrl: "https://receipt.example.org", topic: "two")
+        monitor.register(store.pollRequest(for: one)!)
+        monitor.register(store.pollRequest(for: two)!)
+        let key = one.objectID.uriRepresentation().absoluteString
+        let other = two.objectID.uriRepresentation().absoluteString
+        monitor.record(key: key, failure: .unreachable)
+        monitor.record(key: other, failure: .unauthorized)
+        defaults.set([one.urlString(): Date().addingTimeInterval(1).timeIntervalSince1970], forKey: DeliveryReceipt.key)
+        monitor.refreshReceipts()
+        XCTAssertNil(monitor.topics[key])
+        XCTAssertEqual(monitor.topics[other]?.failure, .unauthorized)
+    }
+}
+
+final class SharedDeliveryBrakeTests: XCTestCase {
+    func testReviewHealthSeamRejectsUnknownSetup() {
+        XCTAssertFalse(LaunchExperience.topicsHealthy())
+    }
+
+    func testPoll429StopsClearsAndClear429StopsPolls() {
+        let date = Date(timeIntervalSince1970: 1_700_000_000)
+        let cooldown = ServerCooldown(defaults: nil, now: { date })
+        let poller = PollCoordinator(cooldown: cooldown, now: { date })
+        let pacer = ClearPacer(cooldown: cooldown)
+        pacer.now = { date }
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://shared.example.org", topic: "one")
+        let request = store.pollRequest(for: topic)!
+        XCTAssertTrue(poller.begin(request, manual: false) { _ in })
+        poller.finish(request, outcome: PollOutcome(succeeded: false, newMessages: [], failure: .rateLimited), retryAfter: "120")
+        var sent = 0
+        let clear = ClearRequest(baseUrl: request.baseUrl, topic: "one", sequence: "s1", user: nil)
+        pacer.send([clear], via: { _, done in sent += 1; done(.sent) }) { _, success in XCTAssertFalse(success) }
+        XCTAssertEqual(sent, 0)
+        let other = ClearRequest(baseUrl: "https://clear-shared.example.org", topic: "one", sequence: "s1", user: nil)
+        pacer.send([other], via: { _, done in done(.rateLimited(retryAfter: 600)) }) { _, _ in }
+        let otherTopic = store.saveSubscription(baseUrl: other.baseUrl, topic: "two")
+        XCTAssertFalse(poller.begin(store.pollRequest(for: otherTopic)!, manual: false) {
+            XCTAssertFalse($0.attempted)
+            XCTAssertEqual($0.failure, .rateLimited)
+        })
+        XCTAssertEqual(cooldown.deadline(for: other.baseUrl), date.addingTimeInterval(600))
+    }
+}
+
+final class DeliveryReceiptSignalTests: XCTestCase {
+    func testReceiptSignalClearsFailureAfterTheDatabaseChangeAlreadyArrived() {
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://receipt-signal.example.org", topic: "one")
+        let monitor = DeliveryHealthMonitor.shared
+        let key = topic.objectID.uriRepresentation().absoluteString
+        monitor.register(store.pollRequest(for: topic)!)
+        // Let the store's startup/save notifications (coalesced for 300 ms) finish first.
+        let settled = expectation(description: "database broadcasts settled")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) { settled.fulfill() }
+        wait(for: [settled], timeout: 3)
+        monitor.record(key: key, failure: .unreachable)
+        // The earlier Core Data broadcast has no receipt yet; the later signal must recover it.
+        monitor.refreshReceipts()
+        XCTAssertEqual(monitor.topics[key]?.failure, .unreachable)
+        let defaults = UserDefaults(suiteName: Store.appGroup)!
+        let previous = defaults.object(forKey: DeliveryReceipt.key)
+        defer { defaults.set(previous, forKey: DeliveryReceipt.key) }
+        defaults.set([topic.urlString(): Date().addingTimeInterval(1).timeIntervalSince1970], forKey: DeliveryReceipt.key)
+        defaults.synchronize()
+        CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(),
+            CFNotificationName("net.ntfy.deliveryHealthReceiptChanged" as CFString), nil, nil, true)
+        let recovered = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in
+            monitor.topics[key] == nil
+        }, object: nil)
+        wait(for: [recovered], timeout: 2)
     }
 }
