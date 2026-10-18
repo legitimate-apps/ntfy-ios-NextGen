@@ -29,15 +29,9 @@ struct DefaultServerView: View {
             }
             showDialog = true
         }) {
-            HStack {
-                let _ = newDefaultBaseUrl
-                Text("Default server")
-                    .foregroundColor(.primary)
-                Spacer()
-                Text(shortUrl(url: defaultBaseUrl))
-                    .foregroundColor(.secondary)
-            }
-            .contentShape(Rectangle())
+            let _ = newDefaultBaseUrl
+            ValueRow("Default server", value: shortUrl(url: defaultBaseUrl))
+                .contentShape(Rectangle())
         }
         .sheet(isPresented: $showDialog) {
             NavigationView {

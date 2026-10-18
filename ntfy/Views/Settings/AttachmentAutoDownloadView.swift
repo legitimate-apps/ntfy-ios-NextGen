@@ -30,14 +30,8 @@ struct AttachmentAutoDownloadView: View {
         Button {
             showingOptions = true
         } label: {
-            HStack {
-                Text("Download attachments")
-                    .foregroundColor(.primary)
-                Spacer()
-                Text(title(for: currentValue))
-                    .foregroundColor(.secondary)
-            }
-            .contentShape(Rectangle())
+            ValueRow("Download attachments", value: title(for: currentValue))
+                .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .confirmationDialog("Download attachments", isPresented: $showingOptions, titleVisibility: .visible) {
