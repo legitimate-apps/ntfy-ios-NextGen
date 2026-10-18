@@ -35,7 +35,7 @@ struct AttachmentAutoDownloadView: View {
                     .foregroundColor(.primary)
                 Spacer()
                 Text(title(for: currentValue))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
             .contentShape(Rectangle())
         }

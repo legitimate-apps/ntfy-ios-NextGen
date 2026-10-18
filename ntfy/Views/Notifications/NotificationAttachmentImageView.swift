@@ -52,7 +52,7 @@ struct NotificationAttachmentImageView: View {
                     ProgressView()
                     Text("Loading preview")
                         .font(.caption)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
             }
     }
@@ -64,7 +64,7 @@ struct NotificationAttachmentImageView: View {
             .overlay {
                 Image(systemName: "photo")
                     .font(.title2)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
     }
 }
@@ -76,6 +76,7 @@ private struct PresentedImage: Identifiable {
 
 struct AttachmentFullscreenImageView: View {
     @Environment(\.dismiss) private var dismiss
+    @ScaledMetric(relativeTo: .body) private var closeButtonSize: CGFloat = 44
 
     let image: UIImage
 
@@ -91,15 +92,16 @@ struct AttachmentFullscreenImageView: View {
                 dismiss()
             } label: {
                 Image(systemName: "xmark")
-                    .font(.system(size: 16, weight: .semibold))
+                    .font(.body.weight(.semibold))
                     .foregroundStyle(.primary)
-                    .frame(width: 36, height: 36)
+                    .frame(width: closeButtonSize, height: closeButtonSize)
                     .background(.regularMaterial, in: Circle())
                     .overlay {
                         Circle()
                             .strokeBorder(Color.white.opacity(0.18), lineWidth: 0.5)
                     }
             }
+            .accessibilityLabel(HardeningCopy.close)
             .padding(.top, 14)
             .padding(.trailing, 14)
         }

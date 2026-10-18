@@ -98,12 +98,12 @@ struct SubscriptionListView: View {
                 VStack {
                     Text("It looks like you don't have any subscriptions yet")
                         .font(.title2)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.bottom)
 
                     Text("Tap + to create a topic. Then send it a message from any computer or script, and it shows up here and as a notification.")
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                         .multilineTextAlignment(.center)
                         .padding(.bottom)
                     if let help = URL(string: Config.helpUrl) {

@@ -18,7 +18,7 @@ enum DeliveryHealthCopy {
     static let repair = "Repair"
     static let repairing = "Repairing…"
     static let repairComplete = "Push setup is complete. This does not check delivery from your server."
-    static let repairWaiting = "Push registration is not ready. Check your connection and try again."
+    static let repairWaiting = "Push setup is still finishing. Check again in a moment."
     static let repairPending = "Push setup is still incomplete. Try again later."
     static let repairTimeout = "Repair is still running. Check again in a moment."
     static let unreachable = "Can't reach the server"
@@ -177,6 +177,9 @@ final class ServerCooldown {
     private var until: [String: Double]
     private var probes: [String: Double]
     private var failures: [String: Int] = [:]
+    // No request survives a launch; only the deadlines and manual-probe pacing need persistence.
+    struct Attempt { fileprivate let generation: UUID? }
+    private var generations: [String: UUID] = [:]
 
     init(defaults: UserDefaults?, now: @escaping () -> Date = Date.init) {
         self.defaults = defaults
@@ -188,6 +191,7 @@ final class ServerCooldown {
         probes = (defaults?.dictionary(forKey: probeKey) as? [String: Double] ?? [:])
             .filter { $0.value.isFinite && $0.value > date - 60 }
             .mapValues { min($0, date) }
+        generations = until.mapValues { _ in UUID() }
         defaults?.set(until, forKey: key)
         defaults?.set(probes, forKey: probeKey)
     }
@@ -198,20 +202,26 @@ final class ServerCooldown {
     }
 
     func claim(server: String, manual: Bool) -> Bool {
+        claimAttempt(server: server, manual: manual) != nil
+    }
+
+    func claimAttempt(server: String, manual: Bool) -> Attempt? {
         lock.lock(); defer { lock.unlock() }
         let server = normalizeBaseUrl(server)
         let date = now().timeIntervalSince1970
-        guard (until[server] ?? 0) > date else { return true }
-        guard manual, date - (probes[server] ?? 0) >= 60 else { return false }
-        probes[server] = date
-        defaults?.set(probes, forKey: probeKey)
-        return true
+        if (until[server] ?? 0) > date {
+            guard manual, date - (probes[server] ?? 0) >= 60 else { return nil }
+            probes[server] = date
+            defaults?.set(probes, forKey: probeKey)
+        }
+        return Attempt(generation: generations[server])
     }
 
     func limit(server: String, retryAfter: String?) {
         lock.lock(); defer { lock.unlock() }
         let server = normalizeBaseUrl(server)
         let date = now()
+        generations[server] = UUID() // A 429 invalidates older probes even if its deadline is unchanged.
         let active = (until[server] ?? 0) > date.timeIntervalSince1970
         // Concurrent failures in the same burst are one attempt, not successive retries.
         if !active { failures[server] = min((failures[server] ?? 0) + 1, 7) }
@@ -223,15 +233,15 @@ final class ServerCooldown {
         defaults?.set(until, forKey: key)
     }
 
-    func succeeded(server: String) {
+    func succeeded(server: String, attempt: Attempt) {
         lock.lock(); defer { lock.unlock() }
         let server = normalizeBaseUrl(server)
-        // A probe cannot erase a newer 429 from a request already in flight.
-        if (until[server] ?? 0) <= now().timeIntervalSince1970 {
-            until.removeValue(forKey: server)
-            failures.removeValue(forKey: server)
-            defaults?.set(until, forKey: key)
-        }
+        // Clear only the brake this fetch tested, never a newer concurrent 429 from a poll or clear.
+        guard generations[server] == attempt.generation else { return }
+        until.removeValue(forKey: server)
+        failures.removeValue(forKey: server)
+        generations.removeValue(forKey: server)
+        defaults?.set(until, forKey: key)
     }
 }
 
@@ -266,11 +276,14 @@ enum DeliveryReceipt {
     static let key = "deliveryHealthPushReceipts"
     static func identity(baseUrl: String, topic: String) -> String { topicUrl(baseUrl: normalizeBaseUrl(baseUrl), topic: topic) }
     static func record(baseUrl: String, topic: String) {
+        record(topicUrl: identity(baseUrl: baseUrl, topic: topic))
+    }
+    static func record(topicUrl: String) {
         let defaults = UserDefaults(suiteName: Store.appGroup) ?? .standard
         var receipts = defaults.dictionary(forKey: key) as? [String: Double] ?? [:]
         let date = Date().timeIntervalSince1970
         receipts = receipts.filter { $0.value > date - 86400 }
-        receipts[identity(baseUrl: baseUrl, topic: topic)] = date
+        receipts[topicUrl] = date
         defaults.set(receipts, forKey: key)
         // Publish after the cross-process defaults write, independently of the earlier database save.
         defaults.synchronize()

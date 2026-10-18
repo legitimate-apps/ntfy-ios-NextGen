@@ -96,6 +96,8 @@
 		0D9D3DDEF2C741D39A7F355C /* DeliveryHealth.swift in Sources */ = {isa = PBXBuildFile; fileRef = F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */; };
 		7C6C8829170C43C2A5BA01C5 /* PollCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */; };
 		A70264F2C0E04C0ABEB04DE4 /* NotificationStatusView.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */; };
+		A3769C0118DB43D18B6C92DB /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 3EBF8DCB39734790AA87FB61 /* PrivacyInfo.xcprivacy */; };
+		6FFB0A9C3B2048C98F08C77F /* PrivacyInfo.xcprivacy in Resources */ = {isa = PBXBuildFile; fileRef = 9A0D6E11BD494385B2EA5D77 /* PrivacyInfo.xcprivacy */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -209,6 +211,8 @@
 		F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryHealth.swift; sourceTree = "<group>"; };
 		6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollCoordinator.swift; sourceTree = "<group>"; };
 		DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationStatusView.swift; sourceTree = "<group>"; };
+		3EBF8DCB39734790AA87FB61 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
+		9A0D6E11BD494385B2EA5D77 /* PrivacyInfo.xcprivacy */ = {isa = PBXFileReference; lastKnownFileType = text.xml; path = PrivacyInfo.xcprivacy; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -305,6 +309,7 @@
 		9474F1BF282F2AA700CDE4DD /* ntfy */ = {
 			isa = PBXGroup;
 			children = (
+				3EBF8DCB39734790AA87FB61 /* PrivacyInfo.xcprivacy */,
 				9474F1D5282F2FED00CDE4DD /* ntfy.entitlements */,
 				9474F1D6282F2FF700CDE4DD /* Info.plist */,
 				9474F20D2833264F00CDE4DD /* App */,
@@ -335,6 +340,7 @@
 		9474F1E5282F3FFD00CDE4DD /* ntfyNSE */ = {
 			isa = PBXGroup;
 			children = (
+				9A0D6E11BD494385B2EA5D77 /* PrivacyInfo.xcprivacy */,
 				9474F2042831CDBF00CDE4DD /* ntfyNSE.entitlements */,
 				9474F1E6282F3FFD00CDE4DD /* NotificationService.swift */,
 				9474F1E8282F3FFD00CDE4DD /* Info.plist */,
@@ -545,6 +551,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A3769C0118DB43D18B6C92DB /* PrivacyInfo.xcprivacy in Resources */,
 				9474F1C8282F2AA800CDE4DD /* Preview Assets.xcassets in Resources */,
 				9474F1C5282F2AA800CDE4DD /* Assets.xcassets in Resources */,
 				94CD1966283E662900973B93 /* emojis.json in Resources */,
@@ -556,6 +563,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				6FFB0A9C3B2048C98F08C77F /* PrivacyInfo.xcprivacy in Resources */,
 				94CD1967283E662900973B93 /* emojis.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;

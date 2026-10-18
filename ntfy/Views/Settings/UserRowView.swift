@@ -23,13 +23,13 @@ struct UserRowView: View {
                     Text(user.username ?? "?")
                     Text(user.baseUrl ?? "?")
                         .font(.subheadline)
-                        .foregroundColor(.gray)
+                        .foregroundColor(.secondary)
                 }
             }
             Spacer()
             Image(systemName: "chevron.forward")
-                .font(.system(size: 12.0))
-                .foregroundColor(.gray)
+                .font(.caption)
+                .foregroundColor(.secondary)
         }
         .padding(.all, 4)
     }

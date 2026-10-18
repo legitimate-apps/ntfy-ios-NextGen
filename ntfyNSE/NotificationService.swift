@@ -92,7 +92,10 @@ class NotificationService: UNNotificationServiceExtension {
             bestAttemptContent = placeholder
             ApiService.shared.poll(poll, timeout: NotificationServiceTiming.pollTimeout) { messages, _ in
                 guard let messages else { self.deliver(placeholder); return }
-                let presentations = Store.shared.save(notificationsFromMessages: messages, polledWith: poll) ?? []
+                guard let presentations = Store.shared.save(notificationsFromMessages: messages, polledWith: poll) else {
+                    self.deliver(placeholder)
+                    return
+                }
                 if let latest = presentations.last(where: { $0.sequence == received.sequence }) {
                     self.handlePresentation(request, content, baseUrl, latest, reconciled: true)
                 } else {

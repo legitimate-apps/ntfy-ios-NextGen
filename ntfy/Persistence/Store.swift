@@ -828,6 +828,9 @@ class Store: ObservableObject {
                 newMessages = nil
             }
         }
+        // The NSE reconciliation caller uses this save too, including successful empty polls.
+        // Publish after saving, so another process never sees recovery before the content lands.
+        if newMessages != nil { DeliveryReceipt.record(topicUrl: request.topicUrl) }
         return newMessages
     }
 
@@ -1084,12 +1087,25 @@ class Store: ObservableObject {
     
     /// Saves a user. A nil password means an existing credential must be left untouched; an empty
     /// non-nil password retains CredentialStoring's explicit delete semantics.
-    func saveUser(baseUrl: String, username: String, password: String?) {
+    @discardableResult
+    func saveUser(baseUrl: String, username: String, password: String?) -> Bool {
+        var saved = false
         // Same main-queue contract as saveSubscription: the Add-subscription login path calls this from
         // a URLSession completion, so the fetch/insert/save must be hopped onto the context's queue.
         context.performAndWait {
+            let normalized = normalizeBaseUrl(baseUrl)
+            var previousPassword: String?
+            if password != nil {
+                switch credentialStore.readPassword(baseUrl: normalized) {
+                case .found(let previous): previousPassword = previous
+                case .notFound: break
+                case .failed: return // Cannot safely replace a credential we cannot restore.
+                }
+            }
             do {
-                let normalized = normalizeBaseUrl(baseUrl)
+                // Write before inserting or mutating a row. Failure leaves the editor's user intact
+                // and creates no orphan account that would silently poll without a password.
+                if let password, !credentialStore.setPassword(password, baseUrl: normalized) { return }
                 let user = getUser(baseUrl: baseUrl) ?? User(context: context)
                 user.baseUrl = normalized
                 user.username = username
@@ -1098,16 +1114,18 @@ class Store: ObservableObject {
                 // migrateCredentialsToKeychain(). It is blanked rather than set to nil because the
                 // model declares `password` non-optional: assigning nil fails validation, the save
                 // throws, and rollbackAndRefresh() then discards the whole user.
-                if let password {
-                    user.password = ""
-                    _ = credentialStore.setPassword(password, baseUrl: normalized)
-                }
+                if password != nil { user.password = "" }
                 try context.save()
+                saved = true
             } catch let error {
                 Log.w(Store.tag, "Cannot store user", error)
+                if password != nil, !credentialStore.setPassword(previousPassword, baseUrl: normalized) {
+                    Log.w(Store.tag, "Cannot restore credential after account save failed")
+                }
                 rollbackAndRefresh()
             }
         }
+        return saved
     }
 
     /// Moves any password still sitting in Core Data into the Keychain and blanks the column.

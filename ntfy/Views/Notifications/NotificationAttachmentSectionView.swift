@@ -60,7 +60,7 @@ struct NotificationAttachmentSectionView: View {
                         HStack(alignment: .center, spacing: 10) {
                             Image(systemName: attachment.systemImageName())
                                 .font(.title3)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                                 .frame(width: 24, height: 24)
 
                             VStack(alignment: .leading, spacing: 3) {
@@ -170,7 +170,7 @@ struct NotificationAttachmentSectionView: View {
                         } else {
                             Image(systemName: "photo")
                                 .font(.title2)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                         }
 
                         Text(attachment.displayName())
@@ -258,7 +258,7 @@ struct NotificationAttachmentSectionView: View {
             attachmentMenuItems(localFileUrl: localFileUrl)
         } label: {
             Image(systemName: "ellipsis.circle")
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
                 .background(.ultraThinMaterial, in: Circle())

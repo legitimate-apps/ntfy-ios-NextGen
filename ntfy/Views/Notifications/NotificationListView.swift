@@ -352,7 +352,7 @@ struct NotificationListView: View {
             completionHandler: {
                 DispatchQueue.main.async {
                     sendingTest = false
-                    subscriptionManager.poll(subscription)
+                    subscriptionManager.pollWithOutcome(subscription, manual: true) { _ in }
                 }
             },
             failureHandler: { error in

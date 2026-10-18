@@ -49,8 +49,9 @@ struct SettingsView: View {
             UserEditorView(
                 selectedUser: dialog.user,
                 onSave: { baseUrl, username, password in
-                    store.saveUser(baseUrl: baseUrl, username: username, password: password)
-                    userDialog = nil
+                    let saved = store.saveUser(baseUrl: baseUrl, username: username, password: password)
+                    if saved { userDialog = nil }
+                    return saved
                 },
                 onDelete: { user in
                     store.delete(user: user)

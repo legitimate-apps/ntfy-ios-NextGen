@@ -6,6 +6,8 @@ import Security
 @testable import ntfy
 
 private final class InMemoryCredentialStore: CredentialStoring {
+    var failWrites = false
+    var passwordWrites: [String?] = []
     private var passwords: [String: String] = [:]
     private var headers: [String: [String: String]] = [:]
     private var deleteRequests: [String] = []
@@ -17,6 +19,8 @@ private final class InMemoryCredentialStore: CredentialStoring {
     func setPassword(_ password: String?, baseUrl: String) -> Bool {
         lock.lock()
         defer { lock.unlock() }
+        if failWrites { return false }
+        passwordWrites.append(password)
         guard let password, !password.isEmpty else {
             passwords.removeValue(forKey: baseUrl)
             return true
@@ -7161,7 +7165,7 @@ final class DeliveryHealthRepairResultTests: XCTestCase {
         XCTAssertEqual(NotificationHealth.repairResult(permission: .notDetermined, registered: true, bindingsComplete: true),
                        "Allow notifications to receive alerts.")
         XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: false, bindingsComplete: true),
-                       "Push registration is not ready. Check your connection and try again.")
+                       "Push setup is still finishing. Check again in a moment.")
         XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: true, bindingsComplete: false),
                        "Push setup is still incomplete. Try again later.")
         XCTAssertEqual(NotificationHealth.repairResult(permission: .provisional, registered: true, bindingsComplete: true),
@@ -7383,5 +7387,273 @@ final class DeliveryReceiptSignalTests: XCTestCase {
             monitor.topics[key] == nil
         }, object: nil)
         wait(for: [recovered], timeout: 2)
+    }
+}
+
+final class HardeningPolicyTests: XCTestCase {
+    func testFailedCredentialWriteDoesNotCreateOrChangeAUser() {
+        let credentials = InMemoryCredentialStore()
+        let store = Store(inMemory: true, credentialStore: credentials)
+        credentials.failWrites = true
+        XCTAssertFalse(store.saveUser(baseUrl: "https://login.example.org", username: "reader", password: "fixture-password"))
+        XCTAssertNil(store.getUser(baseUrl: "https://login.example.org"))
+        credentials.failWrites = false
+        XCTAssertTrue(store.saveUser(baseUrl: "https://login.example.org", username: "reader", password: "first"))
+        credentials.failWrites = true
+        XCTAssertFalse(store.saveUser(baseUrl: "https://login.example.org", username: "changed", password: "second"))
+        XCTAssertEqual(store.getUser(baseUrl: "https://login.example.org")?.username, "reader")
+        XCTAssertEqual(credentials.password(baseUrl: "https://login.example.org"), "first")
+    }
+
+    func testFailedSaveKeepsEditorOpenAndDeleteNeedsConfirmation() {
+        var state = LoginEditorState()
+        XCTAssertFalse(state.save { false })
+        XCTAssertTrue(state.saveFailed)
+        XCTAssertTrue(state.save { true })
+        XCTAssertFalse(state.saveFailed)
+        var deletions = 0
+        state.finishDelete(confirmed: true) { deletions += 1 }
+        XCTAssertEqual(deletions, 0)
+        state.requestDelete()
+        XCTAssertTrue(state.confirmingDelete)
+        state.finishDelete(confirmed: false) { deletions += 1 }
+        XCTAssertEqual(deletions, 0)
+        state.requestDelete()
+        state.confirmingDelete = false // SwiftUI dismisses its alert binding before invoking the action.
+        state.finishDelete(confirmed: true) { deletions += 1 }
+        XCTAssertEqual(deletions, 1)
+    }
+
+    func testHTTPLoginNoticeAndReleaseLogging() {
+        XCTAssertEqual(UrlSecurityNotice.message(for: "http://lan.example.org"), "This server uses HTTP. Your password is sent without encryption.")
+        XCTAssertNil(UrlSecurityNotice.message(for: "https://lan.example.org"))
+        XCTAssertEqual(FirebaseLogPolicy.level(debug: false), .min)
+        XCTAssertEqual(FirebaseLogPolicy.level(debug: true), .max)
+    }
+
+    func testNoEmptyTagsForMissingOrEmptyTagField() {
+        var input: [AnyHashable: Any] = ["id": "id", "time": "1", "event": "message", "topic": "garden", "message": "hello"]
+        XCTAssertEqual(Message.from(userInfo: input)?.tags, [])
+        input["tags"] = ",one,,two,"
+        XCTAssertEqual(Message.from(userInfo: input)?.tags, ["one", "two"])
+    }
+
+    func testPrivacyManifestsAreBundledWithReasonsAndNoTracking() throws {
+        let app = Bundle.main.bundleURL.appendingPathComponent("PrivacyInfo.xcprivacy")
+        let nse = Bundle.main.bundleURL.appendingPathComponent("PlugIns/ntfyNSE.appex/PrivacyInfo.xcprivacy")
+        for url in [app, nse] {
+            let data = try Data(contentsOf: url)
+            let manifest = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
+            XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
+            let reasons = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+            // Exact declarations for the linked Firebase 9.6.0, GDT 9.1.4 and GUL 7.7.1 sources.
+            let expectedReasons = [
+                "NSPrivacyAccessedAPICategoryUserDefaults": Set(["CA92.1", "1C8F.1"])
+            ].merging(url == app ? [
+                "NSPrivacyAccessedAPICategoryFileTimestamp": Set(["C617.1"]),
+                "NSPrivacyAccessedAPICategoryDiskSpace": Set(["E174.1"])
+            ] : [:]) { $1 }
+            let actualReasons = Dictionary(uniqueKeysWithValues: reasons.map {
+                ($0["NSPrivacyAccessedAPIType"] as! String, Set($0["NSPrivacyAccessedAPITypeReasons"] as! [String]))
+            })
+            XCTAssertEqual(actualReasons, expectedReasons)
+            XCTAssertEqual(manifest["NSPrivacyTrackingDomains"] as? [String], [])
+            let collected = try XCTUnwrap(manifest["NSPrivacyCollectedDataTypes"] as? [[String: Any]])
+            let expectedData: [String: Set<String>] = url == app ? [
+                "NSPrivacyCollectedDataTypeDeviceID": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+                "NSPrivacyCollectedDataTypeOtherDataTypes": ["NSPrivacyCollectedDataTypePurposeAnalytics"],
+                "NSPrivacyCollectedDataTypeOtherDiagnosticData": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
+                "NSPrivacyCollectedDataTypeOtherUserContent": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"]
+            ] : [:]
+            XCTAssertEqual(Dictionary(uniqueKeysWithValues: collected.map {
+                ($0["NSPrivacyCollectedDataType"] as! String, Set($0["NSPrivacyCollectedDataTypePurposes"] as! [String]))
+            }), expectedData)
+            for entry in collected {
+                XCTAssertEqual(entry["NSPrivacyCollectedDataTypeLinked"] as? Bool, false)
+                XCTAssertEqual(entry["NSPrivacyCollectedDataTypeTracking"] as? Bool, false)
+            }
+        }
+    }
+}
+
+
+final class DeliveryHealthRoundThreeTests: XCTestCase {
+    func testSuccessfulManualProbeReopensServerAndPersistsRecovery() {
+        let suite = "probe-success-\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let cooldown = ServerCooldown(defaults: defaults, now: { now })
+        let coordinator = PollCoordinator(cooldown: cooldown, now: { now })
+        let store = Store(inMemory: true)
+        let one = store.saveSubscription(baseUrl: "https://probe-success.example.org", topic: "one")
+        let two = store.saveSubscription(baseUrl: one.baseUrl!, topic: "two")
+        cooldown.limit(server: one.baseUrl!, retryAfter: nil) // Stock ntfy sends no header.
+        let request = store.pollRequest(for: one)!
+        XCTAssertTrue(coordinator.begin(request, manual: true) { _ in })
+        coordinator.finish(request, outcome: PollOutcome(succeeded: true, newMessages: []), retryAfter: nil)
+        XCTAssertTrue(coordinator.begin(store.pollRequest(for: two)!, manual: false) { _ in })
+        XCTAssertTrue(ServerCooldown(defaults: defaults, now: { now }).claim(server: one.baseUrl!, manual: false))
+    }
+
+    func testRecoveryDoesNotLeaveASecondTopicBehindALocal429Timer() {
+        var now = Date(timeIntervalSince1970: 1_700_000_000)
+        let cooldown = ServerCooldown(defaults: nil, now: { now })
+        let coordinator = PollCoordinator(cooldown: cooldown, now: { now })
+        let store = Store(inMemory: true)
+        let one = store.saveSubscription(baseUrl: "https://one-brake.example.org", topic: "one")
+        let two = store.saveSubscription(baseUrl: one.baseUrl!, topic: "two")
+        let request = store.pollRequest(for: one)!
+        XCTAssertTrue(coordinator.begin(request, manual: false) { _ in })
+        coordinator.finish(request, outcome: PollOutcome(succeeded: false, newMessages: [], failure: .rateLimited), retryAfter: "3600")
+        now = now.addingTimeInterval(120)
+        let probe = store.pollRequest(for: two)!
+        XCTAssertTrue(coordinator.begin(probe, manual: true) { _ in })
+        coordinator.finish(probe, outcome: PollOutcome(succeeded: true, newMessages: []), retryAfter: nil)
+        XCTAssertTrue(coordinator.begin(request, manual: false, automaticList: true) { _ in }, "server cooldown is the only 429 timer")
+    }
+
+    func testSuccessfulProbeCannotEraseANewer429EvenWithTheSameDeadline() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let cooldown = ServerCooldown(defaults: nil, now: { now })
+        let coordinator = PollCoordinator(cooldown: cooldown, now: { now })
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://new-limit.example.org", topic: "one")
+        let request = store.pollRequest(for: topic)!
+        cooldown.limit(server: request.baseUrl, retryAfter: "600")
+        XCTAssertTrue(coordinator.begin(request, manual: true) { _ in })
+        cooldown.limit(server: request.baseUrl, retryAfter: "600")
+        coordinator.finish(request, outcome: PollOutcome(succeeded: true, newMessages: []), retryAfter: nil)
+        XCTAssertFalse(cooldown.claim(server: request.baseUrl, manual: false))
+    }
+
+    func testPollStartedBefore429CannotClearItOnSuccess() {
+        let now = Date(timeIntervalSince1970: 1_700_000_000)
+        let cooldown = ServerCooldown(defaults: nil, now: { now })
+        let coordinator = PollCoordinator(cooldown: cooldown, now: { now })
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://overlap.example.org", topic: "one")
+        let request = store.pollRequest(for: topic)!
+        XCTAssertTrue(coordinator.begin(request, manual: false) { _ in })
+        cooldown.limit(server: request.baseUrl, retryAfter: nil)
+        coordinator.finish(request, outcome: PollOutcome(succeeded: true, newMessages: []), retryAfter: nil)
+        XCTAssertFalse(cooldown.claim(server: request.baseUrl, manual: false))
+    }
+
+    func testReconciliationSavePublishesReceiptAndClearsOnlyRecoveredRow() {
+        let defaults = UserDefaults(suiteName: Store.appGroup)!
+        let prior = defaults.object(forKey: DeliveryReceipt.key)
+        defer { defaults.set(prior, forKey: DeliveryReceipt.key) }
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://reconcile-receipt.example.org", topic: "one")
+        let request = store.pollRequest(for: topic)!
+        let monitor = DeliveryHealthMonitor(defaults: defaults)
+        monitor.register(request)
+        let key = topic.objectID.uriRepresentation().absoluteString
+        monitor.record(key: key, failure: .unreachable)
+        monitor.record(key: "other", failure: .unauthorized)
+        // Executes the same Store save used by the NSE .reconcile fetch, including empty success.
+        XCTAssertNotNil(store.save(notificationsFromMessages: [], polledWith: request))
+        monitor.refreshReceipts()
+        XCTAssertNil(monitor.topics[key])
+        XCTAssertEqual(monitor.topics["other"]?.failure, .unauthorized)
+        XCTAssertNotNil((defaults.dictionary(forKey: DeliveryReceipt.key) as? [String: Double])?[request.topicUrl])
+    }
+
+    func testDeferredControlReconciliationRecordsReceiptAfterOrderedSave() throws {
+        let defaults = UserDefaults(suiteName: Store.appGroup)!
+        let prior = defaults.object(forKey: DeliveryReceipt.key)
+        defer { defaults.set(prior, forKey: DeliveryReceipt.key) }
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://control-receipt.example.org", topic: "one")
+        func event(_ id: String, _ kind: String) throws -> Message {
+            let wire: [String: Any] = ["id": id, "time": 100, "event": kind, "topic": "one", "sequence_id": "job", "message": "fixture"]
+            return try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: wire))
+        }
+        let latest = try event("latest", "message")
+        _ = store.ingest(pushedMessage: latest, baseUrl: topic.baseUrl!, topic: "one")
+        let clear = try event("clear", "message_clear")
+        guard case .reconcile(let request) = store.ingest(pushedMessage: clear, baseUrl: topic.baseUrl!, topic: "one") else {
+            return XCTFail("ambiguous same-second control must reconcile, matching the NSE branch")
+        }
+        let monitor = DeliveryHealthMonitor(defaults: defaults)
+        monitor.register(request)
+        let key = topic.objectID.uriRepresentation().absoluteString
+        monitor.record(key: key, failure: .unreachable)
+        XCTAssertNotNil(store.save(notificationsFromMessages: [clear, latest], polledWith: request))
+        monitor.refreshReceipts()
+        XCTAssertNil(monitor.topics[key])
+    }
+
+    func testDiscardedReconciliationDoesNotPublishReceipt() {
+        let defaults = UserDefaults(suiteName: Store.appGroup)!
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://discard-receipt.example.org", topic: UUID().uuidString)
+        let request = store.pollRequest(for: topic)!
+        store.context.delete(topic)
+        try! store.context.save()
+        XCTAssertNil(store.save(notificationsFromMessages: [], polledWith: request))
+        XCTAssertNil((defaults.dictionary(forKey: DeliveryReceipt.key) as? [String: Double])?[request.topicUrl])
+    }
+
+    func testFailedReconciliationSaveDoesNotPublishReceipt() {
+        let defaults = UserDefaults(suiteName: Store.appGroup)!
+        let store = Store(inMemory: true)
+        let topic = store.saveSubscription(baseUrl: "https://failed-receipt.example.org", topic: UUID().uuidString)
+        let request = store.pollRequest(for: topic)!
+        _ = User(context: store.context) // A real Core Data validation failure, after ingestion.
+        let message = Message(id: UUID().uuidString, time: 100, event: "message", topic: topic.topic!, message: "fixture")
+        XCTAssertNil(store.save(notificationsFromMessages: [message], polledWith: request))
+        XCTAssertNil((defaults.dictionary(forKey: DeliveryReceipt.key) as? [String: Double])?[request.topicUrl])
+    }
+
+    func testRepairTimeoutIsNeutralWhenRegistrationArrivesAfterWait() {
+        var ready = false
+        var scheduled: (() -> Void)?
+        var result: String?
+        RegistrationRepair.wait(isReady: { ready }, schedule: { scheduled = $0 }, remaining: 1) {
+            result = NotificationHealth.repairResult(permission: .authorized, registered: ready, bindingsComplete: ready)
+        }
+        XCTAssertNil(result)
+        scheduled?() // Exhaust the wait before callbacks land.
+        XCTAssertEqual(result, "Push setup is still finishing. Check again in a moment.")
+        ready = true // The previous text remains truthful when callbacks land after the wait.
+        XCTAssertFalse(result!.contains("not ready"))
+        XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: ready, bindingsComplete: ready), DeliveryHealthCopy.repairComplete)
+    }
+
+    func testUnreadableCredentialIsNotReplacedWhenItCannotBeRestored() {
+        let credentials = InMemoryCredentialStore()
+        let store = Store(inMemory: true, credentialStore: credentials)
+        let base = "https://atomic-unreadable.example.org"
+        XCTAssertTrue(store.saveUser(baseUrl: base, username: "original", password: "old"))
+        credentials.setPasswordReadsFail(true)
+        XCTAssertFalse(store.saveUser(baseUrl: base, username: "changed", password: "new"))
+        XCTAssertEqual(credentials.password(baseUrl: base), "old")
+        XCTAssertEqual(store.getUser(baseUrl: base)?.username, "original")
+        XCTAssertEqual(credentials.passwordWrites, ["old"])
+    }
+
+    func testCoreDataFailureRestoresPreviousPasswordAfterKeychainWrite() {
+        let credentials = InMemoryCredentialStore()
+        let store = Store(inMemory: true, credentialStore: credentials)
+        let base = "https://atomic-existing.example.org"
+        XCTAssertTrue(store.saveUser(baseUrl: base, username: "original", password: "old"))
+        _ = User(context: store.context) // Missing required fields forces the subsequent context.save to fail.
+        XCTAssertFalse(store.saveUser(baseUrl: base, username: "changed", password: "new"))
+        XCTAssertTrue(credentials.passwordWrites.contains("new"), "failure must happen after the Keychain write")
+        XCTAssertEqual(credentials.password(baseUrl: base), "old")
+        XCTAssertEqual(store.getUser(baseUrl: base)?.username, "original")
+    }
+
+    func testCoreDataFailureRemovesNewPasswordAfterKeychainWrite() {
+        let credentials = InMemoryCredentialStore()
+        let store = Store(inMemory: true, credentialStore: credentials)
+        let base = "https://atomic-new.example.org"
+        _ = User(context: store.context)
+        XCTAssertFalse(store.saveUser(baseUrl: base, username: "reader", password: "new"))
+        XCTAssertTrue(credentials.passwordWrites.contains("new"))
+        XCTAssertNil(credentials.password(baseUrl: base))
+        XCTAssertNil(store.getUser(baseUrl: base))
     }
 }

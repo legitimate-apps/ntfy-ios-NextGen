@@ -73,7 +73,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         Store.shared.migrateCredentialsToKeychain()
 
         FirebaseApp.configure()
-        FirebaseConfiguration.shared.setLoggerLevel(.max)
+        #if DEBUG
+        FirebaseConfiguration.shared.setLoggerLevel(FirebaseLogPolicy.level(debug: true))
+        #else
+        FirebaseConfiguration.shared.setLoggerLevel(FirebaseLogPolicy.level(debug: false))
+        #endif
 
         // Move topics off the private server 1.12/1.13 shipped as the built-in default (they get 403
         // there). Once only; after Firebase is configured because a move tears down old FCM names.
@@ -519,4 +523,9 @@ extension AppDelegate: MessagingDelegate {
             FcmSubscriptionReconciler.shared.reconcile(reason: "FCM registration token")
         }
     }
+}
+
+
+enum FirebaseLogPolicy {
+    static func level(debug: Bool) -> FirebaseLoggerLevel { debug ? .max : .min }
 }

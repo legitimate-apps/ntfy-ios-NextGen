@@ -42,7 +42,7 @@ struct LicensesView: View {
                             Text(component.name)
                             Text(component.licenseName)
                                 .font(.subheadline)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                         }
                     }
                 }

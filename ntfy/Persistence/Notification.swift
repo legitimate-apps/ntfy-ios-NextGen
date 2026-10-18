@@ -482,7 +482,7 @@ struct Message: Decodable {
         let message = userInfo["message"] as? String
         let title = userInfo["title"] as? String
         let priority = Int16(userInfo["priority"] as? String ?? "3") ?? 3
-        let tags = (userInfo["tags"] as? String ?? "").components(separatedBy: ",")
+        let tags = (userInfo["tags"] as? String ?? "").components(separatedBy: ",").filter { !$0.isEmpty }
         let actions = userInfo["actions"] as? String
         let click = userInfo["click"] as? String
         let pollId = userInfo["poll_id"] as? String

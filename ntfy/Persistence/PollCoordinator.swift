@@ -75,6 +75,7 @@ final class PollCoordinator {
         let completion: (PollOutcome) -> Void
     }
     private var callbacks: [String: [Waiting]] = [:]
+    private var attempts: [String: ServerCooldown.Attempt] = [:]
 
     init(defaults: UserDefaults?, now: @escaping () -> Date = Date.init) {
         self.now = now
@@ -93,7 +94,8 @@ final class PollCoordinator {
             lock.unlock()
             return false
         }
-        let limited = !cooldown.claim(server: request.baseUrl, manual: manual)
+        let attempt = cooldown.claimAttempt(server: request.baseUrl, manual: manual)
+        let limited = attempt == nil
         if limited || (automaticList && !(timing[key] ?? PollTiming()).allowsPoll(now: now(), manual: manual)) {
             lock.unlock()
             // A skipped request is neither success/new data nor another failed attempt.
@@ -101,6 +103,7 @@ final class PollCoordinator {
             completion(PollOutcome(succeeded: false, newMessages: [], failure: limited ? .rateLimited : nil, attempted: false))
             return false
         }
+        attempts[key] = attempt
         callbacks[key] = [Waiting(presenting: presenting, completion: completion)]
         lock.unlock()
         return true
@@ -110,10 +113,13 @@ final class PollCoordinator {
         lock.lock()
         let key = request.subscriptionID.uriRepresentation().absoluteString
         var policy = timing[key] ?? PollTiming()
-        policy.record(failure: outcome.failure, retryAfter: retryAfter, now: now())
+        // The server brake owns 429 pacing. A second topic timer must not outlive probe recovery.
+        // Keep the ordinary list minimum, and keep local backoff for non-429 failures.
+        policy.record(failure: outcome.failure == .rateLimited ? nil : outcome.failure, retryAfter: nil, now: now())
         timing[key] = policy
+        let attempt = attempts.removeValue(forKey: key)
         if outcome.failure == .rateLimited { cooldown.limit(server: request.baseUrl, retryAfter: retryAfter) }
-        else if outcome.succeeded { cooldown.succeeded(server: request.baseUrl) }
+        else if outcome.succeeded, let attempt { cooldown.succeeded(server: request.baseUrl, attempt: attempt) }
         let waiting = callbacks.removeValue(forKey: key) ?? []
         lock.unlock()
         DeliveryHealthMonitor.shared.record(key: key, failure: outcome.failure)

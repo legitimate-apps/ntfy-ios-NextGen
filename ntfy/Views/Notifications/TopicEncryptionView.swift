@@ -252,7 +252,7 @@ struct TopicEncryptionHelpView: View {
                 }
 
                 Text(verbatim: snippet)
-                    .font(.system(size: 11, design: .monospaced))
+                    .font(.system(.caption2, design: .monospaced))
                     .textSelection(.enabled)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding(10)

@@ -27,7 +27,7 @@ struct AboutView: View {
                 Text("Version")
                 Spacer()
                 Text("ntfy \(Config.version) (\(Config.build))")
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
         }
         .foregroundColor(.primary)
@@ -43,7 +43,7 @@ struct AboutView: View {
                 Text(title)
                 Spacer()
                 Text(detail)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                 Image(systemName: icon)
                     .accessibilityHidden(true)   // decorative; the title already names the action
             }

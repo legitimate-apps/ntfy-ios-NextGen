@@ -35,7 +35,7 @@ struct DefaultServerView: View {
                     .foregroundColor(.primary)
                 Spacer()
                 Text(shortUrl(url: defaultBaseUrl))
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
             }
             .contentShape(Rectangle())
         }

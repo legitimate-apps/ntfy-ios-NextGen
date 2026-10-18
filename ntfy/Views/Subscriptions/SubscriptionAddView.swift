@@ -132,6 +132,9 @@ struct SubscriptionAddView: View {
                         .textContentType(.password)
                 }
             }
+            if let notice = UrlSecurityNotice.message(for: selectedBaseUrl) {
+                Text(notice).font(.footnote).foregroundColor(.secondary).padding()
+            }
             if let error = loginError {
                 ErrorView(error: error)
             }
@@ -235,7 +238,11 @@ struct SubscriptionAddView: View {
             DispatchQueue.main.async {
                 switch result {
                 case .Success:
-                    store.saveUser(baseUrl: selectedBaseUrl, username: username, password: password)
+                    guard store.saveUser(baseUrl: selectedBaseUrl, username: username, password: password) else {
+                        loginError = HardeningCopy.saveLoginFailed
+                        loading = false
+                        return
+                    }
                     subscriptionManager.subscribe(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
                     finishSubscribing()
                 case .Unauthorized:

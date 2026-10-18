@@ -106,7 +106,7 @@ struct NotificationRowView: View {
                     HStack(alignment: .center, spacing: 2) {
                         Text(notification.shortDateTime())
                             .font(.subheadline)
-                            .foregroundColor(.gray)
+                            .foregroundColor(.secondary)
                         if [1,2,4,5].contains(notification.priority) {
                             Image("priority-\(notification.priority)")
                                 .resizable()
@@ -119,7 +119,7 @@ struct NotificationRowView: View {
                         case .decrypted, .locked:
                             Image(systemName: notification.encryptionState == .locked ? "lock" : "lock.fill")
                                 .font(.caption)
-                                .foregroundColor(.gray)
+                                .foregroundColor(.secondary)
                                 .padding([.leading], 2)
                                 .accessibilityLabel(notification.encryptionState == .locked
                                     ? "Encrypted, not readable yet"
@@ -179,7 +179,7 @@ struct NotificationRowView: View {
             if notification.encryptionState == .locked {
                 Text("Set this topic's password (topic menu → End-to-end encryption) to read it.")
                     .font(.footnote)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding([.top], 2)
                     .modifier(MessageRowTapModifier(enabled: installsMessageRegionTaps, action: handleRowTap))
@@ -187,7 +187,7 @@ struct NotificationRowView: View {
             if !notification.nonEmojiTags().isEmpty {
                 Text("Tags: " + notification.nonEmojiTags().joined(separator: ", "))
                     .font(.subheadline)
-                    .foregroundColor(.gray)
+                    .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
                     .padding([.top], 2)
                     .modifier(MessageRowTapModifier(enabled: installsMessageRegionTaps, action: handleRowTap))
@@ -247,7 +247,7 @@ struct NotificationRowView: View {
             }
         } label: {
             Image(systemName: "ellipsis.circle")
-                .foregroundColor(.gray)
+                .foregroundColor(.secondary)
                 .padding(.horizontal, 6)
                 .padding(.vertical, 4)
         }
