@@ -571,6 +571,24 @@ class Store: ObservableObject {
         }
     }
 
+    /// Starts both test-message bodies in `FirstTopicTest` and the topic menu; they prove nothing to the review gate.
+    static let testMessagePrefix = "This is a test notification from NTFY me"
+
+    /// Messages a banner actually put on screen (`presented`; polled rows never are), excluding the
+    /// app's own test messages, and on how many distinct local days. Evidence for the review prompt.
+    func presentedDeliveries(calendar: Calendar = .current) -> (count: Int, days: Int) {
+        var times: [Int64] = []
+        context.performAndWait {
+            let request = NSFetchRequest<NSDictionary>(entityName: "Notification")
+            request.resultType = .dictionaryResultType
+            request.propertiesToFetch = ["time"]
+            request.predicate = NSPredicate(format: "presented == YES AND NOT (message BEGINSWITH %@)", Store.testMessagePrefix)
+            times = ((try? context.fetch(request)) ?? []).compactMap { ($0["time"] as? NSNumber)?.int64Value }
+        }
+        let days = Set(times.map { calendar.startOfDay(for: Date(timeIntervalSince1970: TimeInterval($0))) })
+        return (times.count, days.count)
+    }
+
     private func markPresented(id: String, on subscription: Subscription) {
         let request = Notification.fetchRequest()
         request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, id)

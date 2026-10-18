@@ -6695,62 +6695,75 @@ final class LaunchExperiencePolicyTests: XCTestCase {
         XCTAssertTrue(missing.recordNow)
     }
 
-    func testReviewEligibilityCoversEveryGateAndTwoDayBoundary() {
-        func eligible(topic: Int = 1, total: Int = 3, prompted: String? = nil,
-                      age: TimeInterval? = 172800, hasSubscriptions: Bool = true,
-                      notice: Bool = false, active: Bool = true) -> Bool {
+    func testReviewEligibilityNeedsPushDeliveredMessagesOnTwoDaysAndThreeDayInstall() {
+        func eligible(presented: Int = 3, days: Int = 2, prompted: String? = nil,
+                      age: TimeInterval? = 259200, hasSubscriptions: Bool = true,
+                      authorized: Bool = true, healthy: Bool = true) -> Bool {
             LaunchExperiencePolicy.shouldRequestReview(current: current, lastPrompted: prompted,
-                topicCount: topic, totalCount: total, firstLaunch: age.map { now.addingTimeInterval(-$0) },
-                hasSubscriptions: hasSubscriptions, now: now, noticeShown: notice, foregroundActive: active)
+                presentedCount: presented, presentedDays: days, firstLaunch: age.map { now.addingTimeInterval(-$0) },
+                hasSubscriptions: hasSubscriptions, notificationsAuthorized: authorized, topicsHealthy: healthy, now: now)
         }
         XCTAssertTrue(eligible())
-        XCTAssertFalse(eligible(topic: 0))
-        XCTAssertFalse(eligible(total: 2))
-        XCTAssertFalse(eligible(prompted: current))
+        XCTAssertFalse(eligible(presented: 0, days: 0), "polled-only messages never qualify")
+        XCTAssertFalse(eligible(presented: 2))
+        XCTAssertFalse(eligible(presented: 30, days: 1), "one busy day is not two days of working delivery")
+        XCTAssertFalse(eligible(prompted: current), "once per version")
         XCTAssertTrue(eligible(prompted: "1.16.0"))
-        XCTAssertFalse(eligible(age: 172799))
+        XCTAssertFalse(eligible(age: 259199))
+        XCTAssertFalse(eligible(age: 172800), "the old two-day age no longer suffices")
         XCTAssertFalse(eligible(age: -1))
         XCTAssertTrue(eligible(age: nil)) // Existing subscriber before first-launch tracking.
         XCTAssertFalse(eligible(age: nil, hasSubscriptions: false))
-        XCTAssertFalse(eligible(notice: true)) // Both launch notices share session suppression.
-        XCTAssertFalse(eligible(active: false))
+        XCTAssertFalse(eligible(authorized: false), "denied notifications never qualify")
+        XCTAssertFalse(eligible(healthy: false))
     }
 
-    func testSessionPersistsFirstLaunchAndSuppressesReviewAfterEitherNotice() {
+    func testPresentedDeliveriesCountOnlyBannersNotPolledOrTestMessagesByDistinctDay() throws {
+        let sub = Store.shared.saveSubscription(baseUrl: "https://review.invalid", topic: "review-gate")
+        addTeardownBlock { Store.shared.delete(subscription: sub) }
+        let before = Store.shared.presentedDeliveries()
+        let day: Int64 = 2_210_000_000 // 2040, a day no other fixture uses
+        let pushed = [Message(id: "p1", time: day, event: "message", topic: "review-gate", message: "backup ok"),
+                      Message(id: "p2", time: day + 60, event: "message", topic: "review-gate", message: "backup ok"),
+                      Message(id: "p3", time: day + 86_400 * 3, event: "message", topic: "review-gate", message: "disk ok")]
+        let test = Message(id: "t1", time: day + 86_400 * 6, event: "message", topic: "review-gate", message: FirstTopicTest.body)
+        let polled = Message(id: "q1", time: day + 86_400 * 9, event: "message", topic: "review-gate", message: "polled")
+        Store.shared.save(notificationsFromMessages: pushed + [test, polled], withSubscription: sub)
+        XCTAssertEqual(Store.shared.presentedDeliveries().count, before.count, "polled rows are not presented")
+        (pushed + [test]).forEach { Store.shared.recordPresentation(message: $0, baseUrl: "https://review.invalid") }
+        let after = Store.shared.presentedDeliveries()
+        XCTAssertEqual(after.count - before.count, 3, "test messages don't count")
+        XCTAssertEqual(after.days - before.days, 2)
+        XCTAssertTrue("This is a test notification from NTFY me. It has a priority of 3.".hasPrefix(Store.testMessagePrefix))
+    }
+
+    func testSessionPersistsFirstLaunchAndWhatsNewTakesTheForeground() {
         let suite = "LaunchExperienceTests-\(UUID().uuidString)"
         let defaults = UserDefaults(suiteName: suite)!
         defer { defaults.removePersistentDomain(forName: suite) }
         let session = LaunchExperience(defaults: defaults, current: current)
-        session.prepare(hasSubscriptions: false, movedTopicsPending: false, now: now)
+        session.prepare(hasSubscriptions: false, now: now)
         XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date, now)
         XCTAssertEqual(defaults.string(forKey: LaunchExperience.seenKey), session.current)
         XCTAssertTrue(session.entries.isEmpty)
-        XCTAssertFalse(session.noticeShown)
+        XCTAssertFalse(session.presentWhatsNew(), "nothing to show leaves the foreground free for review")
 
         defaults.removeObject(forKey: LaunchExperience.seenKey)
         defaults.removeObject(forKey: LaunchExperience.firstLaunchKey)
-        let moved = LaunchExperience(defaults: defaults, current: current)
-        moved.prepare(hasSubscriptions: true, movedTopicsPending: true, now: now)
-        XCTAssertTrue(moved.noticeShown)
-        XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date,
-                       now.addingTimeInterval(-172800))
-        moved.dismissWhatsNew()
-        XCTAssertEqual(defaults.string(forKey: LaunchExperience.seenKey), moved.current)
-        XCTAssertTrue(moved.noticeShown)
-
-        defaults.removeObject(forKey: LaunchExperience.seenKey)
         let updated = LaunchExperience(defaults: defaults, current: current)
-        updated.prepare(hasSubscriptions: true, movedTopicsPending: false, now: now)
-        updated.presentWhatsNew()
+        updated.prepare(hasSubscriptions: true, now: now)
+        XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date,
+                       now.addingTimeInterval(-LaunchExperiencePolicy.minimumInstallAge))
+        XCTAssertTrue(updated.presentWhatsNew())
         XCTAssertTrue(updated.showingWhatsNew)
-        XCTAssertTrue(updated.noticeShown)
         updated.dismissWhatsNew()
         XCTAssertTrue(updated.entries.isEmpty)
-        XCTAssertTrue(updated.noticeShown)
-        updated.prepare(hasSubscriptions: true, movedTopicsPending: false, now: now.addingTimeInterval(100))
+        XCTAssertEqual(defaults.string(forKey: LaunchExperience.seenKey), updated.current)
+        XCTAssertFalse(updated.presentWhatsNew(), "a later foreground can ask for the review")
+        updated.prepare(hasSubscriptions: true, now: now.addingTimeInterval(100))
         XCTAssertTrue(updated.entries.isEmpty)
         XCTAssertEqual(defaults.object(forKey: LaunchExperience.firstLaunchKey) as? Date,
-                       now.addingTimeInterval(-172800))
+                       now.addingTimeInterval(-LaunchExperiencePolicy.minimumInstallAge))
     }
 }
 

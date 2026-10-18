@@ -19,6 +19,7 @@ struct SubscriptionListView: View {
     @State private var showingAddDialog = false
     /// Topics `RetiredDefaultServerMigration` moved to ntfy-me.com that the user hasn't been told about.
     @State private var movedTopicsNotice: [String] = []
+    @State private var listVisible = false
     private let appGroupDefaults = UserDefaults(suiteName: Store.appGroup) ?? .standard
     
     private var subscriptionManager: SubscriptionManager {
@@ -54,11 +55,13 @@ struct SubscriptionListView: View {
         }
         .task(id: scenePhase) {
             guard scenePhase == .active else { return }
-            launchExperience.prepare(hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty,
-                movedTopicsPending: !RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults).isEmpty)
+            launchExperience.prepare(hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty)
             do { try await Task.sleep(nanoseconds: 600_000_000) } catch { return }
-            guard movedTopicsNotice.isEmpty, !showingAddDialog else { return }
-            launchExperience.presentWhatsNew()
+            guard movedTopicsNotice.isEmpty, !showingAddDialog, !launchExperience.presentWhatsNew() else { return }
+            // The review request waits for a quiet moment on the list itself, never inside a topic.
+            do { try await Task.sleep(nanoseconds: 1_500_000_000) } catch { return }
+            guard listVisible, !showingAddDialog else { return }
+            await launchExperience.requestReview(store: store)
         }
     }
     
@@ -103,7 +106,9 @@ struct SubscriptionListView: View {
         .sheet(isPresented: $showingAddDialog) {
             SubscriptionAddView(isShowing: $showingAddDialog)
         }
+        .onDisappear { listVisible = false }
         .onAppear {
+            listVisible = true
             // Ensures subscription count stays up to date, so a pull to refresh isn't required
             pollSubscriptions()
             movedTopicsNotice = RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults)

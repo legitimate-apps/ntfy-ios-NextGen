@@ -1,6 +1,7 @@
 import SwiftUI
 import UIKit
 import StoreKit
+import UserNotifications
 
 struct ReleaseNotes: Identifiable, Equatable {
     let version: String
@@ -57,13 +58,17 @@ enum LaunchExperiencePolicy {
         return Update(entries: selected, recordNow: selected.isEmpty)
     }
 
-    static func shouldRequestReview(current: String, lastPrompted: String?, topicCount: Int,
-                                    totalCount: Int, firstLaunch: Date?, hasSubscriptions: Bool,
-                                    now: Date, noticeShown: Bool, foregroundActive: Bool) -> Bool {
-        let oldEnough = firstLaunch.map { now.timeIntervalSince($0) >= 2 * 24 * 60 * 60 }
-            ?? hasSubscriptions
-        return topicCount > 0 && totalCount >= 3 && lastPrompted != current
-            && oldEnough && !noticeShown && foregroundActive
+    static let minimumInstallAge: TimeInterval = 3 * 24 * 60 * 60
+
+    /// Ask only someone for whom delivery demonstrably works: banners a push put on screen (polled
+    /// and test messages don't count) on at least two days, three days after install, notifications
+    /// allowed and no topic failing. Never gated on sentiment (App Review 5.6.1); once per version.
+    static func shouldRequestReview(current: String, lastPrompted: String?, presentedCount: Int,
+                                    presentedDays: Int, firstLaunch: Date?, hasSubscriptions: Bool,
+                                    notificationsAuthorized: Bool, topicsHealthy: Bool, now: Date) -> Bool {
+        let oldEnough = firstLaunch.map { now.timeIntervalSince($0) >= minimumInstallAge } ?? hasSubscriptions
+        return presentedCount >= 3 && presentedDays >= 2 && lastPrompted != current
+            && oldEnough && notificationsAuthorized && topicsHealthy
     }
 }
 
@@ -76,8 +81,9 @@ final class LaunchExperience: ObservableObject {
     let current: String
     @Published var showingWhatsNew = false
     private(set) var entries: [ReleaseNotes] = []
-    private(set) var noticeShown = false
     private var prepared = false
+    /// Seam for per-topic delivery health (feat/delivery-health): false while any topic is failing.
+    static var topicsHealthy: () -> Bool = { true }
     private let defaults: UserDefaults
 
     init(defaults: UserDefaults = .standard,
@@ -97,13 +103,12 @@ final class LaunchExperience: ObservableObject {
         #endif
     }
 
-    func prepare(hasSubscriptions: Bool, movedTopicsPending: Bool, now: Date = Date()) {
-        if movedTopicsPending { noticeShown = true }
+    func prepare(hasSubscriptions: Bool, now: Date = Date()) {
         guard !prepared else { return }
         prepared = true
         if defaults.object(forKey: Self.firstLaunchKey) == nil {
-            // Existing users should not have to wait another two days for this new feature.
-            defaults.set(hasSubscriptions ? now.addingTimeInterval(-2 * 24 * 60 * 60) : now,
+            // Existing users should not have to wait another three days for this new feature.
+            defaults.set(hasSubscriptions ? now.addingTimeInterval(-LaunchExperiencePolicy.minimumInstallAge) : now,
                          forKey: Self.firstLaunchKey)
         }
         let update = LaunchExperiencePolicy.update(current: current,
@@ -112,10 +117,12 @@ final class LaunchExperience: ObservableObject {
         if update.recordNow { defaults.set(current, forKey: Self.seenKey) }
     }
 
-    func presentWhatsNew() {
-        guard !entries.isEmpty else { return }
-        noticeShown = true
+    /// True when the card is shown, so the caller leaves this foreground to it alone.
+    @discardableResult
+    func presentWhatsNew() -> Bool {
+        guard !entries.isEmpty else { return false }
         showingWhatsNew = true
+        return true
     }
 
     func dismissWhatsNew() {
@@ -123,20 +130,23 @@ final class LaunchExperience: ObservableObject {
         entries = []
     }
 
+    /// Called from the topic list when the app returns to the foreground, a natural pause.
     @MainActor
-    func requestReview(store: Store, subscription: Subscription) {
+    func requestReview(store: Store) async {
+        guard defaults.string(forKey: Self.reviewKey) != current else { return }
+        let authorization = await UNUserNotificationCenter.current().notificationSettings().authorizationStatus
+        let delivered = store.presentedDeliveries()
         guard let scene = UIApplication.shared.connectedScenes.compactMap({ $0 as? UIWindowScene })
             .first(where: { $0.activationState == .foregroundActive }),
             let window = scene.windows.first(where: { $0.isKeyWindow }),
-            window.rootViewController?.presentedViewController == nil else { return }
-        let summaries = store.subscriptionSummaries() ?? [:]
-        guard LaunchExperiencePolicy.shouldRequestReview(current: current,
-            lastPrompted: defaults.string(forKey: Self.reviewKey),
-            topicCount: summaries[subscription.objectID]?.total ?? 0,
-            totalCount: summaries.values.reduce(0) { $0 + $1.total },
-            firstLaunch: defaults.object(forKey: Self.firstLaunchKey) as? Date,
-            hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty,
-            now: Date(), noticeShown: noticeShown, foregroundActive: scene.activationState == .foregroundActive)
+            window.rootViewController?.presentedViewController == nil,
+            LaunchExperiencePolicy.shouldRequestReview(current: current,
+                lastPrompted: defaults.string(forKey: Self.reviewKey),
+                presentedCount: delivered.count, presentedDays: delivered.days,
+                firstLaunch: defaults.object(forKey: Self.firstLaunchKey) as? Date,
+                hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty,
+                notificationsAuthorized: authorization == .authorized,
+                topicsHealthy: Self.topicsHealthy(), now: Date())
         else { return }
         defaults.set(current, forKey: Self.reviewKey)
         Log.d("LaunchExperience", "Requesting App Store review for version \(current)")
