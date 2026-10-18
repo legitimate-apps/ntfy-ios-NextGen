@@ -17,7 +17,7 @@ struct UrgentAlertsState: Equatable {
     }
 
     static let explanation = "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings."
-    static let criticalUnavailable = "iOS critical alerts play sound even when silenced. They need Apple's approval and aren't available yet."
+    static let criticalUnavailable = "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app."
     static let criticalExplanation = "When enabled, priority 5 messages can play sound even when silenced."
 
     let status: Status
