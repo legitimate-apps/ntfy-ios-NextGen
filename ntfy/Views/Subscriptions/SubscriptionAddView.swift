@@ -7,6 +7,7 @@ struct SubscriptionAddView: View {
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var delegate: AppDelegate
+    @Environment(\.sizeCategory) private var sizeCategory
     @State private var topic: String = ""
     @State private var useAnother: Bool = false
     @State private var baseUrl: String = ""
@@ -49,6 +50,26 @@ struct SubscriptionAddView: View {
         }
     }
     
+    private var topicField: some View {
+        TextField("Topic name, e.g. alerts-k7m2-x9qp", text: $topic)
+            .disableAutocapitalization()
+            .disableAutocorrection(true)
+    }
+
+    // On a public server the topic name is the password, and a newcomer has no idea what makes a
+    // good one. One tap fills in an unguessable name.
+    private var randomButton: some View {
+        Button {
+            topic = TopicNameGenerator.random()
+        } label: {
+            Label("Random", systemImage: "dice")
+                .font(.subheadline)
+        }
+        .buttonStyle(.borderless)
+        .accessibilityLabel("Random topic name")
+        .accessibilityHint("Fills in a hard-to-guess topic name")
+    }
+
     private var addView: some View {
         VStack(alignment: .leading, spacing: 0) {
             Form {
@@ -58,21 +79,18 @@ struct SubscriptionAddView: View {
                     // looked identical to the app simply not responding.
                     footer: Text(topicFooterText)
                 ) {
-                    HStack {
-                        TextField("Topic name, e.g. alerts-k7m2-x9qp", text: $topic)
-                            .disableAutocapitalization()
-                            .disableAutocorrection(true)
-                        // On a public server the topic name is the password, and a newcomer has
-                        // no idea what makes a good one. One tap fills in an unguessable name.
-                        Button {
-                            topic = TopicNameGenerator.random()
-                        } label: {
-                            Label("Random", systemImage: "dice")
-                                .font(.subheadline)
+                    // Beside the field the button squeezed to "R / and…" at the largest text sizes,
+                    // so there it gets its own line.
+                    if sizeCategory.isAccessibilityCategory {
+                        VStack(alignment: .leading) {
+                            topicField
+                            randomButton
                         }
-                        .buttonStyle(.borderless)
-                        .accessibilityLabel("Random topic name")
-                        .accessibilityHint("Fills in a hard-to-guess topic name")
+                    } else {
+                        HStack {
+                            topicField
+                            randomButton
+                        }
                     }
                 }
                 Section(footer: ServerFooterText(text: serverFooterText)

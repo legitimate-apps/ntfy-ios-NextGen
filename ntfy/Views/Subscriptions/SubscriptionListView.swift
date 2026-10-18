@@ -164,31 +164,43 @@ struct SubscriptionItemNavView: View {
                     Button {
                         toggleRead()
                     } label: {
-                        // From the summary, not `subscription.hasUnread()`. SwiftUI builds this
-                        // label while building the row, not when the user swipes, and hasUnread()
-                        // scans the to-many relationship — which would fault every topic's whole
-                        // history during list rendering and undo the point of the aggregate.
-                        // `toggleRead()` still asks the object directly: by then the user has acted
-                        // and a fresh authoritative read is worth one fault.
-                        let unread = (summary?.unread ?? subscription.unreadCount()) > 0
-                        Label(unread ? "Read" : "Unread",
-                              systemImage: unread ? "envelope.open.fill" : "envelope.badge.fill")
+                        readLabel
                     }
                     .tint(Color.accentColor)
 
                     Button {
                         togglePinned()
                     } label: {
-                        Label(subscription.pinned ? "Unpin" : "Pin",
-                              systemImage: subscription.pinned ? "pin.slash.fill" : "pin.fill")
+                        pinLabel
                     }
                     .tint(PinBadge.tint)
                 }
                 .swipeActions(edge: .trailing) {
+                    // Named for what it does: the confirmation is "Unsubscribe", and a swipe that
+                    // said "Delete" read as deleting messages, not leaving the topic.
                     Button(role: .destructive) {
                         self.unsubscribeAlert = true
                     } label: {
-                        Label("Delete", systemImage: "trash.circle")
+                        Label("Unsubscribe", systemImage: "trash.circle")
+                    }
+                }
+                // Long-press offers the same actions for anyone who never tries a swipe. A blind
+                // setup test looked for pin here, found nothing and concluded the app had none.
+                .contextMenu {
+                    Button {
+                        toggleRead()
+                    } label: {
+                        readLabel
+                    }
+                    Button {
+                        togglePinned()
+                    } label: {
+                        pinLabel
+                    }
+                    Button(role: .destructive) {
+                        self.unsubscribeAlert = true
+                    } label: {
+                        Label("Unsubscribe", systemImage: "trash")
                     }
                 }
         } else {
@@ -209,6 +221,22 @@ struct SubscriptionItemNavView: View {
         }
     }
     
+    private var readLabel: some View {
+        // From the summary, not `subscription.hasUnread()`. SwiftUI builds this label while
+        // building the row, not when the user swipes or long-presses, and hasUnread() scans the
+        // to-many relationship — which would fault every topic's whole history during list
+        // rendering and undo the point of the aggregate. `toggleRead()` still asks the object
+        // directly: by then the user has acted and a fresh authoritative read is worth one fault.
+        let unread = (summary?.unread ?? subscription.unreadCount()) > 0
+        return Label(unread ? "Read" : "Unread",
+                     systemImage: unread ? "envelope.open.fill" : "envelope.badge.fill")
+    }
+
+    private var pinLabel: some View {
+        Label(subscription.pinned ? "Unpin" : "Pin",
+              systemImage: subscription.pinned ? "pin.slash.fill" : "pin.fill")
+    }
+
     private func togglePinned() {
         UIImpactFeedbackGenerator(style: .light).impactOccurred()
         store.setPinned(!subscription.pinned, forSubscription: subscription)

@@ -124,6 +124,12 @@ struct NotificationListView: View {
                         if notificationsModel.notifications.count > 0 {
                             editButton
                         }
+                        // Pin lives on the topic list's swipe and long-press too; here it is
+                        // where people look for a topic's settings.
+                        Button(subscription.pinned ? "Unpin topic" : "Pin topic") {
+                            UIImpactFeedbackGenerator(style: .light).impactOccurred()
+                            store.setPinned(!subscription.pinned, forSubscription: subscription)
+                        }
                         Button("Rename") {
                             self.draftDisplayName = subscription.customDisplayName ?? ""
                             self.showRenameSheet = true
