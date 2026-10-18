@@ -23,14 +23,7 @@ struct SettingsView: View {
                 ) {
                     AttachmentAutoDownloadView()
                 }
-                Section(
-                    // Every other section is titled; without a header this row reads as a stray
-                    // control dangling off the end of the Notifications section's footer.
-                    header: Text("Critical alerts"),
-                    footer: Text("Max priority notifications break through to grab your attention, appearing on the lock screen and playing a sound even when focus mode is on or your device is muted.")
-                ) {
-                    CriticalAlertsSettingView()
-                }
+                UrgentAlertsSettingView()
                 Section(
                     header: Text("Users"),
                     footer: Text("To access read-protected topics, you may add or edit users here. All topics for a given server will use the same user.")

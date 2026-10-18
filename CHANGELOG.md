@@ -9,6 +9,12 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 - After an update, a short "What's new" sheet lists what changed since the version you last used.
 - A new topic has a "Send a test notification" button, so you can see a notification arrive without a
   computer. It uses normal priority, so the first test shows a banner.
+- Priority 4 and 5 messages are now delivered as Time Sensitive, so they break through Focus and the
+  Notification Summary (when Time Sensitive notifications are allowed in iOS and your Focus settings).
+  They still follow the silent switch.
+- Settings → Urgent alerts shows whether iOS currently allows Time Sensitive notifications, with a
+  button to iOS Settings when it doesn't. The Critical Alerts switch is gone: iOS critical alerts need
+  Apple's approval, which this app doesn't have, so the switch never worked.
 
 ## 1.16.0
 

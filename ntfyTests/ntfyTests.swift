@@ -6594,3 +6594,70 @@ final class LaunchExperiencePolicyTests: XCTestCase {
                        now.addingTimeInterval(-172800))
     }
 }
+
+final class UrgentAlertsStateTests: XCTestCase {
+    func testRefreshPublishesSystemNotificationSettings() {
+        let finished = expectation(description: "notification settings refreshed")
+        let delegate = AppDelegate()
+        UNUserNotificationCenter.current().getNotificationSettings { settings in
+            DispatchQueue.main.async {
+                delegate.refreshNotificationSettings {
+                    XCTAssertEqual(delegate.notificationAuthorizationStatus, settings.authorizationStatus)
+                    XCTAssertEqual(delegate.criticalAlertSetting, settings.criticalAlertSetting)
+                    XCTAssertEqual(delegate.timeSensitiveSetting, settings.timeSensitiveSetting)
+                    print("URGENT_SETTINGS authorization=\(settings.authorizationStatus.rawValue) timeSensitive=\(settings.timeSensitiveSetting.rawValue) critical=\(settings.criticalAlertSetting.rawValue)")
+                    finished.fulfill()
+                }
+            }
+        }
+        wait(for: [finished], timeout: 5)
+    }
+
+    func testTimeSensitiveOnHidesRecoveryButtonAndUnsupportedCriticalToggle() {
+        let state = UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported, authorization: .authorized)
+        XCTAssertEqual(state.status, .on)
+        XCTAssertFalse(state.showsSettingsButton)
+        XCTAssertFalse(state.showsCriticalToggle)
+        XCTAssertEqual(state.criticalText, "iOS critical alerts play sound even when silenced. They need Apple's approval and aren't available yet.")
+    }
+
+    func testDisabledOrUnsupportedTimeSensitiveShowsOffAndRecovery() {
+        for setting: UNNotificationSetting in [.disabled, .notSupported] {
+            let state = UrgentAlertsState(timeSensitive: setting, critical: .notSupported, authorization: .authorized)
+            XCTAssertEqual(state.status, .off)
+            XCTAssertTrue(state.showsSettingsButton)
+        }
+    }
+
+    func testNotificationsOffOverridesTimeSensitiveEnabled() {
+        for authorization: UNAuthorizationStatus in [.denied, .notDetermined] {
+            let state = UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported, authorization: authorization)
+            XCTAssertEqual(state.status, .notificationsOff)
+            XCTAssertTrue(state.showsSettingsButton)
+            XCTAssertFalse(state.showsCriticalToggle)
+        }
+    }
+
+    func testProvisionalDeliveryDoesNotPromiseFocusBreakthrough() {
+        let state = UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported, authorization: .provisional)
+        XCTAssertEqual(state.status, .off)
+        XCTAssertTrue(state.showsSettingsButton)
+    }
+
+    func testFutureCriticalCapabilityKeepsOptInForBothPermissionStates() {
+        for critical: UNNotificationSetting in [.enabled, .disabled] {
+            let state = UrgentAlertsState(timeSensitive: .disabled, critical: critical, authorization: .authorized)
+            XCTAssertTrue(state.showsCriticalToggle)
+            XCTAssertEqual(state.criticalText, "When enabled, priority 5 messages can play sound even when silenced.")
+        }
+    }
+
+    func testEphemeralAuthorizationAllowsTimeSensitiveWhenEnabled() {
+        XCTAssertEqual(UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported,
+                                        authorization: .ephemeral).status, .on)
+    }
+
+    func testExplanationNamesPrioritiesAndBothSystemControlsWithPermissionCondition() {
+        XCTAssertEqual(UrgentAlertsState.explanation, "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings.")
+    }
+}

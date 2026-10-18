@@ -46,6 +46,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     
     // Implements navigation from notifications, see https://stackoverflow.com/a/70731861/1440785
     @Published var selectedBaseUrl: String? = nil
+    @Published private(set) var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
+    @Published private(set) var timeSensitiveSetting: UNNotificationSetting = .notSupported
     @Published private(set) var criticalAlertSetting: UNNotificationSetting = .notSupported
 
     /// Taps the extension received in the app's place (on a Mac), and the guard that runs each tap once.
@@ -177,6 +179,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             let isAuthorized = settings.criticalAlertSetting == .enabled
             DispatchQueue.main.async {
+                self.notificationAuthorizationStatus = settings.authorizationStatus
+                if #available(iOS 15.0, *) {
+                    self.timeSensitiveSetting = settings.timeSensitiveSetting
+                }
                 self.criticalAlertSetting = settings.criticalAlertSetting
                 Store.saveCriticalAlertsAuthorized(isAuthorized)
                 completion?()

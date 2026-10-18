@@ -11,7 +11,8 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
         ReleaseNotes(version: "1.17.0", bullets: [
-            "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer."
+            "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer.",
+            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings."
         ]),
         ReleaseNotes(version: "1.16.0", bullets: [
             "On a Mac, notification buttons such as Approve now work right from the banner.",
