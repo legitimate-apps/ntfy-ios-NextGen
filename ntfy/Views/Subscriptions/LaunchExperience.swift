@@ -12,8 +12,12 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
         ReleaseNotes(version: "1.17.0", bullets: [
-            "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer.",
-            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings."
+            "If notifications are turned off for the app, or a topic can't refresh, the app now says why and how to fix it. Settings → Notification status checks that this phone is set up for push and can repair it.",
+            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings.",
+            "Swipe a message to mark it read or unread. Long-press a topic to pin it, mark it read or unsubscribe.",
+            "Settings → Notification history sets how long notifications are kept on this phone. Until you choose a limit, everything is kept. Long topics open on their newest messages, and you can search a topic's whole history.",
+            "Notification buttons can copy text, such as a code, to the clipboard.",
+            "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer."
         ]),
         ReleaseNotes(version: "1.16.0", bullets: [
             "On a Mac, notification buttons such as Approve now work right from the banner.",

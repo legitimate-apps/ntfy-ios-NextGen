@@ -4,17 +4,41 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
-## Unreleased
+## 1.17.0
 
-- After an update, a short "What's new" sheet lists what changed since the version you last used.
-- A new topic has a "Send a test notification" button, so you can see a notification arrive without a
-  computer. It uses normal priority, so the first test shows a banner.
+- When notifications can't arrive, the app says so. The topic list shows a banner when notifications
+  are turned off for the app, and a topic that can't refresh says why: the server can't be reached,
+  sign-in failed, or the server is limiting requests. Settings → Notification status checks this
+  phone's push setup and has a Repair button.
+- If a notification arrives before its message can be loaded, the banner says "New message on <topic>.
+  Open the app to load it." instead of an empty alert.
 - Priority 4 and 5 messages are now delivered as Time Sensitive, so they break through Focus and the
   Notification Summary (when Time Sensitive notifications are allowed in iOS and your Focus settings).
   They still follow the silent switch.
 - Settings → Urgent alerts shows whether iOS currently allows Time Sensitive notifications, with a
   button to iOS Settings when it doesn't. The Critical Alerts switch is gone: iOS critical alerts need
   Apple's approval, which this app doesn't have, so the switch never worked.
+- Swipe a message to mark it read or unread. Long-press a topic to pin it, mark it read or unsubscribe;
+  a topic's ••• menu can pin it too. The topic list's swipe button now says Unsubscribe.
+- Settings → Notification history sets how long notifications are kept on this phone, with the same
+  choices as ntfy for Android. If you already used the app, it keeps everything until you choose a
+  limit; a new install keeps 30 days. Shortening it asks before deleting anything.
+- Topics with long histories open on their newest messages and load older ones as you scroll, and
+  each topic can be searched across its whole history.
+- Notification buttons can copy a value, such as a code, to the clipboard, and the app confirms with
+  "Copied to Clipboard".
+- A new topic has a "Send a test notification" button, so you can see a notification arrive without a
+  computer. It uses normal priority, so the first test shows a banner.
+- Marking a busy topic as read sends its updates to the server a few at a time and backs off when the
+  server is busy, instead of hundreds of requests at once.
+- After an update, a short "What's new" sheet lists what changed since the version you last used.
+- The app may ask for an App Store rating once per version, only after notifications have been arriving
+  for a few days.
+- Login editor: a failed save keeps the editor open, deleting a login asks first, and you're warned
+  when a login would be sent over plain HTTP.
+- Readable at the largest text sizes: Settings shows each value under its title, and the Add
+  subscription sheet puts Random below the topic field. Secondary text has better contrast in dark mode.
+- Privacy manifests for the app and its notification extension.
 
 ## 1.16.0
 
