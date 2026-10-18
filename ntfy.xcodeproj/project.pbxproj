@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        A18000110000000000000003 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
+        A18000120000000000000001 /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000120000000000000002 /* RetentionSettingsView.swift */; };
+        A18000110000000000000001 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
+        A18000010000000000000001 /* RetentionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000010000000000000002 /* RetentionTests.swift */; };
 		117A00012FD0000100F927E4 /* LaunchExperience.swift in Sources */ = {isa = PBXBuildFile; fileRef = 117A00022FD0000100F927E4 /* LaunchExperience.swift */; };
 		29EE00142FD0000100F927E4 /* TopicEncryptionView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00042FD0000100F927E4 /* TopicEncryptionView.swift */; };
 		29EE00132FD0000100F927E4 /* TopicEncryptionSnippets.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00032FD0000100F927E4 /* TopicEncryptionSnippets.swift */; };
@@ -132,6 +136,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        A18000130000000000000001 /* Model 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 7.xcdatamodel"; sourceTree = "<group>"; };
+        A18000120000000000000002 /* RetentionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionSettingsView.swift; sourceTree = "<group>"; };
+        A18000110000000000000002 /* Retention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Retention.swift; sourceTree = "<group>"; };
+        A18000010000000000000002 /* RetentionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionTests.swift; sourceTree = "<group>"; };
 		117A00022FD0000100F927E4 /* LaunchExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchExperience.swift; sourceTree = "<group>"; };
 		2F0C0F1A2FF0000100A52946 /* Base.xcconfig */ = {isa = PBXFileReference; lastKnownFileType = text.xcconfig; name = Base.xcconfig; path = Configuration/Base.xcconfig; sourceTree = SOURCE_ROOT; };
 		29EE00042FD0000100F927E4 /* TopicEncryptionView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicEncryptionView.swift; sourceTree = "<group>"; };
@@ -251,6 +259,7 @@
 				2939B2102F8F293C00A52946 /* DefaultServerView.swift */,
 				2939B2112F8F293C00A52946 /* SettingsView.swift */,
 				DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */,
+                A18000120000000000000002 /* RetentionSettingsView.swift */,
 				29B4EB052FD7C5C1005CA516 /* CriticalAlertsSettingView.swift */,
 				37AB10012FE0000100F927E4 /* ServerHeadersView.swift */,
 				C66C8F6A6B9A4307967D1B47 /* TopicSortOrderView.swift */,
@@ -372,6 +381,7 @@
 				2968F2AC2FBA530200480665 /* AttachmentProgressState.swift */,
 				29E8419F2FB417EA00F927E4 /* NotificationAttachmentImageLoader.swift */,
 				E27008112AF1030A006E33BA /* NotificationsObservable.swift */,
+                A18000110000000000000002 /* Retention.swift */,
 				94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */,
 				6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */,
 				94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */,
@@ -438,6 +448,7 @@
 			isa = PBXGroup;
 			children = (
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
+                A18000010000000000000002 /* RetentionTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
 				2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */,
 			);
@@ -618,6 +629,8 @@
 				9474F1C3282F2AA700CDE4DD /* ContentView.swift in Sources */,
 				9474F20C283321C300CDE4DD /* Notification.swift in Sources */,
 				E27008122AF1030A006E33BA /* NotificationsObservable.swift in Sources */,
+                A18000110000000000000001 /* Retention.swift in Sources */,
+                A18000120000000000000001 /* RetentionSettingsView.swift in Sources */,
 				9486714A2841D0CE0093C7A4 /* ActionExecutor.swift in Sources */,
 				2E1C0B022FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				9474F1FF28316ACE00CDE4DD /* Subscription.swift in Sources */,
@@ -658,6 +671,7 @@
 				94867145284058C60093C7A4 /* ApiService.swift in Sources */,
 				2968F2AE2FBA530200480665 /* AttachmentProgressState.swift in Sources */,
 				9474F2052831D51500CDE4DD /* Store.swift in Sources */,
+                A18000110000000000000003 /* Retention.swift in Sources */,
 				2E1C0B032FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				29C6D8322FBD1B750057C9AC /* DownloadDelegate.swift in Sources */,
 				29F001032FB560E300F927E4 /* AttachmentFileStore.swift in Sources */,
@@ -675,6 +689,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
+                A18000010000000000000001 /* RetentionTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
 				2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */,
 			);
@@ -1045,8 +1060,9 @@
 				9474F1FC2830830700CDE4DD /* Model 4.xcdatamodel */,
 				9474F1FD2830830700CDE4DD /* Model 5.xcdatamodel */,
 				C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */,
+                A18000130000000000000001 /* Model 7.xcdatamodel */,
 			);
-			currentVersion = C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */;
+			currentVersion = A18000130000000000000001 /* Model 7.xcdatamodel */;
 			path = ntfy.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

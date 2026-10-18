@@ -6,6 +6,7 @@
 //
 
 import Foundation
+import Darwin
 import UniformTypeIdentifiers
 
 struct DownloadedAttachmentFile {
@@ -129,17 +130,30 @@ enum AttachmentFileStore {
             remoteUrl: remoteUrl,
             mimeType: mimeType
         )
-        try? FileManager.default.removeItem(at: destinationUrl)
-
-        do {
-            try FileManager.default.moveItem(at: temporaryFileUrl, to: destinationUrl)
-        } catch {
-            try FileManager.default.copyItem(at: temporaryFileUrl, to: destinationUrl)
+        return try withFileAccess(at: destinationUrl) {
+            try? FileManager.default.removeItem(at: destinationUrl)
+            do {
+                try FileManager.default.moveItem(at: temporaryFileUrl, to: destinationUrl)
+            } catch {
+                try FileManager.default.copyItem(at: temporaryFileUrl, to: destinationUrl)
+            }
+            let attributes = try FileManager.default.attributesOfItem(atPath: destinationUrl.path)
+            let size = (attributes[FileAttributeKey.size] as? NSNumber)?.int64Value ?? 0
+            return DownloadedAttachmentFile(localFileUrl: destinationUrl, size: size, mimeType: mimeType)
         }
+    }
 
-        let attributes = try FileManager.default.attributesOfItem(atPath: destinationUrl.path)
-        let size = (attributes[FileAttributeKey.size] as? NSNumber)?.int64Value ?? 0
-        return DownloadedAttachmentFile(localFileUrl: destinationUrl, size: size, mimeType: mimeType)
+    /// The app and NSE share this short filesystem critical section. In particular, checking a
+    /// file's age and unlinking it must not straddle an incoming download replacing that path.
+    /// One lock per attachment directory; process death releases it, without stale lock recovery.
+    static func withFileAccess<T>(at url: URL, _ body: () throws -> T) throws -> T {
+        let lockPath = url.deletingLastPathComponent().appendingPathComponent(".attachments.lock").path
+        let descriptor = Darwin.open(lockPath, O_CREAT | O_RDWR, mode_t(0o600))
+        guard descriptor >= 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { Darwin.close(descriptor) }
+        guard flock(descriptor, LOCK_EX) == 0 else { throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO) }
+        defer { flock(descriptor, LOCK_UN) }
+        return try body()
     }
 
     private static func localFileUrl(notificationID: String, attachment: MessageAttachment, remoteUrl: URL, mimeType: String?) throws -> URL {

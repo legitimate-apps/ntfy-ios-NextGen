@@ -155,8 +155,11 @@ final class ntfyTests: XCTestCase {
         super.setUp()
         Store.shared.clearPublisher = { _, done in done(.sent) }
         installClearPacer()
+        if Store.shared.notificationRetention() != .forever { Store.shared.saveNotificationRetention(.forever) }
         Store.shared.wakePublisher = { _, done in done() }
         Store.shared.notificationRemover = { _ in }
+        Store.shared.notificationBatchRemover = { $0.forEach(Store.shared.notificationRemover) }
+        Store.shared.topicNotificationRemover = { _, _, _, _ in }
         credentialStore = InMemoryCredentialStore()
         Store.shared.credentialStore = credentialStore
         topicSecrets = InMemoryTopicSecretStore()
@@ -1377,6 +1380,12 @@ final class ntfyTests: XCTestCase {
         var sent: [String] = []
         var inFlight = 0, maxInFlight = 0
         var pending: [(ClearOutcome) -> Void] = []
+        var topicRemovals = 0
+        Store.shared.topicNotificationRemover = { base, topic, through, _ in
+            XCTAssertEqual(base, sub.baseUrl); XCTAssertEqual(topic, sub.topic)
+            XCTAssertEqual(through, 1499)
+            topicRemovals += 1
+        }
         var removals = 0
         Store.shared.notificationRemover = { _ in removals += 1 }
         Store.shared.clearPublisher = { request, done in
@@ -1385,7 +1394,8 @@ final class ntfyTests: XCTestCase {
         }
         Store.shared.setRead(true, forSubscription: sub)
         XCTAssertTrue(instantRows(sub).allSatisfy(\.read), "local read is instant and complete")
-        XCTAssertEqual(removals, 500, "every banner on this device still goes")
+        XCTAssertEqual(topicRemovals, 1, "one system query removes every matching topic banner")
+        XCTAssertEqual(removals, ClearPacer.perAction, "individual removals are capped; all topic banners go through the batch callback")
         while !pending.isEmpty { pending.removeFirst()(.sent) }
         XCTAssertEqual(sent.count, ClearPacer.perAction)
         XCTAssertEqual(sent, (490..<500).reversed().map { "s\($0)" }, "newest sequences first")
@@ -1587,7 +1597,11 @@ final class ntfyTests: XCTestCase {
                 expectedScopes += rows.map { topicUrl(baseUrl: baseUrl, topic: topic) + "/" + ($0.sequenceID ?? $0.id ?? "") }
                 if count == 1 { Store.shared.delete(notification: try XCTUnwrap(rows.first)) }
                 else if count == 2 { Store.shared.delete(notifications: Set(rows)) }
-                else { Store.shared.delete(allNotificationsFor: sub) }
+                else {
+                    let done = expectation(description: "chunked local delete")
+                    Store.shared.delete(allNotificationsFor: sub) { done.fulfill() }
+                    wait(for: [done], timeout: 10)
+                }
                 XCTAssertTrue(instantRows(sub).isEmpty, "API \(count) must delete local \(server) rows")
             }
         }
@@ -4100,9 +4114,11 @@ final class ntfyTests: XCTestCase {
         store.setRead(true, forSubscription: subscription)
 
         let materialized = notifications.filter { !$0.isFault }
-        XCTAssertEqual(materialized.count, 1,
+        XCTAssertLessThanOrEqual(materialized.count, 1,
                        "marking one unread row must not materialize the topic's already-read history")
-        XCTAssertEqual(materialized.first?.read, true)
+        // SQL batch updates can leave the changed object faulted too. Resolve retained objects only
+        // after measuring fault scope, and verify that none returns a stale unread flag.
+        XCTAssertTrue(notifications.allSatisfy(\.read))
     }
 
     func testMarkingAFullyReadTopicUnreadFlagsOnlyTheNewestMessage() {
@@ -6125,7 +6141,7 @@ final class NewcomerSetupTests: XCTestCase {
         // reported .noData and never alerted for the message.
         let topic = "poll-background-\(UUID().uuidString.prefix(8))"
         let subscription = Store.shared.saveSubscription(baseUrl: "https://ntfy.sh", topic: topic)
-        let message = Message(id: "bg-\(topic)", time: 600, event: "message", topic: topic, message: "hi", title: nil)
+        let message = Message(id: "bg-\(topic)", time: Int64(Date().timeIntervalSince1970), event: "message", topic: topic, message: "hi", title: nil)
         addTeardownBlock { _ = Store.shared.delete(subscription: subscription) } // cascades to its notifications
         var fetched = 0
         var manager = SubscriptionManager(store: Store.shared)
@@ -7179,7 +7195,7 @@ final class DeliveryHealthPresentationTests: XCTestCase {
         manager.poll(topic) { presentationCounts.append($0.count) }
         manager.poll(topic) { presentationCounts.append($0.count) }
         XCTAssertEqual(replies.count, 1)
-        replies[0]([Message(id: "health-message", time: 600, event: "message", topic: "one", message: "hello", title: nil)], nil)
+        replies[0]([Message(id: "health-message", time: Int64(Date().timeIntervalSince1970), event: "message", topic: "one", message: "hello", title: nil)], nil)
         XCTAssertEqual(liveCount, 1, "the UI still receives the complete result")
         XCTAssertEqual(presentationCounts, [1, 0], "joining a request must not create repeat alerts")
     }
@@ -7475,9 +7491,9 @@ final class HardeningPolicyTests: XCTestCase {
             let reasons = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
             // Exact declarations for the linked Firebase 9.6.0, GDT 9.1.4 and GUL 7.7.1 sources.
             let expectedReasons = [
-                "NSPrivacyAccessedAPICategoryUserDefaults": Set(["CA92.1", "1C8F.1"])
+                "NSPrivacyAccessedAPICategoryUserDefaults": Set(["CA92.1", "1C8F.1"]),
+                "NSPrivacyAccessedAPICategoryFileTimestamp": Set(["C617.1"])
             ].merging(url == app ? [
-                "NSPrivacyAccessedAPICategoryFileTimestamp": Set(["C617.1"]),
                 "NSPrivacyAccessedAPICategoryDiskSpace": Set(["E174.1"])
             ] : [:]) { $1 }
             let actualReasons = Dictionary(uniqueKeysWithValues: reasons.map {

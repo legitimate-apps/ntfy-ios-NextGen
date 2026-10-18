@@ -55,7 +55,16 @@ class Store: ObservableObject {
     static let autoDownload50MB = Constants.autoDownload50MB
     private static let sharedDefaults = UserDefaults(suiteName: Store.appGroup)!
     private static let sharedDefaultsKeyCriticalAlertsAuthorized = "criticalAlertsAuthorized"
-    private let container: NSPersistentContainer
+    let container: NSPersistentContainer
+    let retentionContext: NSManagedObjectContext
+    let retentionReadContext: NSManagedObjectContext
+    let hadPersistentStore: Bool
+    let retentionPolicyLock = NSLock()
+    var retentionPolicyGeneration: UInt64 = 0 // guarded by retentionPolicyLock
+    /// Observes the candidate/save boundary; nil outside deterministic concurrency tests.
+    var retentionCandidatesFetched: (() -> Void)?
+    private let historyContext: NSManagedObjectContext
+    private var historyToken: NSPersistentHistoryToken?
     /// Injected so credential and migration behavior can be tested without pretending an unsigned
     /// XCTest host can use the Keychain. Production and the NSE use the real implementation.
     var credentialStore: CredentialStoring
@@ -66,13 +75,40 @@ class Store: ObservableObject {
     var clearPublisher: ClearPacer.Publish = { ApiService.shared.action($0, completion: $1) }
     var clearPacer = ClearPacer(cooldown: .shared)
     var wakePublisher: (String, @escaping () -> Void) -> Void = { ApiService.shared.wake(topic: $0, completion: $1) }
+    var notificationBatchRemover: ([SequenceRemoval]) -> Void = SequenceRemoval.removeDelivered
+    var topicNotificationRemover: (String, String, Int64, Date) -> Void = SequenceRemoval.removeDelivered
     var notificationRemover: (SequenceRemoval) -> Void = { $0.removeDelivered() }
     /// Whether a missing cached key may be re-derived from the password (PBKDF2). Off in the
     /// notification service extension, which has a tight time and memory budget; the app derives it
     /// the next time it reads the topic, and `retryLockedMessages` then opens what arrived meanwhile.
     var allowsKeyDerivation = !Bundle.main.bundlePath.hasSuffix(".appex")
+    private let observesPersistentChanges: Bool
+    private var viewContextConfigured = false // main queue only
     var context: NSManagedObjectContext {
-        return container.viewContext
+        let viewContext = container.viewContext
+        if Thread.isMainThread { configureViewContext(viewContext) }
+        return viewContext
+    }
+
+    private func configureViewContext(_ viewContext: NSManagedObjectContext) {
+        guard !viewContextConfigured else { return }
+        viewContextConfigured = true
+        viewContext.automaticallyMergesChangesFromParent = true
+        viewContext.mergePolicy = NSMergePolicy(merge: .mergeByPropertyStoreTrumpMergePolicyType)
+        viewContext.transactionAuthor = Bundle.main.bundlePath.hasSuffix(".appex") ? "ntfy.appex" : "ntfy"
+        if observesPersistentChanges {
+            NotificationCenter.default.publisher(for: .NSPersistentStoreRemoteChange,
+                                                 object: container.persistentStoreCoordinator)
+                .throttle(for: .milliseconds(300), scheduler: DispatchQueue.main, latest: true)
+                .sink { [weak self] _ in self?.mergeRemoteHistory() }
+                .store(in: &cancellables)
+            if !Bundle.main.bundlePath.hasSuffix(".appex") {
+                NotificationCenter.default.publisher(for: .NSManagedObjectContextDidSave, object: viewContext)
+                    .debounce(for: .seconds(2), scheduler: DispatchQueue.main)
+                    .sink { [weak self] _ in self?.pruneNotifications() }
+                    .store(in: &cancellables)
+            }
+        }
     }
     private var cancellables: Set<AnyCancellable> = []
     /// Confined to the context queue; identifies the event deferred by this ingestion.
@@ -92,9 +128,11 @@ class Store: ObservableObject {
 
     init(
         inMemory: Bool = false,
+        storeURL: URL? = nil,
         credentialStore: CredentialStoring = KeychainCredentialStore.shared,
         topicSecrets: TopicSecretStoring = KeychainCredentialStore.shared
     ) {
+        self.observesPersistentChanges = !inMemory
         self.credentialStore = credentialStore
         self.topicSecrets = topicSecrets
         let fileManager = FileManager.default
@@ -105,7 +143,7 @@ class Store: ObservableObject {
             for: .applicationSupportDirectory,
             in: .userDomainMask
         ).first ?? fileManager.temporaryDirectory.appendingPathComponent("ntfy-application-support", isDirectory: true)
-        let storeUrl = Store.persistentStoreURL(
+        let storeUrl = storeURL ?? Store.persistentStoreURL(
             inMemory: inMemory,
             appGroupContainerURL: appGroupContainerURL,
             fallbackApplicationSupportURL: fallbackApplicationSupportURL
@@ -121,8 +159,12 @@ class Store: ObservableObject {
                 withIntermediateDirectories: true
             )
         }
+        // A database present before opening is prior-use evidence, even if all rows were cleared
+        // or another process has already migrated its model. /dev/null is the test memory store.
+        hadPersistentStore = storeUrl.path != "/dev/null" && fileManager.fileExists(atPath: storeUrl.path)
         let description = NSPersistentStoreDescription(url: storeUrl)
         description.setOption(true as NSNumber, forKey: NSPersistentStoreRemoteChangeNotificationPostOptionKey)
+        description.setOption(true as NSNumber, forKey: NSPersistentHistoryTrackingKey)
         description.shouldMigrateStoreAutomatically = true
         description.shouldInferMappingModelAutomatically = true
 
@@ -138,46 +180,64 @@ class Store: ObservableObject {
             }
         }
         
-        // Shortcut for context
-        context.automaticallyMergesChangesFromParent = true
-        context.mergePolicy = NSMergePolicy(merge: .mergeByPropertyStoreTrumpMergePolicyType) // https://stackoverflow.com/a/60362945/1440785
-        context.transactionAuthor = Bundle.main.bundlePath.hasSuffix(".appex") ? "ntfy.appex" : "ntfy"
-        
-        // When a remote change comes in (= the app extension updated entities in Core Data),
-        // refresh what the view context already knows about and then tell the observables to
-        // re-run their fetches — see `didChangeRemotely` for why the refresh alone is not enough.
-        NotificationCenter.default
-          .publisher(for: .NSPersistentStoreRemoteChange)
-          // Coalesce bursts. Each extension save emits its own remote-change notification, and every
-          // one of them costs a full refresh plus a re-fetch in each observable, on the main queue —
-          // so twenty pushes landing together would otherwise mean twenty passes over a large
-          // history while the user is looking at it. `throttle` delivers the first immediately (the
-          // common case is a single message, which must feel instant) and then at most one per
-          // window, keeping the latest. Delivery is on main, so the sink body needs no further hop.
-          .throttle(for: .milliseconds(300), scheduler: DispatchQueue.main, latest: true)
-          .sink { value in
-              Log.d(Store.tag, "Remote change detected, refreshing views", value)
-              self.hardRefresh()
-              NotificationCenter.default.post(name: Store.didChangeRemotely, object: nil)
-          }
-          .store(in: &cancellables)
+        retentionContext = container.newBackgroundContext()
+        retentionContext.transactionAuthor = "ntfy.retention"
+        retentionContext.stalenessInterval = 0
+        // Policy lookup must not queue behind a whole-history prune or a chunked topic delete.
+        retentionReadContext = container.newBackgroundContext()
+        retentionReadContext.transactionAuthor = "ntfy.retention-policy"
+
+        historyContext = container.newBackgroundContext()
+        historyToken = container.persistentStoreCoordinator.currentPersistentHistoryToken(fromStores: nil)
+
+        // Finish background first-touch without waiting for main (which may be waiting on
+        // Store.shared's once lock). The getter also configures an immediate main-thread use,
+        // before this scheduled block has had a chance to run.
+        if Thread.isMainThread { _ = context }
+        else { DispatchQueue.main.async { _ = self.context } }
+        if !inMemory {
+            // Persist adoption in whichever process opens first, including an NSE-first upgrade.
+            _ = notificationRetention()
+            if Bundle.main.bundlePath.hasSuffix(".appex") { trimPersistentHistory() }
+        }
     }
 
-    /// Broadcast after the app has absorbed a write made by the notification service extension's
-    /// process.
-    ///
-    /// `hardRefresh()` on its own is not enough, which is why a push arriving while the app was
-    /// open used to leave the screen stale: `refreshAllObjects()` re-faults only objects the view
-    /// context has already registered, and a row inserted by the *extension's* process was never
-    /// registered here. An `NSFetchedResultsController`'s membership changes only when the context
-    /// it observes processes a save, and a cross-process commit never produces one — so the topic
-    /// list showed no new badge and an open topic showed no new row until the user navigated away
-    /// and back or pulled to refresh.
-    ///
-    /// Observables re-run `performFetch()` when this fires. It is deliberately coarse (every
-    /// observable re-fetches, not just the affected topic): the payload would have to carry the
-    /// changed object ids to do better, and a re-fetch on push arrival is cheap next to the
-    /// notification itself.
+    /// Merge only changed object IDs. Refreshing every registered object and fetching every row
+    /// on each push makes an open topic progressively more expensive as its history grows.
+    /// History is serialised on its own queue; the token only advances after a successful fetch.
+    func mergeRemoteHistory(completion: (() -> Void)? = nil) {
+        let localAuthor = context.transactionAuthor
+        historyContext.perform {
+            do {
+                let request = NSPersistentHistoryChangeRequest.fetchHistory(after: self.historyToken)
+                let result = try self.historyContext.execute(request) as? NSPersistentHistoryResult
+                let transactions = result?.result as? [NSPersistentHistoryTransaction] ?? []
+                if let token = transactions.last?.token { self.historyToken = token }
+                let changes = transactions.filter { $0.author != localAuthor }.compactMap { $0.objectIDNotification().userInfo }
+                self.context.perform {
+                    for change in changes {
+                        NSManagedObjectContext.mergeChanges(fromRemoteContextSave: change, into: [self.context])
+                    }
+                    self.context.processPendingChanges()
+                    if !changes.isEmpty { NotificationCenter.default.post(name: Store.didChangeRemotely, object: nil) }
+                    completion?()
+                }
+            } catch {
+                Log.w(Store.tag, "Cannot merge extension history; resetting visible pages", error)
+                self.historyToken = self.container.persistentStoreCoordinator.currentPersistentHistoryToken(fromStores: nil)
+                self.context.perform {
+                    self.hardRefresh()
+                    NotificationCenter.default.post(name: Store.didResetHistory, object: nil)
+                    NotificationCenter.default.post(name: Store.didChangeRemotely, object: nil)
+                    completion?()
+                }
+            }
+        }
+    }
+
+    /// A bounded page refresh after history-token recovery.
+    static let didResetHistory = Foundation.Notification.Name("ntfy.storeDidResetHistory")
+    /// Posted after extension history has been merged, so topic summaries can be invalidated.
     static let didChangeRemotely = Foundation.Notification.Name("ntfy.storeDidChangeRemotely")
 
     /// Posted when the topic sort preference changes. Deliberately distinct from
@@ -397,9 +457,12 @@ class Store: ObservableObject {
             let request = Notification.fetchRequest()
             request.predicate = NSPredicate(format: "id = %@", notificationID)
             guard let notification = try? context.fetch(request).first else {
+                // A manual delete/expiry can finish while the network request is still running.
+                try? FileManager.default.removeItem(atPath: localPath)
                 return
             }
 
+            notification.storedAt = Date()
             notification.attachmentLocalPath = localPath
             notification.attachmentProgress = AttachmentProgressState.done.persistedValue
             if resolvedSize > 0 {
@@ -491,19 +554,32 @@ class Store: ObservableObject {
     /// subscription list's swipe action and by opening a topic.
     func setRead(_ read: Bool, forSubscription subscription: Subscription) {
         context.performAndWait {
-            let request: NSFetchRequest<Notification> = Notification.fetchRequest()
-            request.predicate = NSPredicate(
-                format: "subscription == %@ AND read != %@", subscription, NSNumber(value: read)
-            )
-            guard let notifications = try? context.fetch(request), !notifications.isEmpty else {
-                return // don't churn the context or bump observers for a no-op
-            }
-            let clears = read ? notifications.sorted { $0.time > $1.time }.compactMap { clearRequest(for: $0) } : []
-            for notification in notifications {
-                notification.read = read
-            }
+            let started = Date()
+            let predicate = NSPredicate(format: "subscription == %@ AND read != %@ AND (storedAt == nil OR storedAt <= %@)", subscription, NSNumber(value: read), started as NSDate)
+            let request = Notification.fetchRequest()
+            request.predicate = predicate
+            request.sortDescriptors = [NSSortDescriptor(key: "time", ascending: false), NSSortDescriptor(key: "id", ascending: false)]
+            request.fetchLimit = ClearPacer.perAction
             do {
-                try context.save()
+                // Cap BEFORE materializing rows or reading credentials. The SQL batch below changes
+                // all local read flags; only registered, materialized objects need merging on main.
+                let newest = read ? try context.fetch(request) : []
+                let clears = newest.compactMap { clearRequest(for: $0) }
+                let throughTime = newest.first?.time
+                if context.hasChanges { try context.save() }
+                let update = NSBatchUpdateRequest(entityName: "Notification")
+                update.predicate = predicate
+                update.propertiesToUpdate = ["read": read]
+                update.resultType = .updatedObjectIDsResultType
+                let result = try context.execute(update) as? NSBatchUpdateResult
+                let ids = Set(result?.result as? [NSManagedObjectID] ?? [])
+                let cached = context.registeredObjects.filter { !$0.isFault && ids.contains($0.objectID) }.map(\.objectID)
+                NSManagedObjectContext.mergeChanges(fromRemoteContextSave: [NSUpdatedObjectsKey: cached], into: [context])
+                context.processPendingChanges()
+                if let throughTime, let base = subscription.baseUrl, let topic = subscription.topic {
+                    topicNotificationRemover(base, topic, throughTime, started)
+                }
+                if !ids.isEmpty { NotificationCenter.default.post(name: Self.didChangeRemotely, object: nil) }
                 sendActions(clears)
             } catch {
                 Log.w(Store.tag, "Cannot mark notifications read", error)
@@ -518,7 +594,11 @@ class Store: ObservableObject {
     /// to look at", not "your history is back".
     func markMostRecentUnread(subscription: Subscription) {
         context.performAndWait {
-            guard let newest = subscription.lastNotification(), newest.read else { return }
+            let request = Notification.fetchRequest()
+            request.predicate = NSPredicate(format: "subscription == %@", subscription)
+            request.sortDescriptors = [NSSortDescriptor(key: "time", ascending: false), NSSortDescriptor(key: "id", ascending: false)]
+            request.fetchLimit = 1
+            guard let newest = try? context.fetch(request).first, newest.read else { return }
             newest.read = false
             try? context.save()
         }
@@ -578,15 +658,22 @@ class Store: ObservableObject {
     /// app's own test messages, and on how many distinct local days. Evidence for the review prompt.
     func presentedDeliveries(calendar: Calendar = .current) -> (count: Int, days: Int) {
         var times: [Int64] = []
+        var liveCount = 0
+        var archivedCount = 0
         context.performAndWait {
             let request = NSFetchRequest<NSDictionary>(entityName: "Notification")
             request.resultType = .dictionaryResultType
             request.propertiesToFetch = ["time"]
             request.predicate = NSPredicate(format: "presented == YES AND NOT (message BEGINSWITH %@)", Store.testMessagePrefix)
             times = ((try? context.fetch(request)) ?? []).compactMap { ($0["time"] as? NSNumber)?.int64Value }
+            liveCount = times.count
+            if let (_, evidence) = try? archivedDeliveries(in: context) {
+                archivedCount = evidence.count
+                times += evidence.times
+            }
         }
         let days = Set(times.map { calendar.startOfDay(for: Date(timeIntervalSince1970: TimeInterval($0))) })
-        return (times.count, days.count)
+        return (liveCount + archivedCount, days.count)
     }
 
     private func markPresented(id: String, on subscription: Subscription) {
@@ -821,7 +908,7 @@ class Store: ObservableObject {
                 return
             }
             do {
-                newMessages = try saveNotifications(ingest(messages, for: subscription), withSubscription: subscription, polledSince: request.since)
+                newMessages = try saveNotifications(ingest(messages, for: subscription), withSubscription: subscription, polledSince: request.since, applyingRetention: true)
             } catch let error {
                 Log.w(Store.tag, "Cannot store notifications (fromMessages)", error)
                 rollbackAndRefresh()
@@ -861,10 +948,43 @@ class Store: ObservableObject {
         }
     }
 
-    func delete(allNotificationsFor subscription: Subscription) {
-        context.performAndWait {
-            let notifications = Set(subscription.notifications?.compactMap { $0 as? Notification } ?? [])
-            delete(notifications: notifications)
+    func delete(allNotificationsFor subscription: Subscription, completion: (() -> Void)? = nil) {
+        let id = subscription.objectID
+        let started = Date()
+        retentionContext.perform {
+            self.retentionContext.reset()
+            do {
+                let request = Notification.fetchRequest()
+                request.fetchLimit = 200
+                request.predicate = NSPredicate(format: "subscription == %@ AND (storedAt == nil OR storedAt <= %@)", id, started as NSDate)
+                while true {
+                    let rows = try self.retentionContext.fetch(request)
+                    guard !rows.isEmpty else { break }
+                    let removals = rows.compactMap { row -> SequenceRemoval? in
+                        guard let sub = row.subscription, let base = sub.baseUrl, let topic = sub.topic, let rowID = row.id else { return nil }
+                        return SequenceRemoval(baseUrl: base, topic: topic, sequence: row.sequenceID ?? rowID, throughTime: row.time)
+                    }
+                    let paths = Set(rows.compactMap(\.attachmentLocalPath).filter { !$0.isEmpty })
+                    let pendingRequest = NSFetchRequest<NSManagedObject>(entityName: "PendingAttachmentDeletion")
+                    pendingRequest.predicate = NSPredicate(format: "path IN %@", Array(paths))
+                    let queued = Set(try self.retentionContext.fetch(pendingRequest).compactMap { $0.value(forKey: "path") as? String })
+                    for path in paths.subtracting(queued) {
+                        let pending = NSEntityDescription.insertNewObject(forEntityName: "PendingAttachmentDeletion", into: self.retentionContext)
+                        pending.setValue(path, forKey: "path")
+                    }
+                    try self.archivePresentedDeliveries(rows, in: self.retentionContext)
+                    rows.forEach(self.retentionContext.delete)
+                    try self.retentionContext.save()
+                    self.notificationBatchRemover(removals)
+                    self.retentionContext.reset()
+                }
+            } catch {
+                self.retentionContext.rollback()
+                Log.w(Self.tag, "Cannot delete topic history", error)
+            }
+            // Cleanup also drains the transactional file queue; recent files retain the grace.
+            self.pruneNotifications()
+            self.context.perform { self.context.processPendingChanges(); completion?() }
         }
     }
 
@@ -1534,13 +1654,15 @@ class Store: ObservableObject {
     /// Seen event ids and tombstones survive row deletion, preventing overlapping polls from reviving
     /// a deleted version. States belong to the subscription and are cascaded on unsubscribe.
     @discardableResult
-    private func saveNotifications(_ ingested: [IngestedMessage], withSubscription subscription: Subscription, polledSince: String? = nil, isPush: Bool = false) throws -> [Message] {
+    private func saveNotifications(_ ingested: [IngestedMessage], withSubscription subscription: Subscription, polledSince: String? = nil, isPush: Bool = false, applyingRetention: Bool = false) throws -> [Message] {
         if isPush { deferredPushID = nil }
         let request = Notification.fetchRequest()
-        request.predicate = NSPredicate(format: "subscription == %@", subscription)
+        let sequences = ingested.map { $0.message.sequence }
+        let ids = ingested.map { $0.message.id }
+        request.predicate = NSPredicate(format: "subscription == %@ AND (sequenceID IN %@ OR id IN %@ OR id IN %@)", subscription, sequences, sequences, ids)
         var rows = try context.fetch(request)
         let stateRequest = NSFetchRequest<NSManagedObject>(entityName: "SequenceState")
-        stateRequest.predicate = NSPredicate(format: "subscription == %@", subscription)
+        stateRequest.predicate = NSPredicate(format: "subscription == %@ AND sequenceID IN %@", subscription, sequences)
         var states: [String: NSManagedObject] = [:]
         for state in try context.fetch(stateRequest) {
             refreshFromStore(state)
@@ -1549,6 +1671,8 @@ class Store: ObservableObject {
         let initialCursor = subscription.lastNotificationId
         let positions = Dictionary(ingested.enumerated().map { ($0.element.message.id, $0.offset) }, uniquingKeysWith: { _, last in last })
         if !isPush { subscription.sequenceReconcile = false }
+        let retention = applyingRetention ? notificationRetention() : .forever
+        let expiry = Int64(Date().timeIntervalSince1970) - retention.seconds
         var presentations: [Message] = []
         var removals: [SequenceRemoval] = []
         var traversed = Set<String>()
@@ -1557,6 +1681,7 @@ class Store: ObservableObject {
         for item in ingested {
             var message = item.message
             guard message.topic == subscription.topic, message.event == "message" || message.isControl else { continue }
+            if applyingRetention && retention != .forever && message.event == "message" && message.time < expiry { continue }
             let sequence = message.sequence
             let row = rows.first { !$0.isDeleted && (($0.sequenceID ?? $0.id) == sequence || $0.id == message.id) }
             let sequenceKey = topicUrl(baseUrl: subscription.baseUrl ?? "", topic: message.topic) + "/" + sequence
@@ -1597,6 +1722,7 @@ class Store: ObservableObject {
             next.setValue(sequence, forKey: "sequenceID")
             next.setValue(message.id, forKey: "eventID")
             next.setValue(message.time, forKey: "time")
+            next.setValue(Date(), forKey: "storedAt")
             next.setValue(message.event, forKey: "event")
             next.setValue((message.time == lastTime ? seen.union([message.id]) : Set([message.id])).sorted().joined(separator: ","), forKey: "seenIDs")
             states[sequence] = next
@@ -1623,7 +1749,6 @@ class Store: ObservableObject {
                 notification.sequenceKey = sequenceKey
                 populate(notification, from: item)
                 notification.subscription = subscription
-                subscription.addToNotifications(notification)
                 if row == nil { rows.append(notification) }
                 presentations.append(message)
             }
@@ -1648,6 +1773,7 @@ class Store: ObservableObject {
 
     private func populate(_ notification: Notification, from item: IngestedMessage) {
         let message = item.message
+        notification.storedAt = Date()
         notification.encryption = item.encryption.rawValue
         notification.ciphertext = item.ciphertext
         notification.jweIV = item.iv

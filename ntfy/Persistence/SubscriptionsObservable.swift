@@ -6,12 +6,24 @@ class SubscriptionsObservable: NSObject, ObservableObject {
     
     private var remoteChangeObserver: NSObjectProtocol?
     private var sortOrderObserver: NSObjectProtocol?
+    private var notificationObserver: NSObjectProtocol?
 
     override init() {
         super.init()
 
-        // This will force the initialization of notificationsFetchedResultsController
-        _ = self.notificationsFetchedResultsController
+        _ = self.fetchedResultsController
+        // Observe changes, not a fetched-results controller containing every notification ID.
+        // The row summaries are SQL aggregates; they don't need a history-sized membership list.
+        notificationObserver = NotificationCenter.default.addObserver(
+            forName: .NSManagedObjectContextObjectsDidChange, object: Store.shared.context, queue: nil
+        ) { [weak self] change in
+            let keys = [NSInsertedObjectsKey, NSUpdatedObjectsKey, NSDeletedObjectsKey, NSRefreshedObjectsKey, NSInvalidatedObjectsKey]
+            guard change.userInfo?[NSInvalidatedAllObjectsKey] != nil || keys.contains(where: { key in
+                (change.userInfo?[key] as? Set<NSManagedObject> ?? []).contains { $0.entity.name == "Notification" }
+            }) else { return }
+            self?.invalidateOrder()
+            self?.objectWillChange.send()
+        }
 
         // A push written by the notification service extension's process never reaches these
         // fetched-results controllers on its own — controller membership changes only when the
@@ -40,12 +52,13 @@ class SubscriptionsObservable: NSObject, ObservableObject {
         if let remoteChangeObserver = remoteChangeObserver {
             NotificationCenter.default.removeObserver(remoteChangeObserver)
         }
+        if let notificationObserver { NotificationCenter.default.removeObserver(notificationObserver) }
         if let sortOrderObserver = sortOrderObserver {
             NotificationCenter.default.removeObserver(sortOrderObserver)
         }
     }
 
-    /// Re-runs both fetches against the store and tells SwiftUI to re-render. Internal rather than
+    /// Re-runs the subscription fetch against the store and tells SwiftUI to re-render. Internal rather than
     /// private so a test can drive it directly; production only reaches it through the
     /// remote-change broadcast.
     func refetch() {
@@ -53,20 +66,12 @@ class SubscriptionsObservable: NSObject, ObservableObject {
         // array — a push arriving while the app is open would update nothing on screen, which is
         // exactly the ntfy#337 bug whose test caught this.
         invalidateOrder()
-        // Each controller gets its own catch: sharing one meant a throw from the first silently
-        // skipped the second, and the view was then told to re-render off entirely stale state.
         var refreshed = false
         do {
             try fetchedResultsController.performFetch()
             refreshed = true
         } catch {
             Log.w(tag, "Failed to re-fetch subscriptions after a remote change: \(error)", error)
-        }
-        do {
-            try notificationsFetchedResultsController.performFetch()
-            refreshed = true
-        } catch {
-            Log.w(tag, "Failed to re-fetch notifications after a remote change: \(error)", error)
         }
         guard refreshed else { return } // nothing moved; don't churn a render for stale state
         objectWillChange.send()
@@ -84,28 +89,6 @@ class SubscriptionsObservable: NSObject, ObservableObject {
             try controller.performFetch()
         } catch {
             Log.w(tag, "Failed to fetch subscriptions: \(error)", error)
-        }
-        
-        return controller
-    }()
-    
-    private lazy var notificationsFetchedResultsController: NSFetchedResultsController<Notification> = {
-        let fetchRequest: NSFetchRequest<Notification> = Notification.fetchRequest()
-        fetchRequest.sortDescriptors = [NSSortDescriptor(key: "time", ascending: true)]
-        // This controller exists only to notice that *some* notification changed, so the rows can
-        // re-render their counts and unread badges — nothing reads its results. It has no predicate,
-        // so on an install with a long history it would otherwise fault in every notification the
-        // user has ever received on each re-fetch.
-        fetchRequest.fetchBatchSize = 50
-        
-        let controller = NSFetchedResultsController(fetchRequest: fetchRequest, managedObjectContext: Store.shared.context, sectionNameKeyPath: nil, cacheName: nil)
-        controller.delegate = self
-        
-        do {
-            Log.d(tag, "Fetching notifications")
-            try controller.performFetch()
-        } catch {
-            Log.w(tag, "Failed to fetch notifications: \(error)", error)
         }
         
         return controller

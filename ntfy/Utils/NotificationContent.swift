@@ -449,6 +449,31 @@ struct SequenceRemoval {
         requests.filter { matches(userInfo: $0.content.userInfo) }.map(\.identifier)
     }
 
+    static func removeDelivered(_ removals: [SequenceRemoval]) {
+        guard !removals.isEmpty else { return }
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { notifications in
+            let ids = notifications.filter { banner in removals.contains { $0.matches(userInfo: banner.request.content.userInfo) } }.map { $0.request.identifier }
+            if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+        }
+    }
+
+    static func topicIdentifiers(in requests: [UNNotificationRequest], baseUrl: String, topic: String, throughTime: Int64) -> [String] {
+        requests.filter {
+            guard let message = Message.from(userInfo: $0.content.userInfo) else { return false }
+            return message.topic == topic && message.time <= throughTime
+                && normalizeBaseUrl($0.content.userInfo["base_url"] as? String ?? Config.appBaseUrl) == normalizeBaseUrl(baseUrl)
+        }.map(\.identifier)
+    }
+
+    static func removeDelivered(baseUrl: String, topic: String, throughTime: Int64, before: Date) {
+        let center = UNUserNotificationCenter.current()
+        center.getDeliveredNotifications { notifications in
+            let ids = topicIdentifiers(in: notifications.filter { $0.date <= before }.map(\.request), baseUrl: baseUrl, topic: topic, throughTime: throughTime)
+            if !ids.isEmpty { center.removeDeliveredNotifications(withIdentifiers: ids) }
+        }
+    }
+
     func removeDelivered() {
         let center = UNUserNotificationCenter.current()
         center.getDeliveredNotifications { notifications in

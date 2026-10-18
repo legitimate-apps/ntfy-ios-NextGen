@@ -19,12 +19,16 @@ struct AppMain: App {
                 .environmentObject(store)
                 .environmentObject(delegate)
                 .environment(\.managedObjectContext, store.context)
+                .onReceive(Timer.publish(every: 900, on: .main, in: .common).autoconnect()) { _ in
+                    if UIApplication.shared.applicationState == .active { store.pruneNotifications() }
+                }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     // Use this hook instead of applicationDidBecomeActive, see https://stackoverflow.com/a/68888509/1440785
                     // That post also explains how to start SwiftUI from AppDelegate if that's ever needed.
                     
                     Log.d(tag, "App became active, refreshing objects")
-                    store.hardRefresh()
+                    store.mergeRemoteHistory()
+                    store.pruneNotifications()
                     // Open encrypted messages that arrived while the key couldn't be read (before
                     // first unlock, a Keychain hiccup, or a key the extension couldn't derive).
                     store.retryLockedMessages()
