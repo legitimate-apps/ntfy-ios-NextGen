@@ -465,13 +465,26 @@ final class ntfyTests: XCTestCase {
     }
 
     func testCopyActionCopiesItsValueToClipboard() {
-        let existing = UIPasteboard.general.string
-        defer { UIPasteboard.general.string = existing }
+        // Reading what another app left on the pasteboard asks for paste permission and stalls the run, so start empty.
+        UIPasteboard.general.items = []
+        addTeardownBlock { UIPasteboard.general.items = [] }
         var action = Action(id: "copy", action: "copy", label: "Copy code",
                             url: nil, method: nil, headers: nil, body: nil, clear: nil)
         action.value = "ABC-123"
         ActionExecutor.execute(action)
         XCTAssertEqual(UIPasteboard.general.string, "ABC-123")
+    }
+
+    func testOnlyACopyActionWithAValueGetsTheCopiedConfirmation() {
+        var copy = Action(id: "c", action: "copy", label: "Copy code",
+                          url: nil, method: nil, headers: nil, body: nil, clear: nil)
+        XCTAssertFalse(copy.copiesText, "nothing is copied without a value, so nothing to confirm")
+        copy.value = "ABC-123"
+        XCTAssertTrue(copy.copiesText)
+        var view = Action(id: "v", action: "view", label: "Open",
+                          url: "https://example.com", method: nil, headers: nil, body: nil, clear: nil)
+        view.value = "ignored"
+        XCTAssertFalse(view.copiesText)
     }
 
     // MARK: Actions.encode — nil round-trips to empty string

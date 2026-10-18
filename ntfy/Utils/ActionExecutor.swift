@@ -9,6 +9,12 @@ enum HTTPActionResult: Equatable {
     case failure(String) // human-readable reason (transport error or non-2xx status)
 }
 
+extension Action {
+    /// A copy action that has text to copy: tapping it puts that text on the clipboard, so the
+    /// list confirms it the way "Copy message" does.
+    var copiesText: Bool { action == "copy" && value != nil }
+}
+
 struct ActionExecutor {
     private static let tag = "ActionExecutor"
 

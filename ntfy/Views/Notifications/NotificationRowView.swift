@@ -75,6 +75,10 @@ struct NotificationRowView: View {
                                 notificationId: notification.id,
                                 baseUrl: notification.subscription?.baseUrl
                             )
+                            if action.copiesText {
+                                UINotificationFeedbackGenerator().notificationOccurred(.success)
+                                showCopyFeedback()
+                            }
                         }
                         .buttonStyle(.borderedProminent)
                     }
