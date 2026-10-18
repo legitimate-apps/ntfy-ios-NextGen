@@ -38,6 +38,12 @@ struct ActionExecutor {
             }
         case "http":
             http(action, baseUrl: baseUrl, credentialStore: credentialStore)
+        case "copy":
+            if let value = action.value {
+                UIPasteboard.general.string = value
+            } else {
+                Log.w(tag, "Copy action is missing its value", action)
+            }
         default:
             Log.w(tag, "Action \(action.action) not supported", action)
         }

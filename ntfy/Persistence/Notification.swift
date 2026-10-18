@@ -530,4 +530,6 @@ struct Action: Encodable, Decodable, Identifiable {
     var headers: [String: String]?
     var body: String?
     var clear: Bool?
+    // ntfy copy actions carry the text to copy under the "value" key.
+    var value: String? = nil
 }

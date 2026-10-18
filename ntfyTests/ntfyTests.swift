@@ -450,6 +450,26 @@ final class ntfyTests: XCTestCase {
         XCTAssertEqual(parsed?.first?.action, "view")
     }
 
+    func testCopyActionIsParsedWithItsValueWhileBroadcastStaysUnsupported() {
+        let json = """
+        [{"id":"c","action":"copy","label":"Copy code","value":"ABC-123"},        {"id":"b","action":"broadcast","label":"Android only"}]
+        """
+        let actions = Actions.shared.parse(json)
+        XCTAssertEqual(actions?.count, 1)
+        XCTAssertEqual(actions?.first?.action, "copy")
+        XCTAssertEqual(actions?.first?.value, "ABC-123")
+    }
+
+    func testCopyActionCopiesItsValueToClipboard() {
+        let existing = UIPasteboard.general.string
+        defer { UIPasteboard.general.string = existing }
+        var action = Action(id: "copy", action: "copy", label: "Copy code",
+                            url: nil, method: nil, headers: nil, body: nil, clear: nil)
+        action.value = "ABC-123"
+        ActionExecutor.execute(action)
+        XCTAssertEqual(UIPasteboard.general.string, "ABC-123")
+    }
+
     // MARK: Actions.encode — nil round-trips to empty string
 
     func testActionsEncodeNilIsEmptyString() {
