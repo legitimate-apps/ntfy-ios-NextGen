@@ -149,7 +149,8 @@ final class ntfyTests: XCTestCase {
 
     override func setUp() {
         super.setUp()
-        Store.shared.clearPublisher = { _, done in done(true) }
+        Store.shared.clearPublisher = { _, done in done(.sent) }
+        installClearPacer()
         Store.shared.wakePublisher = { _, done in done() }
         Store.shared.notificationRemover = { _ in }
         credentialStore = InMemoryCredentialStore()
@@ -959,7 +960,7 @@ final class ntfyTests: XCTestCase {
     func testSequenceReceivedClearNeverRepublishesEvenWhenTopicIsReadAgain() throws {
         let sub = sequenceSubscription()
         var clears: [ClearRequest] = []
-        Store.shared.clearPublisher = { request, done in clears.append(request); done(true) }
+        Store.shared.clearPublisher = { request, done in clears.append(request); done(.sent) }
         Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
         _ = Store.shared.ingest(pushedMessage: try sequenceEvent("clear", "message_clear", time: 101), baseUrl: sub.baseUrl!, topic: sub.topic!)
         Store.shared.setRead(true, forSubscription: sub)
@@ -974,7 +975,7 @@ final class ntfyTests: XCTestCase {
         addTeardownBlock { Store.shared.delete(user: user) }
         Store.shared.save(notificationsFromMessages: [try sequenceEvent("original")], withSubscription: sub)
         var clears: [ClearRequest] = []
-        Store.shared.clearPublisher = { request, done in clears.append(request); done(true) }
+        Store.shared.clearPublisher = { request, done in clears.append(request); done(.sent) }
         Store.shared.setRead(true, forSubscription: sub)
         Store.shared.setRead(true, forSubscription: sub)
         XCTAssertEqual(clears.count, 1)
@@ -989,13 +990,13 @@ final class ntfyTests: XCTestCase {
         let sub = sequenceSubscription()
         let original = try sequenceEvent("original")
         Store.shared.save(notificationsFromMessages: [original], withSubscription: sub)
-        var finished: ((Bool) -> Void)?
+        var finished: ((ClearOutcome) -> Void)?
         Store.shared.clearPublisher = { _, done in finished = done }
         let completed = expectation(description: "dismiss completion after request")
         Store.shared.read(message: original, baseUrl: sub.baseUrl!) { completed.fulfill() }
         XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).read)
         XCTAssertNotNil(finished)
-        finished?(true)
+        finished?(.sent)
         wait(for: [completed], timeout: 2)
     }
 
@@ -1004,7 +1005,7 @@ final class ntfyTests: XCTestCase {
         let old = try sequenceEvent("old")
         Store.shared.save(notificationsFromMessages: [old, try sequenceEvent("new", time: 101)], withSubscription: sub)
         var sequences: [String] = []
-        Store.shared.clearPublisher = { request, done in sequences.append(request.sequence); done(true) }
+        Store.shared.clearPublisher = { request, done in sequences.append(request.sequence); done(.sent) }
         Store.shared.setRead(false, forNotification: try XCTUnwrap(sequenceRows(sub).first))
         XCTAssertTrue(sequences.isEmpty)
         Store.shared.read(message: old, baseUrl: sub.baseUrl!)
@@ -1017,7 +1018,7 @@ final class ntfyTests: XCTestCase {
         let original = Message(id: "legacy-id", time: 100, event: "message", topic: sub.topic!, message: "old server")
         Store.shared.save(notificationsFromMessages: [original], withSubscription: sub)
         var ids: [String] = []
-        Store.shared.clearPublisher = { request, done in ids.append(request.sequence); done(true) }
+        Store.shared.clearPublisher = { request, done in ids.append(request.sequence); done(.sent) }
         Store.shared.setRead(true, forNotification: try XCTUnwrap(sequenceRows(sub).first))
         XCTAssertEqual(ids, ["legacy-id"])
         let clear = try sequenceEvent("clear", "message_clear", sequence: "legacy-id", time: 101)
@@ -1310,28 +1311,182 @@ final class ntfyTests: XCTestCase {
         let sub = instantSubscription()
         Store.shared.save(notificationsFromMessages: [instantMessage("a", sequence: "one"), instantMessage("b", sequence: "two"), instantMessage("c", sequence: "three")], withSubscription: sub)
         var sends: [ClearRequest] = []
-        var callbacks: [(Bool) -> Void] = []
+        var callbacks: [(ClearOutcome) -> Void] = []
         var wakes: [String] = []
         Store.shared.clearPublisher = { sends.append($0); callbacks.append($1) }
         let woke = expectation(description: "one batch wake")
         Store.shared.wakePublisher = { topic, done in wakes.append(topic); done(); woke.fulfill() }
         Store.shared.setRead(true, forSubscription: sub)
-        XCTAssertEqual(sends.count, 3)
+        XCTAssertEqual(sends.count, 1, "clears go out one at a time")
         XCTAssertTrue(instantRows(sub).allSatisfy(\.read))
         XCTAssertTrue(wakes.isEmpty)
-        callbacks[0](true)
-        callbacks[1](false)
+        callbacks[0](.sent)
+        XCTAssertEqual(sends.count, 2)
+        callbacks[1](.failed)
         XCTAssertTrue(wakes.isEmpty, "do not wake before source action batch finishes")
-        callbacks[2](true)
+        callbacks[2](.sent)
         wait(for: [woke], timeout: 2)
         XCTAssertEqual(wakes, [instantHash])
         XCTAssertEqual(Set(sends.map(\.sequence)), ["one", "two", "three"])
     }
 
+    /// Opening a topic with 500 unread messages used to send 500 PUTs at once against a server
+    /// bucket of 120 (one token per 3 s); most came back 429 and the user's own polls were refused.
+    func testClearBurstFiveHundredUnreadSendsNewestFewOneAtATimePaced() throws {
+        let sub = instantSubscription()
+        let messages = (0..<500).map { instantMessage("m\($0)", sequence: "s\($0)", time: 1_000 + Int64($0)) }
+        Store.shared.save(notificationsFromMessages: messages, withSubscription: sub)
+        let clock = installClearPacer()
+        var sent: [String] = []
+        var inFlight = 0, maxInFlight = 0
+        var pending: [(ClearOutcome) -> Void] = []
+        var removals = 0
+        Store.shared.notificationRemover = { _ in removals += 1 }
+        Store.shared.clearPublisher = { request, done in
+            sent.append(request.sequence); inFlight += 1; maxInFlight = max(maxInFlight, inFlight)
+            pending.append { inFlight -= 1; done($0) }
+        }
+        Store.shared.setRead(true, forSubscription: sub)
+        XCTAssertTrue(instantRows(sub).allSatisfy(\.read), "local read is instant and complete")
+        XCTAssertEqual(removals, 500, "every banner on this device still goes")
+        while !pending.isEmpty { pending.removeFirst()(.sent) }
+        XCTAssertEqual(sent.count, ClearPacer.perAction)
+        XCTAssertEqual(sent, (490..<500).reversed().map { "s\($0)" }, "newest sequences first")
+        XCTAssertEqual(maxInFlight, 1)
+        XCTAssertEqual(clock.delays.count, ClearPacer.perAction - 1)
+        XCTAssertTrue(clock.delays.allSatisfy { $0 >= ClearPacer.spacing - 0.001 }, "\(clock.delays)")
+    }
+
+    func testClearRateLimitedStopsQueueAndPausesForRetryAfter() throws {
+        let sub = instantSubscription()
+        Store.shared.save(notificationsFromMessages: (0..<20).map { instantMessage("r\($0)", sequence: "q\($0)", time: 1_000 + Int64($0)) }, withSubscription: sub)
+        let clock = installClearPacer()
+        var sent: [String] = []
+        Store.shared.clearPublisher = { request, done in
+            sent.append(request.sequence)
+            done(sent.count == 2 ? .rateLimited(retryAfter: 120) : .sent)
+        }
+        let woke = expectation(description: "rate-limited batch still wakes for the clear that landed")
+        Store.shared.wakePublisher = { _, done in done(); woke.fulfill() }
+        Store.shared.setRead(true, forSubscription: sub)
+        wait(for: [woke], timeout: 2)
+        Store.shared.wakePublisher = { _, done in done() } // later batches wake too; don't over-fulfill
+        XCTAssertEqual(sent, ["q19", "q18"], "a 429 drops the rest of the queue")
+        let more = instantSubscription(topic: "instant-more")
+        Store.shared.save(notificationsFromMessages: [instantMessage("late", sequence: "late", topic: "instant-more", time: 2_000)], withSubscription: more)
+        clock.now += 60
+        Store.shared.setRead(true, forSubscription: more)
+        XCTAssertEqual(sent.count, 2, "nothing goes out before Retry-After passes")
+        XCTAssertTrue(instantRows(more).allSatisfy(\.read))
+        Store.shared.save(notificationsFromMessages: [instantMessage("later", sequence: "later", topic: "instant-more", time: 2_001)], withSubscription: more)
+        clock.now += 61
+        Store.shared.setRead(true, forSubscription: more)
+        XCTAssertEqual(sent.last, "later", "sending resumes after Retry-After")
+    }
+
+    /// A 429 (or a hostile Retry-After) from one server must not silence clears to another.
+    func testClearRateLimitOnOneServerDoesNotPauseAnother() throws {
+        let limited = instantSubscription(baseUrl: "https://limited.invalid", topic: "limited")
+        let other = instantSubscription(baseUrl: "https://other.invalid", topic: "other")
+        Store.shared.save(notificationsFromMessages: (0..<3).map { instantMessage("l\($0)", sequence: "l\($0)", topic: "limited", time: 1_000 + Int64($0)) }, withSubscription: limited)
+        let clock = installClearPacer()
+        var sent: [String] = []
+        Store.shared.clearPublisher = { request, done in
+            sent.append(request.sequence)
+            done(request.baseUrl.contains("limited") ? .rateLimited(retryAfter: 3600) : .sent)
+        }
+        Store.shared.wakePublisher = { _, done in done() }
+        Store.shared.setRead(true, forSubscription: limited)
+        XCTAssertEqual(sent, ["l2"], "the limited server's queue stops at its 429")
+        Store.shared.save(notificationsFromMessages: [instantMessage("o", sequence: "o0", topic: "other", time: 2_000)], withSubscription: other)
+        clock.now += 5
+        Store.shared.setRead(true, forSubscription: other)
+        XCTAssertEqual(sent.last, "o0", "another server's clears still go out")
+        Store.shared.save(notificationsFromMessages: [instantMessage("l9", sequence: "l9", topic: "limited", time: 3_000)], withSubscription: limited)
+        Store.shared.setRead(true, forSubscription: limited)
+        XCTAssertEqual(sent.last, "o0", "the limited server stays paused")
+    }
+
+    /// A pacer whose spacing waits are held until the test runs them.
+    private func heldPacer() -> (ClearPacer, PacerClock, () -> Void) {
+        let clock = PacerClock()
+        let pacer = ClearPacer()
+        var held: [() -> Void] = []
+        pacer.now = { clock.now }
+        pacer.schedule = { delay, work in clock.delays.append(delay); held.append { clock.now += delay; work() } }
+        return (pacer, clock, { let next = held.removeFirst(); next() })
+    }
+
+    func testClearPacerReleasesItemsDroppedForAPausedServerWhileWaitingOnSpacing() {
+        let (pacer, _, _) = heldPacer()
+        let limited = ClearRequest(baseUrl: "https://limited.invalid", topic: "t", sequence: "a1", user: nil)
+        pacer.send([limited], via: { _, done in done(.rateLimited(retryAfter: 60)) }) { _, _ in }
+        var results: [String: Bool] = [:]
+        let other = ClearRequest(baseUrl: "https://other.invalid", topic: "t", sequence: "b1", user: nil)
+        let again = ClearRequest(baseUrl: "https://limited.invalid", topic: "t", sequence: "a2", user: nil)
+        pacer.send([again, other], via: { _, done in done(.sent) }) { request, sent in results[request.sequence] = sent }
+        XCTAssertEqual(results["a2"], false, "a paused server's clear is released, not left hanging behind the spacing wait")
+        XCTAssertNil(results["b1"], "the other server's clear is still waiting its turn")
+    }
+
+    func testClearPacerPutsANotificationResponseClearAheadOfTheBacklog() {
+        let (pacer, _, runNext) = heldPacer()
+        var sent: [String] = []
+        let publish: ClearPacer.Publish = { request, done in sent.append(request.sequence); done(.sent) }
+        let backlog = (0..<8).map { ClearRequest(baseUrl: "https://selfhost.invalid", topic: "t", sequence: "s\($0)", user: nil) }
+        pacer.send(backlog, via: publish) { _, _ in }
+        XCTAssertEqual(sent, ["s0"])
+        let tapped = ClearRequest(baseUrl: "https://selfhost.invalid", topic: "t", sequence: "tapped", user: nil)
+        pacer.send([tapped], via: publish, first: true) { _, _ in }
+        runNext()
+        XCTAssertEqual(sent, ["s0", "tapped"], "the tapped banner's clear goes next, not after the backlog")
+        runNext()
+        XCTAssertEqual(sent.last, "s1")
+    }
+
+    func testClearPacerOverflowKeepsAClearPutFirst() {
+        let (pacer, _, _) = heldPacer()
+        var dropped: [String] = []
+        let hold: ClearPacer.Publish = { _, _ in } // first request stays in flight; the rest queue
+        let backlog = (0..<ClearPacer.maxPending + 1).map { ClearRequest(baseUrl: "https://selfhost.invalid", topic: "t", sequence: "s\($0)", user: nil) }
+        let record: (ClearRequest, Bool) -> Void = { request, sent in if !sent { dropped.append(request.sequence) } }
+        pacer.send(backlog, via: hold, done: record)
+        XCTAssertEqual(dropped, ["s0"], "one over the cap: the oldest queued item goes")
+        for name in ["tapped", "tapped2"] {
+            pacer.send([ClearRequest(baseUrl: "https://selfhost.invalid", topic: "t", sequence: name, user: nil)], via: hold, first: true, done: record)
+        }
+        XCTAssertEqual(dropped, ["s0", "s2"], "clears put first are never what makes room; the oldest backlog item is")
+    }
+
+    func testClearActionReportsRateLimitWithRetryAfter() {
+        let request = ClearRequest(baseUrl: "https://sequence.invalid", topic: "sequence-tests", sequence: "job", user: nil)
+        for (status, headers, expected) in [(429, ["Retry-After": "42"], ClearOutcome.rateLimited(retryAfter: 42)),
+                                            (429, [:], .rateLimited(retryAfter: 60)), (200, [:], .sent), (500, [:], .failed)] {
+            let done = expectation(description: "status \(status)")
+            ApiService.shared.action(request, session: StubURLProtocol.session(status: status, headers: headers)) {
+                XCTAssertEqual($0, expected); done.fulfill()
+            }
+            wait(for: [done], timeout: 2)
+        }
+    }
+
+    /// A deterministic clock for the clear pacer: scheduled work runs at once and advances time.
+    final class PacerClock { var now = Date(timeIntervalSince1970: 1_000_000); var delays: [TimeInterval] = [] }
+
+    @discardableResult
+    private func installClearPacer() -> PacerClock {
+        let clock = PacerClock()
+        let pacer = ClearPacer()
+        pacer.now = { clock.now }
+        pacer.schedule = { delay, work in clock.delays.append(delay); clock.now += delay; work() }
+        Store.shared.clearPacer = pacer
+        return clock
+    }
+
     func testInstantFailedReadBatchKeepsLocalReadWithoutWake() {
         let sub = instantSubscription()
         Store.shared.save(notificationsFromMessages: [instantMessage("a", sequence: "one"), instantMessage("b", sequence: "two")], withSubscription: sub)
-        Store.shared.clearPublisher = { _, done in done(false) }
+        Store.shared.clearPublisher = { _, done in done(.failed) }
         let unexpected = expectation(description: "failed source actions cannot wake")
         unexpected.isInverted = true
         Store.shared.wakePublisher = { _, done in done(); unexpected.fulfill() }
@@ -1346,7 +1501,7 @@ final class ntfyTests: XCTestCase {
         Store.shared.save(notificationsFromMessages: [instantMessage("local-self-a", sequence: "one", topic: "local-selfhost"), instantMessage("local-self-b", sequence: "two", topic: "local-selfhost")], withSubscription: selfhost)
         Store.shared.save(notificationsFromMessages: [instantMessage("local-direct-a", sequence: "one", topic: "local-default")], withSubscription: direct)
         var published: [ClearRequest] = []
-        Store.shared.clearPublisher = { request, done in published.append(request); done(true) }
+        Store.shared.clearPublisher = { request, done in published.append(request); done(.sent) }
         let unexpected = expectation(description: "local mixed selection cannot wake another device")
         unexpected.isInverted = true
         Store.shared.wakePublisher = { _, done in done(); unexpected.fulfill() }
@@ -1361,7 +1516,7 @@ final class ntfyTests: XCTestCase {
         let sub = instantSubscription(baseUrl: Config.appBaseUrl)
         Store.shared.save(notificationsFromMessages: [instantMessage("default", sequence: "job")], withSubscription: sub)
         var clears = 0
-        Store.shared.clearPublisher = { _, done in clears += 1; done(true) }
+        Store.shared.clearPublisher = { _, done in clears += 1; done(.sent) }
         let unexpected = expectation(description: "default server already sends direct controls")
         unexpected.isInverted = true
         Store.shared.wakePublisher = { _, done in done(); unexpected.fulfill() }
@@ -1377,7 +1532,7 @@ final class ntfyTests: XCTestCase {
         var removals: [SequenceRemoval] = []
         var expectedScopes: [String] = []
         Store.shared.notificationRemover = { removals.append($0) }
-        Store.shared.clearPublisher = { request, done in published.append(request); done(true) }
+        Store.shared.clearPublisher = { request, done in published.append(request); done(.sent) }
         let unexpected = expectation(description: "all local delete APIs cannot wake")
         unexpected.isInverted = true
         var wakeCount = 0
@@ -1410,7 +1565,7 @@ final class ntfyTests: XCTestCase {
         let sub = instantSubscription()
         Store.shared.save(notificationsFromMessages: [instantMessage("local-denied", sequence: "job")], withSubscription: sub)
         var attempts = 0
-        Store.shared.clearPublisher = { _, done in attempts += 1; done(false) }
+        Store.shared.clearPublisher = { _, done in attempts += 1; done(.failed) }
         let unexpected = expectation(description: "local delete never attempts wake")
         unexpected.isInverted = true
         Store.shared.wakePublisher = { _, done in done(); unexpected.fulfill() }
@@ -1440,7 +1595,7 @@ final class ntfyTests: XCTestCase {
         let clear = ClearRequest(baseUrl: "https://selfhost.invalid", topic: "instant", sequence: "job", user: BasicUser(username: "writer", password: "source-password"))
         RecordingURLProtocol.reset()
         let recorded = expectation(description: "source clear attempted")
-        api.action(clear, session: recordingSession()) { success in XCTAssertFalse(success); recorded.fulfill() }
+        api.action(clear, session: recordingSession()) { outcome in XCTAssertEqual(outcome, .failed); recorded.fulfill() }
         wait(for: [recorded], timeout: 2)
         XCTAssertEqual(RecordingURLProtocol.requests.first?.httpMethod, "PUT")
         XCTAssertEqual(RecordingURLProtocol.requests.first?.url?.absoluteString, "https://selfhost.invalid/instant/job/clear")
@@ -1448,7 +1603,7 @@ final class ntfyTests: XCTestCase {
         XCTAssertEqual(RecordingURLProtocol.requests.first?.value(forHTTPHeaderField: "CF-Access-Client-Secret"), "origin-access")
         for status in [200, 403, 404, 500] {
             let done = expectation(description: "action status \(status)")
-            api.action(clear, session: StubURLProtocol.session(status: status)) { success in XCTAssertEqual(success, status == 200); done.fulfill() }
+            api.action(clear, session: StubURLProtocol.session(status: status)) { outcome in XCTAssertEqual(outcome, status == 200 ? .sent : .failed); done.fulfill() }
             wait(for: [done], timeout: 2)
         }
     }
@@ -2218,8 +2373,11 @@ final class ntfyTests: XCTestCase {
         private static var body = Data()
         private static var failure: Error?
 
-        static func session(status: Int = 200, body: Data = Data(), failWith error: Error? = nil) -> URLSession {
+        private static var headers: [String: String] = [:]
+
+        static func session(status: Int = 200, body: Data = Data(), headers: [String: String] = [:], failWith error: Error? = nil) -> URLSession {
             lock.lock()
+            self.headers = headers
             self.status = status
             self.body = body
             self.failure = error
@@ -2237,6 +2395,7 @@ final class ntfyTests: XCTestCase {
             let status = StubURLProtocol.status
             let body = StubURLProtocol.body
             let failure = StubURLProtocol.failure
+            let headers = StubURLProtocol.headers
             StubURLProtocol.lock.unlock()
 
             if let failure = failure {
@@ -2244,7 +2403,7 @@ final class ntfyTests: XCTestCase {
                 return
             }
             let response = HTTPURLResponse(url: request.url!, statusCode: status,
-                                           httpVersion: "HTTP/1.1", headerFields: nil)!
+                                           httpVersion: "HTTP/1.1", headerFields: headers)!
             client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
             if !body.isEmpty {
                 client?.urlProtocol(self, didLoad: body)

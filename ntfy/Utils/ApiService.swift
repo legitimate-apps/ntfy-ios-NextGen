@@ -68,15 +68,21 @@ class ApiService {
         action(clear, session: session) { _ in completion?() }
     }
 
-    /// Only a successful response from the real server permits an upstream wake.
-    func action(_ clear: ClearRequest, session: URLSession? = nil, completion: @escaping (Bool) -> Void) {
-        guard let request = clearRequest(clear) else { completion(false); return }
+    /// Only a successful response from the real server permits an upstream wake. A 429 carries
+    /// the server's Retry-After so the pacer can stop sending until then.
+    func action(_ clear: ClearRequest, session: URLSession? = nil, completion: @escaping (ClearOutcome) -> Void) {
+        guard let request = clearRequest(clear) else { completion(.failed); return }
         runOneShot(request, timeout: 8, baseUrl: clear.baseUrl, session: session) { _, response, error in
-            let succeeded = error == nil && (200..<300).contains((response as? HTTPURLResponse)?.statusCode ?? 0)
-            if !succeeded {
-                Log.w(self.tag, "Sequence action failed; keeping local state (HTTP \((response as? HTTPURLResponse)?.statusCode ?? 0))")
+            let http = response as? HTTPURLResponse
+            let status = error == nil ? http?.statusCode ?? 0 : 0
+            if !(200..<300).contains(status) {
+                Log.w(self.tag, "Sequence action failed; keeping local state (HTTP \(status))")
             }
-            completion(succeeded)
+            if status == 429 {
+                completion(.rateLimited(retryAfter: TimeInterval(http?.value(forHTTPHeaderField: "Retry-After") ?? "") ?? 60))
+            } else {
+                completion((200..<300).contains(status) ? .sent : .failed)
+            }
         }
     }
 
@@ -385,6 +391,87 @@ struct AuthCheckResponse: Codable {
         self.code = try container.decodeIfPresent(Int.self, forKey: .code)
         self.http = try container.decodeIfPresent(Int.self, forKey: .http)
         self.error = try container.decodeIfPresent(String.self, forKey: .error)
+    }
+}
+
+enum ClearOutcome: Equatable {
+    case sent, failed, rateLimited(retryAfter: TimeInterval)
+}
+
+/// Read-state clears share the server's per-IP request bucket (ntfy-me.com: 120 burst, one token
+/// per 3 s) and its daily message quota with polls and publishes. Opening a topic with hundreds of
+/// unread messages used to fire one PUT per message at once; most came back 429 and locked the
+/// user's own polls out for minutes. Clears go out one at a time, spaced, and a 429 drops what is
+/// queued for that server and pauses it for its Retry-After; other servers keep going.
+/// Clears are best effort: local state never waits.
+final class ClearPacer {
+    /// Newest distinct sequences cleared per read action; older ones are rarely still on screen elsewhere.
+    static let perAction = 10
+    static let maxPending = 30
+    static let spacing: TimeInterval = 1
+    typealias Publish = (ClearRequest, @escaping (ClearOutcome) -> Void) -> Void
+    var schedule: (TimeInterval, @escaping () -> Void) -> Void = { DispatchQueue.main.asyncAfter(deadline: .now() + $0, execute: $1) }
+    var now: () -> Date = Date.init
+    private struct Item {
+        let request: ClearRequest; let publish: Publish; let first: Bool; let done: (Bool) -> Void
+        var server: String { normalizeBaseUrl(request.baseUrl) }
+    }
+    private let lock = NSLock()
+    private var pending: [Item] = []
+    private var busy = false
+    private var lastStart = Date.distantPast
+    private var pausedUntil: [String: Date] = [:]
+
+    /// `first` puts these ahead of the backlog: a notification response holds iOS's completion
+    /// handler until its clear is sent, so it can't wait behind a topic's worth of clears.
+    func send(_ requests: [ClearRequest], via publish: @escaping Publish, first: Bool = false,
+              done: @escaping (ClearRequest, Bool) -> Void) {
+        lock.lock()
+        let items = requests.map { request in Item(request: request, publish: publish, first: first) { done(request, $0) } }
+        if first { pending.insert(contentsOf: items, at: 0) } else { pending += items }
+        var overflow: [Item] = []
+        var index = 0
+        while pending.count > Self.maxPending, index < pending.count {
+            if pending[index].first { index += 1 } else { overflow.append(pending.remove(at: index)) }
+        }
+        lock.unlock()
+        overflow.forEach { $0.done(false) }
+        pump()
+    }
+
+    private func pump() {
+        lock.lock()
+        let now = now()
+        pausedUntil = pausedUntil.filter { $0.value > now }
+        let paused = pending.filter { pausedUntil[$0.server] != nil }
+        pending.removeAll { pausedUntil[$0.server] != nil }
+        guard !busy, !pending.isEmpty else { lock.unlock(); paused.forEach { $0.done(false) }; return }
+        busy = true
+        let wait = lastStart.addingTimeInterval(Self.spacing).timeIntervalSince(now)
+        if wait > 0 {
+            lock.unlock()
+            paused.forEach { $0.done(false) }
+            schedule(wait) { [self] in lock.lock(); busy = false; lock.unlock(); pump() }
+            return
+        }
+        let item = pending.removeFirst()
+        lastStart = now
+        lock.unlock()
+        paused.forEach { $0.done(false) }
+        item.publish(item.request) { [self] outcome in
+            lock.lock()
+            busy = false
+            var dropped: [Item] = []
+            if case .rateLimited(let retryAfter) = outcome {
+                pausedUntil[item.server] = self.now().addingTimeInterval(min(max(retryAfter, 1), 3600))
+                dropped = pending.filter { $0.server == item.server }
+                pending.removeAll { $0.server == item.server }
+            }
+            lock.unlock()
+            item.done(outcome == .sent)
+            dropped.forEach { $0.done(false) }
+            pump()
+        }
     }
 }
 

@@ -63,7 +63,8 @@ class Store: ObservableObject {
     /// `credentialStore`.
     var topicSecrets: TopicSecretStoring
     /// Only local read actions call this; remote ingestion never publishes.
-    var clearPublisher: (ClearRequest, @escaping (Bool) -> Void) -> Void = { ApiService.shared.action($0, completion: $1) }
+    var clearPublisher: ClearPacer.Publish = { ApiService.shared.action($0, completion: $1) }
+    var clearPacer = ClearPacer()
     var wakePublisher: (String, @escaping () -> Void) -> Void = { ApiService.shared.wake(topic: $0, completion: $1) }
     var notificationRemover: (SequenceRemoval) -> Void = { $0.removeDelivered() }
     /// Whether a missing cached key may be re-derived from the password (PBKDF2). Off in the
@@ -497,7 +498,7 @@ class Store: ObservableObject {
             guard let notifications = try? context.fetch(request), !notifications.isEmpty else {
                 return // don't churn the context or bump observers for a no-op
             }
-            let clears = read ? notifications.compactMap { clearRequest(for: $0) } : []
+            let clears = read ? notifications.sorted { $0.time > $1.time }.compactMap { clearRequest(for: $0) } : []
             for notification in notifications {
                 notification.read = read
             }
@@ -553,7 +554,7 @@ class Store: ObservableObject {
             unread.forEach { $0.read = true }
             do {
                 try context.save()
-                sendActions(requests, completion: completion)
+                sendActions(requests, first: true, completion: completion)
             } catch {
                 rollbackAndRefresh()
                 completion()
@@ -586,26 +587,29 @@ class Store: ObservableObject {
                             user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore))
     }
 
-    /// One read action may clear many sequences. Finish its real-server requests first,
-    /// then wake each successful self-hosted topic once. Incoming ingestion never calls this.
-    private func sendActions(_ requests: [ClearRequest], completion: (() -> Void)? = nil) {
+    /// One read action may clear many sequences (newest first). Every banner goes locally; only the
+    /// newest `ClearPacer.perAction` go to the server, paced. Finish those requests first, then
+    /// wake each successful self-hosted topic once. Incoming ingestion never calls this.
+    private func sendActions(_ requests: [ClearRequest], first: Bool = false, completion: (() -> Void)? = nil) {
         guard !requests.isEmpty else { completion?(); return }
-        let publish = clearPublisher
         let wake = wakePublisher
         let lock = NSLock()
         let group = DispatchGroup()
         var topics: Set<String> = []
-        for request in requests {
+        var seen: Set<String> = []
+        let unique = requests.filter { seen.insert("\($0.baseUrl)|\($0.topic)|\($0.sequence)").inserted }
+        for request in unique {
             notificationRemover(SequenceRemoval(baseUrl: request.baseUrl, topic: request.topic, sequence: request.sequence))
-            group.enter()
-            publish(request) { succeeded in
-                if succeeded && normalizeBaseUrl(request.baseUrl) != normalizeBaseUrl(Config.appBaseUrl) {
-                    lock.lock()
-                    topics.insert(firebaseTopic(baseUrl: request.baseUrl, topic: request.topic))
-                    lock.unlock()
-                }
-                group.leave()
+        }
+        let capped = Array(unique.prefix(ClearPacer.perAction))
+        capped.forEach { _ in group.enter() }
+        clearPacer.send(capped, via: clearPublisher, first: first) { request, succeeded in
+            if succeeded && normalizeBaseUrl(request.baseUrl) != normalizeBaseUrl(Config.appBaseUrl) {
+                lock.lock()
+                topics.insert(firebaseTopic(baseUrl: request.baseUrl, topic: request.topic))
+                lock.unlock()
             }
+            group.leave()
         }
         group.notify(queue: .main) {
             let wakes = DispatchGroup()
