@@ -40,7 +40,7 @@ struct SubscriptionManager {
             }) else { continue }
             let finish: (Bool, Error?) -> Void = { saved, error in
                 polling.finish(request, outcome: PollOutcome(succeeded: saved, newMessages: [],
-                    failure: saved ? nil : PollFailure.classify(error)), retryAfter: (error as? PollHTTPError)?.retryAfter)
+                    failure: saved ? nil : PollFailure.classify(error)), retryAfter: (error as? PollHTTPError)?.retryAfter, retryCondition: (error as? PollHTTPError)?.retryCondition)
             }
             fetch(request) { messages, error in
                 guard let messages, store.save(notificationsFromMessages: messages, polledWith: request) != nil else {
@@ -143,7 +143,7 @@ struct SubscriptionManager {
             guard let messages = messages else {
                 Log.e(tag, "Polling failed", error)
                 polling.finish(request, outcome: PollOutcome(succeeded: false, newMessages: [], failure: PollFailure.classify(error)),
-                               retryAfter: (error as? PollHTTPError)?.retryAfter)
+                               retryAfter: (error as? PollHTTPError)?.retryAfter, retryCondition: (error as? PollHTTPError)?.retryCondition)
                 return
             }
             // Report only what was actually stored. The server can re-deliver messages we already

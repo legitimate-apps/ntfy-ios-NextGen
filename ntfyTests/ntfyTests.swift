@@ -7392,29 +7392,22 @@ final class SharedDeliveryBrakeTests: XCTestCase {
         XCTAssertFalse(LaunchExperience.topicsHealthy())
     }
 
-    func testPoll429StopsClearsAndClear429StopsPolls() {
+    func testPollAndClearRefusalsOnlyPauseTheirOwnBudget() {
         let date = Date(timeIntervalSince1970: 1_700_000_000)
         let cooldown = ServerCooldown(defaults: nil, now: { date })
-        let poller = PollCoordinator(cooldown: cooldown, now: { date })
+        cooldown.limit(server: "https://shared.example.org", retryAfter: "120")
         let pacer = ClearPacer(cooldown: cooldown)
         pacer.now = { date }
-        let store = Store(inMemory: true)
-        let topic = store.saveSubscription(baseUrl: "https://shared.example.org", topic: "one")
-        let request = store.pollRequest(for: topic)!
-        XCTAssertTrue(poller.begin(request, manual: false) { _ in })
-        poller.finish(request, outcome: PollOutcome(succeeded: false, newMessages: [], failure: .rateLimited), retryAfter: "120")
+        let clear = ClearRequest(baseUrl: "https://shared.example.org", topic: "one", sequence: "s1", user: nil)
         var sent = 0
-        let clear = ClearRequest(baseUrl: request.baseUrl, topic: "one", sequence: "s1", user: nil)
-        pacer.send([clear], via: { _, done in sent += 1; done(.sent) }) { _, success in XCTAssertFalse(success) }
-        XCTAssertEqual(sent, 0)
-        let other = ClearRequest(baseUrl: "https://clear-shared.example.org", topic: "one", sequence: "s1", user: nil)
-        pacer.send([other], via: { _, done in done(.rateLimited(retryAfter: 600)) }) { _, _ in }
-        let otherTopic = store.saveSubscription(baseUrl: other.baseUrl, topic: "two")
-        XCTAssertFalse(poller.begin(store.pollRequest(for: otherTopic)!, manual: false) {
-            XCTAssertFalse($0.attempted)
-            XCTAssertEqual($0.failure, .rateLimited)
-        })
-        XCTAssertEqual(cooldown.deadline(for: other.baseUrl), date.addingTimeInterval(600))
+        pacer.send([clear], via: { _, done in sent += 1; done(.sent) }) { _, success in XCTAssertTrue(success) }
+        XCTAssertEqual(sent, 1)
+        XCTAssertFalse(cooldown.claim(server: clear.baseUrl, manual: false))
+        let other = "https://clear-shared.example.org"
+        cooldown.limit(server: other, retryAfter: "600", kind: .clear)
+        XCTAssertTrue(cooldown.claim(server: other, manual: false))
+        XCTAssertFalse(cooldown.claim(server: other, manual: false, kind: .clearThrough))
+        XCTAssertEqual(cooldown.deadline(for: other, kind: .clear), date.addingTimeInterval(600))
     }
 }
 

@@ -9,6 +9,14 @@
 /* Begin PBXBuildFile section */
 		118B00010000000000000004 /* TopicLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000003 /* TopicLinkTests.swift */; };
 		118B00010000000000000002 /* TopicLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000001 /* TopicLink.swift */; };
+		BA1180000000000000000012 /* ServerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1180000000000000000011; };
+		118BEEF00000000000000002 /* RelayCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118CAFE00000000000000002 /* RelayCheckTests.swift */; };
+		118BEEF00000000000000001 /* RelayCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118CAFE00000000000000001 /* RelayCheck.swift */; };
+        C11800010000000000000001 /* ClearThrough.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11800010000000000000003 /* ClearThrough.swift */; };
+        C11800010000000000000002 /* ClearThrough.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11800010000000000000003 /* ClearThrough.swift */; };
+        C11800010000000000000004 /* ClearThroughTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C11800010000000000000005 /* ClearThroughTests.swift */; };
+		BA1180000000000000000002 /* ServerCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1180000000000000000001; };
+		BA1180000000000000000003 /* ServerCapabilities.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1180000000000000000001; };
         A18000110000000000000003 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
         A18000120000000000000001 /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000120000000000000002 /* RetentionSettingsView.swift */; };
         A18000110000000000000001 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
@@ -140,6 +148,12 @@
 /* Begin PBXFileReference section */
 		118B00010000000000000003 /* TopicLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLinkTests.swift; sourceTree = "<group>"; };
 		118B00010000000000000001 /* TopicLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLink.swift; sourceTree = "<group>"; };
+		BA1180000000000000000011 /* ServerContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerContractTests.swift; sourceTree = "<group>"; };
+		118CAFE00000000000000002 /* RelayCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayCheckTests.swift; sourceTree = "<group>"; };
+		118CAFE00000000000000001 /* RelayCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayCheck.swift; sourceTree = "<group>"; };
+        C11800010000000000000003 /* ClearThrough.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearThrough.swift; sourceTree = "<group>"; };
+        C11800010000000000000005 /* ClearThroughTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ClearThroughTests.swift; sourceTree = "<group>"; };
+		BA1180000000000000000001 /* ServerCapabilities.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerCapabilities.swift; sourceTree = "<group>"; };
         A18000130000000000000001 /* Model 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 7.xcdatamodel"; sourceTree = "<group>"; };
         A18000120000000000000002 /* RetentionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionSettingsView.swift; sourceTree = "<group>"; };
         A18000110000000000000002 /* Retention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Retention.swift; sourceTree = "<group>"; };
@@ -409,12 +423,14 @@
 		9474F210283326E000CDE4DD /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				BA1180000000000000000001 /* ServerCapabilities.swift */,
 				9474F20E283326C500CDE4DD /* ApiService.swift */,
 				94CD1969283E666900973B93 /* EmojiManager.swift */,
 				9474F211283327C200CDE4DD /* Helpers.swift */,
 				29EE00032FD0000100F927E4 /* TopicEncryptionSnippets.swift */,
 				29EE00022FD0000100F927E4 /* TopicEncryption+Message.swift */,
 				29EE00012FD0000100F927E4 /* TopicEncryption.swift */,
+				118CAFE00000000000000001 /* RelayCheck.swift */,
 				94A3F7C928386B2100C48E79 /* Config.swift */,
 				2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */,
 				29E8419D2FB417EA00F927E4 /* AttachmentFileStore.swift */,
@@ -424,6 +440,7 @@
 				94867142283EC9950093C7A4 /* Actions.swift */,
 				948671462841B0B20093C7A4 /* NotificationContent.swift */,
 				F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */,
+                C11800010000000000000003 /* ClearThrough.swift */,
 				948671492841D0CE0093C7A4 /* ActionExecutor.swift */,
 				2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */,
 			);
@@ -453,7 +470,10 @@
 			isa = PBXGroup;
 			children = (
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
-                A18000010000000000000002 /* RetentionTests.swift */,
+                BA1180000000000000000011 /* ServerContractTests.swift */,
+				A18000010000000000000002 /* RetentionTests.swift */,
+				118CAFE00000000000000002 /* RelayCheckTests.swift */,
+                C11800010000000000000005 /* ClearThroughTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
 				2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */,
 				118B00010000000000000003 /* TopicLinkTests.swift */,
@@ -614,12 +634,14 @@
 				29C6D8312FBD1B750057C9AC /* DownloadDelegate.swift in Sources */,
 				2939B21A2F8F293C00A52946 /* SettingsView.swift in Sources */,
 				A70264F2C0E04C0ABEB04DE4 /* NotificationStatusView.swift in Sources */,
+				118BEEF00000000000000001 /* RelayCheck.swift in Sources */,
 				2939B21B2F8F293C00A52946 /* UserTableView.swift in Sources */,
 				E27008102AF0F64B006E33BA /* SubscriptionsObservable.swift in Sources */,
 				02024E60283D7CBB0064224A /* Extensions.swift in Sources */,
 				20158E94B11143EDB4B529A7 /* LazyView.swift in Sources */,
 				948671472841B0B20093C7A4 /* NotificationContent.swift in Sources */,
 				E2DA5F6493F7477AA23CFA63 /* DeliveryHealth.swift in Sources */,
+                C11800010000000000000001 /* ClearThrough.swift in Sources */,
 				9474F1F92830835400CDE4DD /* Store.swift in Sources */,
 				9474F212283327C200CDE4DD /* Helpers.swift in Sources */,
 				9474F217283531A300CDE4DD /* Log.swift in Sources */,
@@ -644,6 +666,7 @@
 				9474F1C1282F2AA700CDE4DD /* AppMain.swift in Sources */,
 				118B00010000000000000002 /* TopicLink.swift in Sources */,
 				94867143283EC9960093C7A4 /* Actions.swift in Sources */,
+				BA1180000000000000000002 /* ServerCapabilities.swift in Sources */,
 				9474F20F283326C500CDE4DD /* ApiService.swift in Sources */,
 				94B736D7284AF9BE003D69FB /* MainView.swift in Sources */,
 				9474F1F72830830700CDE4DD /* ntfy.xcdatamodeld in Sources */,
@@ -675,6 +698,7 @@
 				9474F1E7282F3FFD00CDE4DD /* NotificationService.swift in Sources */,
 				94CD196B283E666900973B93 /* EmojiManager.swift in Sources */,
 				94867144283ECD370093C7A4 /* Actions.swift in Sources */,
+				BA1180000000000000000003 /* ServerCapabilities.swift in Sources */,
 				94867145284058C60093C7A4 /* ApiService.swift in Sources */,
 				2968F2AE2FBA530200480665 /* AttachmentProgressState.swift in Sources */,
 				9474F2052831D51500CDE4DD /* Store.swift in Sources */,
@@ -687,6 +711,7 @@
 				94A3F7CB28386B2100C48E79 /* Config.swift in Sources */,
 				948671482841B1430093C7A4 /* NotificationContent.swift in Sources */,
 				0D9D3DDEF2C741D39A7F355C /* DeliveryHealth.swift in Sources */,
+                C11800010000000000000002 /* ClearThrough.swift in Sources */,
 				9474F2142834755E00CDE4DD /* Subscription.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -696,7 +721,10 @@
 			buildActionMask = 2147483647;
 			files = (
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
-                A18000010000000000000001 /* RetentionTests.swift in Sources */,
+                BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
+				A18000010000000000000001 /* RetentionTests.swift in Sources */,
+				118BEEF00000000000000002 /* RelayCheckTests.swift in Sources */,
+                C11800010000000000000004 /* ClearThroughTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
 				2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */,
 				118B00010000000000000004 /* TopicLinkTests.swift in Sources */,

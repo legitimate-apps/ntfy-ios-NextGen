@@ -83,6 +83,15 @@ struct ActionExecutor {
 
     private static func perform(_ request: URLRequest, action: Action, baseUrl: String?,
                                 credentialStore: CredentialStoring, attempt: Int) {
+        let server = cooldownServer(for: request, baseUrl: baseUrl)
+        guard let permit = ServerCooldown.shared.claimAttempt(server: server, manual: attempt == 1, kind: .action) else {
+            let seconds = max(1, Int(ceil(ServerCooldown.shared.deadline(for: server, kind: .action).timeIntervalSinceNow)))
+            let detail = ServerCooldown.shared.hasNonTimeRefusal(server: server, kind: .action)
+                ? "The server or action request must change before trying again."
+                : "The server is limiting this action. Try again in \(seconds) seconds."
+            notifyActionResult(action, success: false, detail: detail)
+            return
+        }
         let method = request.httpMethod ?? "POST"
         Log.d(tag, "Performing HTTP \(method) \(request.url?.absoluteString ?? "?") (attempt \(attempt))")
 
@@ -94,6 +103,12 @@ struct ActionExecutor {
             session = .shared
         }
         session.dataTask(with: request) { (data, response, error) in
+            if let http = response as? HTTPURLResponse, http.statusCode == 429,
+               RetryDirective.parse(condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
+                                    retryAfter: http.value(forHTTPHeaderField: "Retry-After")) != nil {
+                ServerCooldown.shared.limit(server: server, retryAfter: http.value(forHTTPHeaderField: "Retry-After"),
+                    condition: http.value(forHTTPHeaderField: "Retry-After-Condition"), kind: .action)
+            }
             if let delay = retryDelay(response: response, error: error, attempt: attempt) {
                 Log.w(self.tag, "HTTP \(method) action not processed, retrying in \(delay)s")
                 DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
@@ -103,6 +118,7 @@ struct ActionExecutor {
             }
             switch httpActionResult(response: response, error: error) {
             case .success:
+                ServerCooldown.shared.succeeded(server: server, attempt: permit)
                 Log.d(self.tag, "HTTP \(method) action succeeded", response)
                 recordOutcome(actionId: action.id, success: true)
                 notifyActionResult(action, success: true, detail: nil)
@@ -183,10 +199,30 @@ struct ActionExecutor {
             return backoff
         }
         guard let http = response as? HTTPURLResponse, [429, 503].contains(http.statusCode) else { return nil }
+        if http.statusCode == 429, let directive = RetryDirective.parse(
+            condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
+            retryAfter: http.value(forHTTPHeaderField: "Retry-After")) {
+            switch directive {
+            case .time(let delay): return delay <= maxRetryDelay ? max(backoff, delay) : nil
+            case .stateChange, .requestChange: return nil
+            }
+        }
         if let header = http.value(forHTTPHeaderField: "Retry-After"), let seconds = TimeInterval(header.trimmingCharacters(in: .whitespaces)) {
             return min(max(seconds, 0), maxRetryDelay)
         }
         return backoff
+    }
+
+    /// An action can target a different host than its notification. Charge only its destination.
+    static func cooldownServer(for request: URLRequest, baseUrl: String?) -> String {
+        guard let url = request.url, var origin = URLComponents(url: url, resolvingAgainstBaseURL: false) else { return "" }
+        if let baseUrl, let base = URLComponents(string: baseUrl),
+           base.scheme?.lowercased() == origin.scheme?.lowercased(), base.host?.lowercased() == origin.host?.lowercased(),
+           (base.port ?? (base.scheme == "https" ? 443 : 80)) == (origin.port ?? (origin.scheme == "https" ? 443 : 80)) {
+            return normalizeBaseUrl(baseUrl)
+        }
+        origin.path = ""; origin.query = nil; origin.fragment = nil; origin.user = nil; origin.password = nil
+        return origin.string ?? ""
     }
 
     static func makeHTTPRequest(
@@ -221,6 +257,11 @@ struct ActionExecutor {
             return .success
         }
         guard (200..<300).contains(http.statusCode) else {
+            if http.statusCode == 429, case .time(let seconds) = RetryDirective.parse(
+                condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
+                retryAfter: http.value(forHTTPHeaderField: "Retry-After")) {
+                return .failure("The server is limiting this action. Try again in \(Int(ceil(seconds))) seconds.")
+            }
             return .failure("HTTP \(http.statusCode)")
         }
         return .success

@@ -72,7 +72,12 @@ class Store: ObservableObject {
     /// `credentialStore`.
     var topicSecrets: TopicSecretStoring
     /// Only local read actions call this; remote ingestion never publishes.
-    var clearPublisher: ClearPacer.Publish = { ApiService.shared.action($0, completion: $1) }
+    var clearPublisher: ClearPacer.Publish = { ApiService.shared.action($0, completion: $1) } {
+        // An injected legacy transport retains the synchronous 1.17 test seam. Tests of the
+        // extension explicitly install their own coordinator after setting this publisher.
+        didSet { clearThrough = nil }
+    }
+    var clearThrough: ClearThroughCoordinator? = ClearThroughCoordinator()
     var clearPacer = ClearPacer(cooldown: .shared)
     var wakePublisher: (String, @escaping () -> Void) -> Void = { ApiService.shared.wake(topic: $0, completion: $1) }
     var notificationBatchRemover: ([SequenceRemoval]) -> Void = SequenceRemoval.removeDelivered
@@ -566,6 +571,7 @@ class Store: ObservableObject {
                 let newest = read ? try context.fetch(request) : []
                 let clears = newest.compactMap { clearRequest(for: $0) }
                 let throughTime = newest.first?.time
+                let bulkIntent = read ? clearThroughIntent(newest: newest, fallback: clears, subscription: subscription, predicate: predicate) : nil
                 if context.hasChanges { try context.save() }
                 let update = NSBatchUpdateRequest(entityName: "Notification")
                 update.predicate = predicate
@@ -580,7 +586,19 @@ class Store: ObservableObject {
                     topicNotificationRemover(base, topic, throughTime, started)
                 }
                 if !ids.isEmpty { NotificationCenter.default.post(name: Self.didChangeRemotely, object: nil) }
-                sendActions(clears)
+                if let bulkIntent, let clearThrough {
+                    let poll = PollRequest(subscriptionID: subscription.objectID, baseUrl: bulkIntent.boundary.baseUrl,
+                        topicUrl: topicUrl(baseUrl: bulkIntent.boundary.baseUrl, topic: bulkIntent.boundary.topic), since: nil, user: bulkIntent.boundary.user)
+                    clearThrough.send(bulkIntent, storeMessages: { [weak self] messages in
+                        self?.save(notificationsFromMessages: messages, polledWith: poll) != nil
+                    }) { [weak self] result in
+                        switch result {
+                        case .fallback: self?.sendActions(clears)
+                        case .sent: self?.wakeAfterBulk(bulkIntent.boundary)
+                        case .deferred: break
+                        }
+                    }
+                } else { sendActions(clears) }
             } catch {
                 Log.w(Store.tag, "Cannot mark notifications read", error)
                 rollbackAndRefresh()
@@ -689,7 +707,38 @@ class Store: ObservableObject {
         guard let subscription = notification.subscription, let baseUrl = subscription.baseUrl,
               let topic = subscription.topic, let id = notification.id else { return nil }
         return ClearRequest(baseUrl: baseUrl, topic: topic, sequence: notification.sequenceID ?? id,
-                            user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore))
+                            user: try? fetchUser(baseUrl: baseUrl)?.toBasicUser(credentialStore: credentialStore), messageId: id)
+    }
+
+    /// Materialize only the legacy fallback cap. Retain bounded metadata for EVERY newly read
+    /// row, so a poll containing ten clears cannot incorrectly settle a larger topic-wide intent.
+    private func clearThroughIntent(newest: [Notification], fallback: [ClearRequest], subscription: Subscription,
+                                    predicate: NSPredicate) -> ClearThroughIntent? {
+        guard clearThrough != nil, let boundary = fallback.first, ClearThroughCoordinator.valid(boundary),
+              let time = newest.first?.time else { return nil }
+        let request = NSFetchRequest<NSDictionary>(entityName: "Notification")
+        request.resultType = .dictionaryResultType
+        request.propertiesToFetch = ["id", "sequenceID", "time"]
+        // Include previously read rows too: the server clears every eligible sequence through
+        // the boundary, and all such versions must already be stored and read on this device.
+        request.predicate = NSCompoundPredicate(orPredicateWithSubpredicates: [predicate, NSPredicate(format: "subscription == %@ AND read == YES", subscription)])
+        request.fetchLimit = 1001
+        guard let rows = try? context.fetch(request), rows.count <= 1000 else { return nil }
+        var candidates: [ClearRequest] = []
+        let known = rows.compactMap { row -> ClearRequest? in
+            guard let id = row["id"] as? String else { return nil }
+            let snapshot = ClearRequest(baseUrl: boundary.baseUrl, topic: boundary.topic, sequence: row["sequenceID"] as? String ?? id,
+                                        user: boundary.user, messageId: id)
+            if (row["time"] as? NSNumber)?.int64Value == time { candidates.append(snapshot) }
+            return snapshot
+        }
+        guard !candidates.isEmpty, known.count == rows.count else { return nil }
+        return ClearThroughIntent(boundary: boundary, candidates: candidates, known: known)
+    }
+
+    private func wakeAfterBulk(_ request: ClearRequest) {
+        guard normalizeBaseUrl(request.baseUrl) != normalizeBaseUrl(Config.appBaseUrl) else { return }
+        wakePublisher(firebaseTopic(baseUrl: request.baseUrl, topic: request.topic)) {}
     }
 
     /// One read action may clear many sequences (newest first). Every banner goes locally; only the
@@ -917,7 +966,10 @@ class Store: ObservableObject {
         }
         // The NSE reconciliation caller uses this save too, including successful empty polls.
         // Publish after saving, so another process never sees recovery before the content lands.
-        if newMessages != nil { DeliveryReceipt.record(topicUrl: request.topicUrl) }
+        if newMessages != nil {
+            DeliveryReceipt.record(topicUrl: request.topicUrl)
+            if let topic = messages.first?.topic { clearThrough?.reconcile(baseUrl: request.baseUrl, topic: topic, messages: messages) }
+        }
         return newMessages
     }
 

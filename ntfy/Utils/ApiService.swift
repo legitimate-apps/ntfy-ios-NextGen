@@ -40,7 +40,8 @@ class ApiService {
             guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
                 let http = response as? HTTPURLResponse
                 completionHandler(nil, PollHTTPError(status: http?.statusCode ?? 0,
-                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After")))
+                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After"),
+                    retryCondition: http?.value(forHTTPHeaderField: "Retry-After-Condition")))
                 return
             }
             guard let data = data else {
@@ -81,6 +82,10 @@ class ApiService {
                 Log.w(self.tag, "Sequence action failed; keeping local state (HTTP \(status))")
             }
             if status == 429 {
+                if let directive = RetryDirective.parse(condition: http?.value(forHTTPHeaderField: "Retry-After-Condition"),
+                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After")) {
+                    completion(.conditionLimited(directive)); return
+                }
                 completion(.rateLimited(retryAfter: PollTiming.retryDelay(http?.value(forHTTPHeaderField: "Retry-After"), now: Date()) ?? 60))
             } else {
                 completion((200..<300).contains(status) ? .sent : .failed)
@@ -119,6 +124,7 @@ class ApiService {
         tags: [String] = [],
         encryptionKey: Data? = nil,
         session: URLSession? = nil,
+        cooldown: ServerCooldown = .shared,
         completionHandler: (() -> Void)? = nil,
         failureHandler: ((PublishError) -> Void)? = nil
     ) {
@@ -137,8 +143,9 @@ class ApiService {
             failureHandler?(error)
             return
         }
+        let baseUrl = subscription.baseUrl ?? ""
         Log.d(tag, "Publishing to \(request.url?.absoluteString ?? "?")\(encryptionKey == nil ? "" : " (end-to-end encrypted)")")
-        runOneShot(request, timeout: 10, baseUrl: subscription.baseUrl ?? "?", session: session) { (data, response, error) in
+        runOneShot(request, timeout: 10, baseUrl: baseUrl, session: session) { (data, response, error) in
             guard error == nil else {
                 Log.e(self.tag, "Error publishing message", error!)
                 failureHandler?(.network(error!.localizedDescription))
@@ -147,6 +154,12 @@ class ApiService {
             guard let httpResponse = response as? HTTPURLResponse,
                   (200..<300).contains(httpResponse.statusCode) else {
                 let status = (response as? HTTPURLResponse)?.statusCode
+                if let http = response as? HTTPURLResponse, http.statusCode == 429,
+                   RetryDirective.parse(condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
+                                        retryAfter: http.value(forHTTPHeaderField: "Retry-After")) != nil {
+                    cooldown.limit(server: baseUrl, retryAfter: http.value(forHTTPHeaderField: "Retry-After"),
+                        condition: http.value(forHTTPHeaderField: "Retry-After-Condition"), kind: .publish)
+                }
                 Log.e(self.tag, "Publishing message failed with HTTP status \(status.map { String($0) } ?? "<missing>")")
                 failureHandler?(.http(status))
                 return
@@ -285,7 +298,8 @@ class ApiService {
             guard let httpResponse = response as? HTTPURLResponse, (200..<300).contains(httpResponse.statusCode) else {
                 let http = response as? HTTPURLResponse
                 completionHandler(nil, PollHTTPError(status: http?.statusCode ?? 0,
-                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After")))
+                    retryAfter: http?.value(forHTTPHeaderField: "Retry-After"),
+                    retryCondition: http?.value(forHTTPHeaderField: "Retry-After-Condition")))
                 return
             }
             guard let data = data else {
@@ -399,7 +413,7 @@ struct AuthCheckResponse: Codable {
 }
 
 enum ClearOutcome: Equatable {
-    case sent, failed, rateLimited(retryAfter: TimeInterval)
+    case sent, failed, rateLimited(retryAfter: TimeInterval), conditionLimited(RetryDirective)
 }
 
 /// Read-state clears share the server's per-IP request bucket (ntfy-me.com: 120 burst, one token
@@ -434,6 +448,7 @@ final class ClearPacer {
     func send(_ requests: [ClearRequest], via publish: @escaping Publish, first: Bool = false,
               done: @escaping (ClearRequest, Bool) -> Void) {
         lock.lock()
+        for request in requests { cooldown.requestChanged(server: request.baseUrl, kind: .clear) }
         let items = requests.map { request in Item(request: request, publish: publish, first: first) { done(request, $0) } }
         if first { pending.insert(contentsOf: items, at: 0) } else { pending += items }
         var overflow: [Item] = []
@@ -449,8 +464,8 @@ final class ClearPacer {
     private func pump() {
         lock.lock()
         let now = now()
-        let paused = pending.filter { !cooldown.claim(server: $0.server, manual: false) }
-        pending.removeAll { !cooldown.claim(server: $0.server, manual: false) }
+        let paused = pending.filter { !cooldown.claim(server: $0.server, manual: cooldown.hasNonTimeRefusal(server: $0.server, kind: .clear), kind: .clear, consumingProbe: false) }
+        pending.removeAll { !cooldown.claim(server: $0.server, manual: cooldown.hasNonTimeRefusal(server: $0.server, kind: .clear), kind: .clear, consumingProbe: false) }
         guard !busy, !pending.isEmpty else { lock.unlock(); paused.forEach { $0.done(false) }; return }
         busy = true
         let wait = lastStart.addingTimeInterval(Self.spacing).timeIntervalSince(now)
@@ -461,6 +476,15 @@ final class ClearPacer {
             return
         }
         let item = pending.removeFirst()
+        guard let attempt = cooldown.claimAttempt(server: item.server,
+            manual: cooldown.hasNonTimeRefusal(server: item.server, kind: .clear), kind: .clear) else {
+            busy = false
+            lock.unlock()
+            paused.forEach { $0.done(false) }
+            item.done(false)
+            pump()
+            return
+        }
         lastStart = now
         lock.unlock()
         paused.forEach { $0.done(false) }
@@ -468,9 +492,19 @@ final class ClearPacer {
             lock.lock()
             busy = false
             var dropped: [Item] = []
+            if outcome == .sent { cooldown.succeeded(server: item.server, attempt: attempt) }
             if case .rateLimited(let retryAfter) = outcome {
                 let header = retryAfter.isFinite && retryAfter >= 0 ? String(Int(min(retryAfter, 3600))) : nil
-                cooldown.limit(server: item.server, retryAfter: header)
+                cooldown.limit(server: item.server, retryAfter: header, kind: .clear)
+                dropped = pending.filter { $0.server == item.server }
+                pending.removeAll { $0.server == item.server }
+            }
+            if case .conditionLimited(let directive) = outcome {
+                switch directive {
+                case .time(let delay): cooldown.limit(server: item.server, retryAfter: String(format: "%.0f", ceil(delay)), condition: "time", kind: .clear)
+                case .stateChange: cooldown.limit(server: item.server, retryAfter: nil, condition: "state-change", kind: .clear)
+                case .requestChange: cooldown.limit(server: item.server, retryAfter: nil, condition: "request-change", kind: .clear)
+                }
                 dropped = pending.filter { $0.server == item.server }
                 pending.removeAll { $0.server == item.server }
             }
@@ -488,4 +522,8 @@ struct ClearRequest {
     let topic: String
     let sequence: String
     let user: BasicUser?
+    let messageId: String?
+    init(baseUrl: String, topic: String, sequence: String, user: BasicUser?, messageId: String? = nil) {
+        self.baseUrl = baseUrl; self.topic = topic; self.sequence = sequence; self.user = user; self.messageId = messageId
+    }
 }

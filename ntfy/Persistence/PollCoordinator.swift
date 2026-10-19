@@ -109,7 +109,7 @@ final class PollCoordinator {
         return true
     }
 
-    func finish(_ request: PollRequest, outcome: PollOutcome, retryAfter: String?) {
+    func finish(_ request: PollRequest, outcome: PollOutcome, retryAfter: String?, retryCondition: String? = nil) {
         lock.lock()
         let key = request.subscriptionID.uriRepresentation().absoluteString
         var policy = timing[key] ?? PollTiming()
@@ -118,7 +118,7 @@ final class PollCoordinator {
         policy.record(failure: outcome.failure == .rateLimited ? nil : outcome.failure, retryAfter: nil, now: now())
         timing[key] = policy
         let attempt = attempts.removeValue(forKey: key)
-        if outcome.failure == .rateLimited { cooldown.limit(server: request.baseUrl, retryAfter: retryAfter) }
+        if outcome.failure == .rateLimited { cooldown.limit(server: request.baseUrl, retryAfter: retryAfter, condition: retryCondition) }
         else if outcome.succeeded, let attempt { cooldown.succeeded(server: request.baseUrl, attempt: attempt) }
         let waiting = callbacks.removeValue(forKey: key) ?? []
         lock.unlock()
