@@ -4,6 +4,17 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.18.0
+
+- Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new
+  topic has its server and name filled in, ready for you to tap Subscribe.
+- Marking a topic read can update your other devices with fewer requests on ntfy-me.com and
+  self-hosted servers that support it.
+- A server limit on sending no longer pauses message refreshes.
+- For self-hosted HTTPS topics, Settings → Notification status can check whether ntfy-me.com
+  receives forwarded wake-ups. It asks before sending one visible test message. This checks
+  forwarding, not delivery to your phone.
+
 ## 1.17.0
 
 - When notifications can't arrive, the app says so. The topic list shows a banner when notifications

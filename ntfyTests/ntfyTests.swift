@@ -6827,7 +6827,9 @@ final class LaunchExperiencePolicyTests: XCTestCase {
             XCTAssertTrue(result.entries.isEmpty)
             XCTAssertFalse(result.recordNow)
         }
-        let missing = LaunchExperiencePolicy.update(current: "1.18.0", lastSeen: current, hasSubscriptions: true)
+        // Keep this missing-entry fixture independent of which versions have since shipped.
+        let missing = LaunchExperiencePolicy.update(current: "1.18.0", lastSeen: current,
+                                                   hasSubscriptions: true, entries: [])
         XCTAssertTrue(missing.entries.isEmpty)
         XCTAssertTrue(missing.recordNow)
     }
