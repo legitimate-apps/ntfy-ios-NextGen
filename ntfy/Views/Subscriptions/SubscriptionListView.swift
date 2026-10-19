@@ -6,6 +6,7 @@ import UIKit
 
 struct SubscriptionListView: View {
     let tag = "SubscriptionList"
+    var linkRoute: TopicLinkRoute? = nil
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var delegate: AppDelegate
@@ -18,6 +19,7 @@ struct SubscriptionListView: View {
     @ObservedObject private var launchExperience = LaunchExperience.shared
     @Environment(\.scenePhase) private var scenePhase
     @State private var showingAddDialog = false
+    @State private var handledTopicLink = false
     /// Topics `RetiredDefaultServerMigration` moved to ntfy-me.com that the user hasn't been told about.
     @State private var movedTopicsNotice: [String] = []
     @State private var listVisible = false
@@ -55,7 +57,7 @@ struct SubscriptionListView: View {
             }
         }
         .task(id: scenePhase) {
-            guard scenePhase == .active else { return }
+            guard scenePhase == .active, linkRoute == nil else { return }
             launchExperience.prepare(hasSubscriptions: !(store.getSubscriptions() ?? []).isEmpty)
             do { try await Task.sleep(nanoseconds: 600_000_000) } catch { return }
             guard movedTopicsNotice.isEmpty, !showingAddDialog, !launchExperience.presentWhatsNew() else { return }
@@ -114,12 +116,23 @@ struct SubscriptionListView: View {
             }
         })
         .sheet(isPresented: $showingAddDialog) {
-            SubscriptionAddView(isShowing: $showingAddDialog)
+            SubscriptionAddView(isShowing: $showingAddDialog, topicLink: addTopicLink)
         }
         .onDisappear { listVisible = false }
         .onAppear {
             listVisible = true
-            movedTopicsNotice = RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults)
+            if let linkRoute, !handledTopicLink {
+                handledTopicLink = true
+                switch linkRoute {
+                case .add: showingAddDialog = true
+                case .open(let url):
+                    // Let the links mount before selecting one, including on a cold launch.
+                    DispatchQueue.main.async { delegate.selectedBaseUrl = url }
+                }
+            }
+            if linkRoute == nil {
+                movedTopicsNotice = RetiredDefaultServerMigration.pendingNoticeTopics(defaults: appGroupDefaults)
+            }
         }
         .alert(isPresented: Binding(
             get: { !movedTopicsNotice.isEmpty },
@@ -131,6 +144,11 @@ struct SubscriptionListView: View {
                 dismissButton: .default(Text("OK")) { dismissMovedTopicsNotice() }
             )
         }
+    }
+
+    private var addTopicLink: TopicLink? {
+        if case .add(let link) = linkRoute { return link }
+        return nil
     }
 
     private func dismissMovedTopicsNotice() {

@@ -4,6 +4,7 @@ struct SubscriptionAddView: View {
     private let tag = "SubscriptionAddView"
     
     @Binding var isShowing: Bool
+    private let topicLink: TopicLink?
     
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var delegate: AppDelegate
@@ -21,6 +22,14 @@ struct SubscriptionAddView: View {
     @State private var loginError: String?
     /// The topic URL just subscribed to, while the notification-permission explanation is showing.
     @State private var primingTopicUrl: String?
+
+    init(isShowing: Binding<Bool>, topicLink: TopicLink? = nil) {
+        self.topicLink = topicLink
+        _isShowing = isShowing
+        _topic = State(initialValue: topicLink?.topic ?? "")
+        _useAnother = State(initialValue: topicLink != nil)
+        _baseUrl = State(initialValue: topicLink == nil ? "" : TopicLink.baseURL)
+    }
 
     private var subscriptionManager: SubscriptionManager {
         return SubscriptionManager(store: store)
@@ -350,7 +359,10 @@ struct SubscriptionAddView: View {
     }
     
     private var serverFooterText: String {
-        Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
+        if topicLink != nil, selectedBaseUrl == TopicLink.baseURL {
+            return "This link uses ntfy-me.com. Review the topic above, then tap Subscribe to add it."
+        }
+        return Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
     }
 
     private var selectedBaseUrl: String {

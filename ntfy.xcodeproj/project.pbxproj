@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		118B00010000000000000004 /* TopicLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000003 /* TopicLinkTests.swift */; };
+		118B00010000000000000002 /* TopicLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000001 /* TopicLink.swift */; };
         A18000110000000000000003 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
         A18000120000000000000001 /* RetentionSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000120000000000000002 /* RetentionSettingsView.swift */; };
         A18000110000000000000001 /* Retention.swift in Sources */ = {isa = PBXBuildFile; fileRef = A18000110000000000000002 /* Retention.swift */; };
@@ -136,6 +138,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		118B00010000000000000003 /* TopicLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLinkTests.swift; sourceTree = "<group>"; };
+		118B00010000000000000001 /* TopicLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLink.swift; sourceTree = "<group>"; };
         A18000130000000000000001 /* Model 7.xcdatamodel */ = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 7.xcdatamodel"; sourceTree = "<group>"; };
         A18000120000000000000002 /* RetentionSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RetentionSettingsView.swift; sourceTree = "<group>"; };
         A18000110000000000000002 /* Retention.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Retention.swift; sourceTree = "<group>"; };
@@ -397,6 +401,7 @@
 			children = (
 				9474F1D1282F2D2C00CDE4DD /* AppDelegate.swift */,
 				9474F1C0282F2AA700CDE4DD /* AppMain.swift */,
+				118B00010000000000000001 /* TopicLink.swift */,
 			);
 			path = App;
 			sourceTree = "<group>";
@@ -451,6 +456,7 @@
                 A18000010000000000000002 /* RetentionTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
 				2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */,
+				118B00010000000000000003 /* TopicLinkTests.swift */,
 			);
 			name = ntfyTests;
 			path = ntfyTests;
@@ -636,6 +642,7 @@
 				9474F1FF28316ACE00CDE4DD /* Subscription.swift in Sources */,
 				94CD196A283E666900973B93 /* EmojiManager.swift in Sources */,
 				9474F1C1282F2AA700CDE4DD /* AppMain.swift in Sources */,
+				118B00010000000000000002 /* TopicLink.swift in Sources */,
 				94867143283EC9960093C7A4 /* Actions.swift in Sources */,
 				9474F20F283326C500CDE4DD /* ApiService.swift in Sources */,
 				94B736D7284AF9BE003D69FB /* MainView.swift in Sources */,
@@ -692,6 +699,7 @@
                 A18000010000000000000001 /* RetentionTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
 				2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */,
+				118B00010000000000000004 /* TopicLinkTests.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
