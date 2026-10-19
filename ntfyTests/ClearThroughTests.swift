@@ -5,6 +5,33 @@ import CoreData
 final class ClearThroughTests: XCTestCase {
     private let base = "https://bulk.example"
     private var coordinator: ClearThroughCoordinator!
+    private var store: Store!
+    private var api: ApiService!
+    // Hosted CI exhausted a two-second wait without a PUT during an 8.6-second test. Keep request/count
+    // assertions below; allow scheduler headroom instead of imposing a two-second UI deadline.
+    private let completionWatchdog: TimeInterval = 15
+
+    override func setUp() {
+        super.setUp()
+        let credentials = InMemoryCredentialStore()
+        credentials.setHTTPHeaders(["X-Test-Fixture": "isolated"], baseUrl: base)
+        api = ApiService(credentialStore: credentials)
+        store = Store(inMemory: true, credentialStore: credentials, topicSecrets: InMemoryTopicSecretStore())
+        store.saveNotificationRetention(.forever)
+        store.clearPublisher = { _, _ in XCTFail("unexpected individual clear") }
+        store.wakePublisher = { _, done in done() }
+        store.notificationRemover = { _ in }
+        store.notificationBatchRemover = { _ in }
+        store.topicNotificationRemover = { _, _, _, _ in }
+    }
+
+    override func tearDown() {
+        store.clearPublisher = { _, done in done(.failed) }
+        coordinator = nil
+        store = nil
+        api = nil
+        super.tearDown()
+    }
 
     private func clear(_ id: String = "AbCdEf123456", sequence: String = "opaque-sequence") -> ClearRequest {
         ClearRequest(baseUrl: base, topic: "test-topic", sequence: sequence,
@@ -21,7 +48,7 @@ final class ClearThroughTests: XCTestCase {
                       cooldown: ServerCooldown = ServerCooldown(defaults: nil),
                       transport: @escaping ClearThroughCoordinator.Transport) -> ClearThroughCoordinator {
         var needsPreflight = preflight
-        return ClearThroughCoordinator(cooldown: cooldown, discover: { _, _, done in done(ServerCapabilities(clearThrough: supported)) },
+        return ClearThroughCoordinator(api: api, cooldown: cooldown, discover: { _, _, done in done(ServerCapabilities(clearThrough: supported)) },
                                 invalidate: invalidate, transport: { request, done in
             if needsPreflight {
                 needsPreflight = false
@@ -42,6 +69,7 @@ final class ClearThroughTests: XCTestCase {
             XCTAssertEqual(request.url?.absoluteString, "https://bulk.example/test-topic/opaque-sequence/clear-through")
             XCTAssertEqual(request.value(forHTTPHeaderField: "X-NtfyMe-Through-ID"), "AbCdEf123456")
             XCTAssertEqual(request.value(forHTTPHeaderField: "Authorization"), self.clear().user?.toHeader())
+            XCTAssertEqual(request.value(forHTTPHeaderField: "X-Test-Fixture"), "isolated", "request construction uses fixture credentials too")
             XCTAssertEqual(request.httpBody?.count, 0)
             done(self.receipt(), self.response(request, status: 200), nil)
         }
@@ -49,7 +77,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .sent = result else { return XCTFail("bulk should succeed") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testUnsupportedDiscoveryRetainsLegacyFallbackWithoutBulkRequest() {
@@ -59,7 +87,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .fallback = result else { return XCTFail("stock should use individual clears") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func test404405InvalidateAnd413FallbackWithoutRetry() {
@@ -74,7 +102,7 @@ final class ClearThroughTests: XCTestCase {
                 XCTAssertEqual(sends, 1); XCTAssertEqual(invalidated, status == 413 ? 0 : 1)
                 finished.fulfill()
             }
-            wait(for: [finished], timeout: 2)
+            wait(for: [finished], timeout: completionWatchdog)
         }
     }
 
@@ -93,7 +121,7 @@ final class ClearThroughTests: XCTestCase {
                 if status == 429 { XCTAssertFalse(cooldown.claim(server: self.base, manual: false, kind: .clearThrough)) }
                 finished.fulfill()
             }
-            wait(for: [finished], timeout: 2)
+            wait(for: [finished], timeout: completionWatchdog)
         }
     }
 
@@ -110,7 +138,7 @@ final class ClearThroughTests: XCTestCase {
             XCTAssertEqual(methods, ["PUT", "GET", "PUT", "GET", "PUT", "GET"])
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testLostResponsePollSeesCommittedControlAndDoesNotPublishAgain() {
@@ -128,7 +156,7 @@ final class ClearThroughTests: XCTestCase {
                 XCTAssertEqual(methods, ["PUT", "GET"])
                 finished.fulfill()
             }
-            wait(for: [finished], timeout: 2)
+            wait(for: [finished], timeout: completionWatchdog)
         }
     }
 
@@ -145,7 +173,7 @@ final class ClearThroughTests: XCTestCase {
             XCTAssertEqual(methods, ["PUT", "GET", "PUT", "GET", "PUT", "GET"])
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testReconciliationPoll429StopsWithoutResending() {
@@ -160,7 +188,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .deferred = result else { return XCTFail("poll quota cannot cause fallback") }
             XCTAssertEqual(sends, 2); finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testEqualSecondBoundaryUsesLastKnownMessageInServerOrder() {
@@ -183,7 +211,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .sent = result else { return XCTFail("tie should resolve") }
             XCTAssertEqual(methods, ["GET", "PUT"]); finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testAbsentTieCandidatesFallbackInsteadOfGuessing() {
@@ -196,7 +224,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .fallback = result else { return XCTFail("missing candidates are not ordered") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testLatePollReconciliationRetainsSuccessCallbackAndReportsItOnlyOnce() {
@@ -223,7 +251,7 @@ final class ClearThroughTests: XCTestCase {
             case .fallback: XCTFail("lost-response intent must not fan out")
             }
         }
-        wait(for: [deferred, reconciled], timeout: 2)
+        wait(for: [deferred, reconciled], timeout: completionWatchdog)
         wait(for: [duplicate], timeout: 0.1)
         XCTAssertEqual(sends, 2)
         XCTAssertEqual(successes, 1)
@@ -231,7 +259,7 @@ final class ClearThroughTests: XCTestCase {
     }
 
     func testTopicReadCommitsLocallyWhileDiscoveryWaitsAndUsesOneBulkRequest() throws {
-        let store = Store.shared
+        let store = self.store!
         let sub = store.saveSubscription(baseUrl: base, topic: "test-topic")
         defer { store.delete(subscription: sub); store.clearThrough = nil }
         store.clearPublisher = { _, _ in XCTFail("advertised support uses one bulk request") }
@@ -243,7 +271,7 @@ final class ClearThroughTests: XCTestCase {
         let finished = expectation(description: "one bulk completed")
         var discovery: ((ServerCapabilities) -> Void)?
         var sends = 0
-        coordinator = ClearThroughCoordinator(cooldown: ServerCooldown(defaults: nil), discover: { _, _, done in
+        coordinator = ClearThroughCoordinator(api: api, cooldown: ServerCooldown(defaults: nil), discover: { _, _, done in
             discovery = done; discovering.fulfill()
         }, transport: { request, done in
             if request.httpMethod != "PUT" {
@@ -258,14 +286,14 @@ final class ClearThroughTests: XCTestCase {
         store.clearThrough = coordinator
         store.setRead(true, forSubscription: sub)
         XCTAssertEqual(store.unreadCount(baseUrl: base, topic: "test-topic"), 0)
-        wait(for: [discovering], timeout: 2)
+        wait(for: [discovering], timeout: completionWatchdog)
         XCTAssertEqual(sends, 0)
         discovery?(ServerCapabilities(clearThrough: true))
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
         XCTAssertEqual(sends, 1)
     }
     func testTopicIntentOverTenRowsDoesNotReconcileFromOnlyTenClearControls() throws {
-        let store = Store.shared
+        let store = self.store!
         let sub = store.saveSubscription(baseUrl: base, topic: "test-topic")
         defer { store.delete(subscription: sub); store.clearThrough = nil }
         store.clearPublisher = { _, _ in XCTFail("bulk retry cannot fan out") }
@@ -303,13 +331,13 @@ final class ClearThroughTests: XCTestCase {
         store.clearThrough = coordinator
         store.setRead(true, forSubscription: sub)
         XCTAssertEqual(store.unreadCount(baseUrl: base, topic: "test-topic"), 0)
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
         XCTAssertEqual(methods, ["PUT", "GET", "PUT"])
     }
 
     func testTopicReadStoresPreflightBeforeClearAndKeepsEarlierMissingMessageUnread() {
         let timestamp = Int64(Date().timeIntervalSince1970)
-        let store = Store.shared
+        let store = self.store!
         let sub = store.saveSubscription(baseUrl: base, topic: "test-topic")
         defer { store.delete(subscription: sub); store.clearThrough = nil }
         let fallback = expectation(description: "only known read row is cleared")
@@ -334,13 +362,13 @@ final class ClearThroughTests: XCTestCase {
         store.clearThrough = coordinator
         store.setRead(true, forSubscription: sub)
         XCTAssertEqual(store.unreadCount(baseUrl: base, topic: "test-topic"), 0)
-        wait(for: [polled], timeout: 2)
+        wait(for: [polled], timeout: completionWatchdog)
         guard let preflightRequest, let preflightDone else { wait(for: [fallback], timeout: 0.1); return }
         let earlier = Data(String(decoding: event(id: "Missed123456", sequence: "Missed123456"), as: UTF8.self).replacingOccurrences(of: "\"time\":100", with: "\"time\":\(timestamp - 10)").utf8)
         let boundary = Data(String(decoding: event(sequence: "AbCdEf123456"), as: UTF8.self)
             .replacingOccurrences(of: "\"time\":100", with: "\"time\":\(timestamp)").utf8)
         preflightDone(earlier + boundary, response(preflightRequest, status: 200), nil)
-        wait(for: [fallback], timeout: 2)
+        wait(for: [fallback], timeout: completionWatchdog)
         XCTAssertEqual(store.unreadCount(baseUrl: base, topic: "test-topic"), 1)
     }
 
@@ -354,7 +382,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .deferred = result else { return XCTFail("failed local save cannot authorize a clear") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func testReplacingIntentDuringDiscoveryRetainsBothLegacyFallbacks() {
@@ -362,7 +390,7 @@ final class ClearThroughTests: XCTestCase {
         let finished = expectation(description: "both fallback callbacks")
         finished.expectedFulfillmentCount = 2
         var discoveries: [(ServerCapabilities) -> Void] = []
-        coordinator = ClearThroughCoordinator(cooldown: ServerCooldown(defaults: nil), discover: { _, _, done in
+        coordinator = ClearThroughCoordinator(api: api, cooldown: ServerCooldown(defaults: nil), discover: { _, _, done in
             discoveries.append(done)
             if discoveries.count == 1 { discovering.fulfill() }
             else { done(.unsupported) }
@@ -371,12 +399,12 @@ final class ClearThroughTests: XCTestCase {
             guard case .fallback = result else { return XCTFail("unsent read intent needs legacy fallback") }
             finished.fulfill()
         }
-        wait(for: [discovering], timeout: 2)
+        wait(for: [discovering], timeout: completionWatchdog)
         coordinator.send(intent(clear("OtherA123456", sequence: "other"))) { result in
             guard case .fallback = result else { return XCTFail("stock needs legacy fallback") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
         discoveries.first?(.unsupported)
     }
 
@@ -390,7 +418,7 @@ final class ClearThroughTests: XCTestCase {
             guard case .fallback = result else { return XCTFail("oversize selection must retain legacy fallback") }
             finished.fulfill()
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: completionWatchdog)
     }
 
     func test413RemembersTopicForFiveMinutesWithoutMoreDiscoveryOrRequests() {
@@ -405,12 +433,12 @@ final class ClearThroughTests: XCTestCase {
             guard case .fallback = result else { return XCTFail("413 needs legacy fallback") }
             first.fulfill()
         }
-        wait(for: [first], timeout: 2)
+        wait(for: [first], timeout: completionWatchdog)
         coordinator.send(intent(clear("OtherA123456", sequence: "other"))) { result in
             guard case .fallback = result else { return XCTFail("oversized topic should remain on paced clears") }
             second.fulfill()
         }
-        wait(for: [second], timeout: 2)
+        wait(for: [second], timeout: completionWatchdog)
         XCTAssertEqual(sends, 1)
     }
 

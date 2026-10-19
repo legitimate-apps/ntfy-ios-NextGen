@@ -5,7 +5,7 @@ import UIKit
 import Security
 @testable import ntfy
 
-private final class InMemoryCredentialStore: CredentialStoring {
+final class InMemoryCredentialStore: CredentialStoring {
     var failWrites = false
     var passwordWrites: [String?] = []
     private var passwords: [String: String] = [:]
@@ -93,7 +93,7 @@ private final class InMemoryCredentialStore: CredentialStoring {
     }
 }
 
-private final class InMemoryTopicSecretStore: TopicSecretStoring {
+final class InMemoryTopicSecretStore: TopicSecretStoring {
     private var passwords: [String: String] = [:]
     private var keys: [String: Data] = [:]
     private(set) var readCount = 0
@@ -471,7 +471,8 @@ final class ntfyTests: XCTestCase {
         // Reading what another app left on the pasteboard asks for paste permission and stalls the run, so start empty.
         UIPasteboard.general.items = []
         addTeardownBlock { UIPasteboard.general.items = [] }
-        var action = Action(id: "copy", action: "copy", label: "Copy code",
+        // Each invocation is a new action, including same-process test repetitions.
+        var action = Action(id: "copy-\(UUID().uuidString)", action: "copy", label: "Copy code",
                             url: nil, method: nil, headers: nil, body: nil, clear: nil)
         action.value = "ABC-123"
         ActionExecutor.execute(action)
@@ -1318,20 +1319,35 @@ final class ntfyTests: XCTestCase {
 
     private let instantHash = "20428e863f19a4a3570462569f64a29c74c0eeddfbc043faa37f3c81d53707fc"
 
-    private func instantSubscription(baseUrl: String = "https://selfhost.invalid", topic: String = "instant") -> Subscription {
-        let sub = Store.shared.saveSubscription(baseUrl: baseUrl, topic: topic)
-        addTeardownBlock { Store.shared.delete(subscription: sub) }
+    private func instantSubscription(store: Store = .shared, baseUrl: String = "https://selfhost.invalid", topic: String = "instant") -> Subscription {
+        let sub = store.saveSubscription(baseUrl: baseUrl, topic: topic)
+        addTeardownBlock { store.delete(subscription: sub) }
         return sub
+    }
+
+    // Hosted CI's two-second wake wait failed in a test lasting 4.6 seconds.
+    // This is a scheduling watchdog, not an app response-time assertion; poll state is isolated.
+    private let silentWakeWatchdog: TimeInterval = 15
+
+    private func silentWakeStore() -> Store {
+        let store = Store(inMemory: true, credentialStore: credentialStore, topicSecrets: topicSecrets)
+        store.saveNotificationRetention(.forever)
+        store.notificationRemover = { _ in }
+        store.notificationBatchRemover = { _ in }
+        store.topicNotificationRemover = { _, _, _, _ in }
+        store.clearPublisher = { _, _ in XCTFail("a wake cannot publish a clear") }
+        store.wakePublisher = { _, _ in XCTFail("a wake cannot publish another wake") }
+        return store
     }
 
     private func instantMessage(_ id: String, sequence: String, event: String = "message", topic: String = "instant", time: Int64 = 100) -> Message {
         Message(id: id, time: time, event: event, topic: topic, message: "trusted source content", sequenceID: sequence)
     }
 
-    private func instantRows(_ sub: Subscription) -> [ntfy.Notification] {
+    private func instantRows(_ sub: Subscription, store: Store = .shared) -> [ntfy.Notification] {
         let request = ntfy.Notification.fetchRequest()
         request.predicate = NSPredicate(format: "subscription == %@", sub)
-        return (try? Store.shared.context.fetch(request)) ?? []
+        return (try? store.context.fetch(request)) ?? []
     }
 
     private func instantWake(topic: String? = nil, event: String = "message_clear") -> [AnyHashable: Any] {
@@ -1668,43 +1684,46 @@ final class ntfyTests: XCTestCase {
     }
 
     func testInstantSilentWakePollsOwnServerAndNeverAppliesPayload() {
-        let sub = instantSubscription()
-        Store.shared.save(notificationsFromMessages: [instantMessage("original", sequence: "job")], withSubscription: sub)
+        let store = silentWakeStore()
+        let sub = instantSubscription(store: store)
+        store.save(notificationsFromMessages: [instantMessage("original", sequence: "job")], withSubscription: sub)
         var requests: [PollRequest] = []
-        var manager = SubscriptionManager(store: Store.shared)
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         manager.fetch = { request, done in requests.append(request); done([], nil) }
         let done = expectation(description: "trusted empty poll succeeds")
         XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake()) { success in XCTAssertTrue(success); done.fulfill() })
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: silentWakeWatchdog)
         XCTAssertEqual(requests.count, 1)
         XCTAssertEqual(requests.first?.baseUrl, "https://selfhost.invalid")
         XCTAssertEqual(requests.first?.topicUrl, "https://selfhost.invalid/instant")
-        XCTAssertFalse(instantRows(sub).first?.read ?? true, "forged wake clear cannot mark the real sequence read")
-        XCTAssertEqual(instantRows(sub).first?.message, "trusted source content")
+        XCTAssertFalse(instantRows(sub, store: store).first?.read ?? true, "forged wake clear cannot mark the real sequence read")
+        XCTAssertEqual(instantRows(sub, store: store).first?.message, "trusted source content")
     }
 
     func testInstantSilentWakeAcceptsEventAndKnownHashWithoutMessageEnvelope() {
-        _ = instantSubscription()
-        var manager = SubscriptionManager(store: Store.shared)
+        let store = silentWakeStore()
+        _ = instantSubscription(store: store)
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         var fetched = 0
         manager.fetch = { _, done in fetched += 1; done([], nil) }
         let done = expectation(description: "metadata-only wake")
         XCTAssertTrue(manager.handleSilentWake(userInfo: ["event": "message_clear", "topic": instantHash]) { success in XCTAssertTrue(success); done.fulfill() })
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: silentWakeWatchdog)
         XCTAssertEqual(fetched, 1, "id, sequence and time are untrusted wake data, not required message input")
     }
 
     func testInstantSilentWakeAppliesTrustedClearDeleteUpdateWithoutSendLoop() throws {
-        let sub = instantSubscription()
-        Store.shared.saveUser(baseUrl: sub.baseUrl!, username: "reader", password: "source-password")
-        let user = try XCTUnwrap(Store.shared.getUser(baseUrl: sub.baseUrl!))
-        addTeardownBlock { Store.shared.delete(user: user) }
-        Store.shared.save(notificationsFromMessages: [instantMessage("a", sequence: "read"), instantMessage("b", sequence: "delete"), instantMessage("c", sequence: "update")], withSubscription: sub)
+        let store = silentWakeStore()
+        let sub = instantSubscription(store: store)
+        store.saveUser(baseUrl: sub.baseUrl!, username: "reader", password: "source-password")
+        let user = try XCTUnwrap(store.getUser(baseUrl: sub.baseUrl!))
+        addTeardownBlock { store.delete(user: user) }
+        store.save(notificationsFromMessages: [instantMessage("a", sequence: "read"), instantMessage("b", sequence: "delete"), instantMessage("c", sequence: "update")], withSubscription: sub)
         var removals: [SequenceRemoval] = []
-        Store.shared.notificationRemover = { removals.append($0) }
-        Store.shared.clearPublisher = { _, _ in XCTFail("received state cannot send clear") }
-        Store.shared.wakePublisher = { _, _ in XCTFail("received state cannot send wake") }
-        var manager = SubscriptionManager(store: Store.shared)
+        store.notificationRemover = { removals.append($0) }
+        store.clearPublisher = { _, _ in XCTFail("received state cannot send clear") }
+        store.wakePublisher = { _, _ in XCTFail("received state cannot send wake") }
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         manager.fetch = { request, done in
             XCTAssertEqual(request.user?.username, "reader")
             XCTAssertEqual(request.user?.password, "source-password")
@@ -1712,18 +1731,19 @@ final class ntfyTests: XCTestCase {
         }
         let done = expectation(description: "trusted controls applied")
         XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake(event: "message_delete")) { success in XCTAssertTrue(success); done.fulfill() })
-        wait(for: [done], timeout: 2)
-        XCTAssertEqual(instantRows(sub).count, 2)
-        XCTAssertTrue(try XCTUnwrap(instantRows(sub).first { $0.id == "a" }).read)
-        XCTAssertEqual(instantRows(sub).first { $0.sequenceID == "update" }?.id, "updated")
+        wait(for: [done], timeout: silentWakeWatchdog)
+        XCTAssertEqual(instantRows(sub, store: store).count, 2)
+        XCTAssertTrue(try XCTUnwrap(instantRows(sub, store: store).first { $0.id == "a" }).read)
+        XCTAssertEqual(instantRows(sub, store: store).first { $0.sequenceID == "update" }?.id, "updated")
         XCTAssertEqual(Set(removals.map(\.sequence)), ["read", "delete", "update"])
         XCTAssertEqual(sub.lastNotificationId, "updated")
     }
 
     func testInstantSilentWakeRejectsUnmatchedAndNonControlTopics() {
-        _ = instantSubscription()
-        _ = instantSubscription(baseUrl: Config.appBaseUrl, topic: "default")
-        var manager = SubscriptionManager(store: Store.shared)
+        let store = silentWakeStore()
+        _ = instantSubscription(store: store)
+        _ = instantSubscription(store: store, baseUrl: Config.appBaseUrl, topic: "default")
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         manager.fetch = { _, _ in XCTFail("unmatched wake cannot fetch") }
         for payload in [instantWake(topic: "not-a-known-hash"), instantWake(topic: "default"), instantWake(event: "message"), instantWake(event: "poll_request")] {
             XCTAssertFalse(manager.handleSilentWake(userInfo: payload) { _ in XCTFail("unconsumed wake completion belongs to caller") })
@@ -1731,50 +1751,56 @@ final class ntfyTests: XCTestCase {
     }
 
     func testInstantSilentWakeFailureAndUnsubscribeCompleteFalseWithoutPayloadEffect() throws {
+        let store = silentWakeStore()
         for unsubscribe in [false, true] {
-            let sub = instantSubscription()
-            Store.shared.save(notificationsFromMessages: [instantMessage("original", sequence: "job")], withSubscription: sub)
-            var manager = SubscriptionManager(store: Store.shared)
+            let sub = instantSubscription(store: store)
+            store.save(notificationsFromMessages: [instantMessage("original", sequence: "job")], withSubscription: sub)
+            var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+            var fetches = 0
             manager.fetch = { _, done in
-                if unsubscribe { Store.shared.delete(subscription: sub); done([], nil) }
+                fetches += 1
+                if unsubscribe { store.delete(subscription: sub); done([], nil) }
                 else { done(nil, URLError(.notConnectedToInternet)) }
             }
             let done = expectation(description: "wake failure completes \(unsubscribe)")
             XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake()) { success in XCTAssertFalse(success); done.fulfill() })
-            wait(for: [done], timeout: 2)
-            if !unsubscribe { XCTAssertFalse(try XCTUnwrap(instantRows(sub).first).read); Store.shared.delete(subscription: sub) }
+            wait(for: [done], timeout: silentWakeWatchdog)
+            XCTAssertEqual(fetches, 1, "exercise the failure, rather than an unrelated shared gate")
+            if !unsubscribe { XCTAssertFalse(try XCTUnwrap(instantRows(sub, store: store).first).read); store.delete(subscription: sub) }
         }
     }
 
     func testInstantSilentWakePersistenceFailureReportsFalseAndRollsBackClear() throws {
-        let sub = instantSubscription()
-        Store.shared.save(notificationsFromMessages: [instantMessage("invalid-save-original", sequence: "job")], withSubscription: sub)
+        let store = silentWakeStore()
+        let sub = instantSubscription(store: store)
+        store.save(notificationsFromMessages: [instantMessage("invalid-save-original", sequence: "job")], withSubscription: sub)
         // Real validation failure, not an injected success flag: required id/message are absent.
-        let invalid = ntfy.Notification(context: Store.shared.context)
+        let invalid = ntfy.Notification(context: store.context)
         XCTAssertNil(invalid.id)
-        var manager = SubscriptionManager(store: Store.shared)
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         manager.fetch = { _, done in done([self.instantMessage("invalid-save-clear", sequence: "job", event: "message_clear", time: 101)], nil) }
         let done = expectation(description: "failed persistence is not successful wake application")
         XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake()) { success in XCTAssertFalse(success); done.fulfill() })
-        wait(for: [done], timeout: 2)
-        XCTAssertFalse(try XCTUnwrap(instantRows(sub).first { $0.id == "invalid-save-original" }).read)
+        wait(for: [done], timeout: silentWakeWatchdog)
+        XCTAssertFalse(try XCTUnwrap(instantRows(sub, store: store).first { $0.id == "invalid-save-original" }).read)
         XCTAssertEqual(sub.lastNotificationId, "invalid-save-original")
     }
 
     func testInstantSilentWakeOverlapPerformsOneOrderedPollBeforeCompletion() throws {
-        let sub = instantSubscription()
+        let store = silentWakeStore()
+        let sub = instantSubscription(store: store)
         let a = instantMessage("overlap-a", sequence: "job")
         let b = instantMessage("overlap-b", sequence: "job")
         let clear = instantMessage("overlap-clear", sequence: "job", event: "message_clear")
-        Store.shared.save(notificationsFromMessages: [a], withSubscription: sub)
+        store.save(notificationsFromMessages: [a], withSubscription: sub)
         var requests: [PollRequest] = []
-        var manager = SubscriptionManager(store: Store.shared)
+        var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         manager.fetch = { request, done in
             requests.append(request)
             if requests.count == 1 {
                 XCTAssertEqual(request.since, a.id)
                 // Another trusted poll stores B while the wake's since=A request is in flight.
-                Store.shared.save(notificationsFromMessages: [b], polledWith: request)
+                store.save(notificationsFromMessages: [b], polledWith: request)
                 done([clear], nil)
             } else {
                 XCTAssertEqual(requests.count, 2, "at most one reconciliation within background budget")
@@ -1782,18 +1808,56 @@ final class ntfyTests: XCTestCase {
                 done([a, b, clear], nil)
             }
         }
-        Store.shared.clearPublisher = { _, _ in XCTFail("wake reconciliation cannot send clear") }
-        Store.shared.wakePublisher = { _, _ in XCTFail("wake reconciliation cannot re-wake") }
+        store.clearPublisher = { _, _ in XCTFail("wake reconciliation cannot send clear") }
+        store.wakePublisher = { _, _ in XCTFail("wake reconciliation cannot re-wake") }
         let done = expectation(description: "same-second control applied before wake completion")
         XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake()) { success in
             XCTAssertTrue(success)
-            XCTAssertTrue(self.instantRows(sub).first?.read ?? false)
+            XCTAssertTrue(self.instantRows(sub, store: store).first?.read ?? false)
             done.fulfill()
         })
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: silentWakeWatchdog)
         XCTAssertEqual(requests.count, 2)
         XCTAssertEqual(sub.lastNotificationId, clear.id)
         XCTAssertFalse(sub.sequenceReconcile)
+    }
+
+    func testInstantSilentWakeJoinsHeldPollAndCompletesOnceAfterFailureOrUnsubscribe() throws {
+        for unsubscribe in [false, true] {
+            let store = silentWakeStore()
+            let sub = instantSubscription(store: store)
+            store.save(notificationsFromMessages: [instantMessage("original", sequence: "job")], withSubscription: sub)
+            var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
+            var reply: (([Message]?, Error?) -> Void)?
+            var fetches = 0
+            manager.fetch = { _, done in fetches += 1; reply = done }
+            var pollCompletions = 0
+            manager.pollWithOutcome(sub) { outcome in
+                XCTAssertFalse(outcome.succeeded)
+                pollCompletions += 1
+            }
+            let heldReply = try XCTUnwrap(reply)
+            reply = nil
+            let completed = expectation(description: "joined wake reports the actual held poll result")
+            var wakeCompletions = 0
+            XCTAssertTrue(manager.handleSilentWake(userInfo: instantWake()) { success in
+                XCTAssertFalse(success)
+                wakeCompletions += 1
+                completed.fulfill()
+            })
+            XCTAssertEqual(fetches, 1, "a joined wake cannot start another fetch")
+            DispatchQueue.main.async {
+                XCTAssertEqual(wakeCompletions, 0, "the wake must await its real poll signal")
+                XCTAssertEqual(pollCompletions, 0)
+                if unsubscribe { XCTAssertTrue(store.delete(subscription: sub)); heldReply([], nil) }
+                else { heldReply(nil, URLError(.notConnectedToInternet)) }
+            }
+            wait(for: [completed], timeout: silentWakeWatchdog)
+            XCTAssertEqual(fetches, 1)
+            XCTAssertEqual(pollCompletions, 1)
+            XCTAssertEqual(wakeCompletions, 1)
+            if !unsubscribe { XCTAssertFalse(try XCTUnwrap(instantRows(sub, store: store).first).read) }
+        }
     }
 
     // MARK: UNMutableNotificationContent.actionCategoryIdentifier — per-action-set banner category
@@ -6117,15 +6181,17 @@ final class NewcomerSetupTests: XCTestCase {
         XCTAssertTrue(guardian.begin(key: "k"), "the next poll runs once the first ended")
     }
 
-    func testAPollWhileOneIsInFlightIsSkippedAndUnsubscribingMeanwhileIsSafe() {
+    func testAPollWhileOneIsInFlightIsSkippedAndUnsubscribingMeanwhileIsSafe() throws {
         // Through SubscriptionManager: the live loop's second poll is answered at once without a
         // request, and unsubscribing while the first is out neither crashes nor queues anything.
-        let manager = SubscriptionManager(store: Store.shared)
-        let subscription = Store.shared.saveSubscription(baseUrl: "http://127.0.0.1:9", topic: "poll-skip-\(UUID().uuidString.prefix(8))")
+        var manager = SubscriptionManager(store: Store.shared, polling: PollCoordinator(defaults: nil))
+        var reply: (([Message]?, Error?) -> Void)?
+        manager.fetch = { _, done in reply = done }
+        let subscription = Store.shared.saveSubscription(baseUrl: "https://poll-skip.invalid", topic: "poll-skip-\(UUID().uuidString.prefix(8))")
         let key = subscription.urlString()
         let first = expectation(description: "first poll finished")
         manager.pollWithOutcome(subscription, skipIfInFlight: true) { outcome in
-            XCTAssertFalse(outcome.succeeded, "nothing listens on port 9")
+            XCTAssertFalse(outcome.succeeded, "the held fetch fails after unsubscribe")
             first.fulfill()
         }
         var skipped: PollOutcome?
@@ -6133,7 +6199,8 @@ final class NewcomerSetupTests: XCTestCase {
         XCTAssertNotNil(skipped, "the second caller is answered synchronously, not queued")
         XCTAssertEqual(skipped?.attempted, false, "a skip is not a fresh success or failure")
         XCTAssertTrue(Store.shared.delete(subscription: subscription))
-        wait(for: [first], timeout: 35)
+        try XCTUnwrap(reply)(nil, URLError(.notConnectedToInternet))
+        wait(for: [first], timeout: 15)
         XCTAssertTrue(PollGuard.shared.begin(key: key), "the guard is released after the request ends")
         PollGuard.shared.end(key: key)
     }
@@ -6147,7 +6214,7 @@ final class NewcomerSetupTests: XCTestCase {
         let message = Message(id: "bg-\(topic)", time: Int64(Date().timeIntervalSince1970), event: "message", topic: topic, message: "hi", title: nil)
         addTeardownBlock { _ = Store.shared.delete(subscription: subscription) } // cascades to its notifications
         var fetched = 0
-        var manager = SubscriptionManager(store: Store.shared)
+        var manager = SubscriptionManager(store: Store.shared, polling: PollCoordinator(defaults: nil))
         manager.fetch = { _, completion in fetched += 1; completion([message], nil) }
         let key = subscription.urlString()
         XCTAssertTrue(PollGuard.shared.begin(key: key), "premise: the live loop's poll is in flight")
@@ -6993,7 +7060,7 @@ final class DeliveryHealthPolicyTests: XCTestCase {
 
 final class DeliveryHealthRefreshTests: XCTestCase {
     func testPollAllWaitsForEveryFetchAndPublishesFailure() {
-        let store = Store(inMemory: true)
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
         let first = store.saveSubscription(baseUrl: "https://health.example.org", topic: "one")
         let second = store.saveSubscription(baseUrl: "https://health.example.org", topic: "two")
         let polling = PollCoordinator(defaults: nil)
@@ -7013,7 +7080,7 @@ final class DeliveryHealthRefreshTests: XCTestCase {
             XCTAssertEqual(DeliveryHealthMonitor.shared.topics[second.objectID.uriRepresentation().absoluteString]?.failure, .unauthorized)
             done.fulfill()
         }
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: 15)
     }
 
     func testAutomaticCooldownManualOverrideAndServerWide429() {
@@ -7158,7 +7225,7 @@ final class DeliveryHealthHTTPTests: XCTestCase {
 
 final class DeliveryHealthConcurrencyTests: XCTestCase {
     func testListRefreshHasAtMostFourRequestsInFlight() {
-        let store = Store(inMemory: true)
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
         let topics = (0..<6).map { store.saveSubscription(baseUrl: "https://bounded.example.org", topic: "topic-\($0)") }
         var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
         var replies: [([Message]?, Error?) -> Void] = []
@@ -7172,7 +7239,7 @@ final class DeliveryHealthConcurrencyTests: XCTestCase {
             replies[4]([], nil)
             replies[5]([], nil)
         }
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: 15)
     }
 }
 
@@ -7329,7 +7396,7 @@ final class DeliveryHealthRoundTwoTests: XCTestCase {
 
 final class DeliveryHealthBatchRecoveryTests: XCTestCase {
     func testDeadServerDoesNotQueueMoreRequestsOrBlockOtherServer() {
-        let store = Store(inMemory: true)
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
         let topics = (0..<20).map { store.saveSubscription(baseUrl: "https://dead.example.org", topic: "topic-\($0)") }
         let healthy = store.saveSubscription(baseUrl: "https://healthy.example.org", topic: "healthy")
         var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
@@ -7344,13 +7411,13 @@ final class DeliveryHealthBatchRecoveryTests: XCTestCase {
             if request.baseUrl == "https://healthy.example.org" { replies[index]([], nil) }
             else { replies[index](nil, URLError(.timedOut)) }
         }
-        wait(for: [finished], timeout: 2)
+        wait(for: [finished], timeout: 15)
         XCTAssertEqual(requests.count, 4)
         XCTAssertEqual(DeliveryHealthMonitor.shared.topics[topics.last!.objectID.uriRepresentation().absoluteString]?.consecutiveFailures, 0)
     }
 
     func testSilentWakeFetchesEvenAfterRecentListRefresh() {
-        let store = Store(inMemory: true)
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
         let base = "https://wake-health.example.org"
         let topic = store.saveSubscription(baseUrl: base, topic: "one")
         var manager = SubscriptionManager(store: store, polling: PollCoordinator(defaults: nil))
@@ -7362,7 +7429,7 @@ final class DeliveryHealthBatchRecoveryTests: XCTestCase {
             XCTAssertTrue($0)
             done.fulfill()
         })
-        wait(for: [done], timeout: 2)
+        wait(for: [done], timeout: 15)
         XCTAssertGreaterThan(calls, 1)
     }
 
