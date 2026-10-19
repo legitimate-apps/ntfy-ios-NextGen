@@ -97,22 +97,29 @@ struct SubscriptionListView: View {
         }
         .overlay(Group {
             if subscriptionsModel.subscriptions.isEmpty {
-                VStack {
-                    Text("It looks like you don't have any subscriptions yet")
-                        .font(.title2)
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom)
+                GeometryReader { geometry in
+                    ScrollView {
+                        VStack {
+                            Text("It looks like you don't have any subscriptions yet")
+                                .font(.title2)
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom)
 
-                    Text("Tap + to create a topic. Then send it a message from any computer or script, and it shows up here and as a notification.")
-                        .foregroundColor(.secondary)
-                        .multilineTextAlignment(.center)
-                        .padding(.bottom)
-                    if let help = URL(string: Config.helpUrl) {
-                        Link("Quick start at \(shortUrl(url: normalizeBaseUrl(Config.helpUrl)))", destination: help)
+                            Text("Tap + to create a topic. Then send it a message from any computer or script, and it shows up here and as a notification.")
+                                .foregroundColor(.secondary)
+                                .multilineTextAlignment(.center)
+                                .padding(.bottom)
+                            if let help = URL(string: Config.helpUrl) {
+                                Link("Quick start at \(shortUrl(url: normalizeBaseUrl(Config.helpUrl)))", destination: help)
+                            }
+                        }
+                        .padding(40)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .frame(maxWidth: .infinity)
+                        .frame(minHeight: geometry.size.height)
                     }
                 }
-                .padding(40)
             }
         })
         .sheet(isPresented: $showingAddDialog) {
