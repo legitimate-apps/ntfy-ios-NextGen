@@ -240,7 +240,7 @@ SOFTWARE.
         ),
         OpenSourceComponent(
             name: "Firebase",
-            detail: "firebase-ios-sdk 9.6.0: FirebaseCore, FirebaseCoreInternal, FirebaseCoreDiagnostics, FirebaseInstallations, FirebaseMessaging",
+            detail: "firebase-ios-sdk 13.0.1: FirebaseCore, FirebaseCoreInternal, FirebaseInstallations, FirebaseMessaging",
             licenseName: "Apache License 2.0",
             notice: #"""
 Copyright 2017-2021 Google LLC
@@ -251,7 +251,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); the full text fo
         ),
         OpenSourceComponent(
             name: "GoogleUtilities",
-            detail: "GoogleUtilities 7.7.1",
+            detail: "GoogleUtilities 8.1.5",
             licenseName: "Apache License 2.0",
             notice: #"""
 Copyright 2017-2021 Google LLC
@@ -262,7 +262,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); the full text fo
         ),
         OpenSourceComponent(
             name: "GoogleUtilities: isAppEncrypted",
-            detail: "GoogleUtilities 7.7.1, Environment/third_party/GULAppEnvironmentUtil.m",
+            detail: "GoogleUtilities 8.1.5, Environment/third_party/GULAppEnvironmentUtil.m",
             licenseName: "MIT License",
             notice: #"""
 The following copyright from Landon J. Fuller applies to the isAppEncrypted
@@ -292,7 +292,7 @@ CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
         ),
         OpenSourceComponent(
             name: "GoogleDataTransport",
-            detail: "GoogleDataTransport 9.1.4",
+            detail: "GoogleDataTransport 10.1.1",
             licenseName: "Apache License 2.0",
             notice: #"""
 Copyright 2018-2020 Google LLC
@@ -303,7 +303,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); the full text fo
         ),
         OpenSourceComponent(
             name: "Promises",
-            detail: "Promises (FBLPromises) 2.1.0",
+            detail: "Promises (FBLPromises) 2.4.1",
             licenseName: "Apache License 2.0",
             notice: #"""
 Copyright 2018 Google Inc. All rights reserved.
@@ -314,7 +314,7 @@ Licensed under the Apache License, Version 2.0 (the "License"); the full text fo
         ),
         OpenSourceComponent(
             name: "nanopb",
-            detail: "nanopb 2.30909.0",
+            detail: "nanopb 2.30910.1",
             licenseName: "zlib License",
             notice: #"""
 Copyright (c) 2011 Petteri Aimonen <jpa at nanopb.mail.kapsi.fi>

@@ -3254,6 +3254,9 @@ final class ntfyTests: XCTestCase {
         let key = plist?["API_KEY"] as? String ?? ""
         XCTAssertEqual(key.count, 39, "API_KEY must be 39 characters, got \(key.count)")
         XCTAssertTrue(key.hasPrefix("A"), "API_KEY must start with \"A\"")
+        XCTAssertTrue(key.unicodeScalars.allSatisfy {
+            CharacterSet(charactersIn: "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_").contains($0)
+        }, "Firebase Installations 13 also requires a base64 URL-safe API key")
     }
 
     // MARK: tag parsing over the real dataset — the user-visible half of the alias bug
@@ -7500,13 +7503,11 @@ final class HardeningPolicyTests: XCTestCase {
             let manifest = try XCTUnwrap(PropertyListSerialization.propertyList(from: data, format: nil) as? [String: Any])
             XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false)
             let reasons = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
-            // Exact declarations for the linked Firebase 9.6.0, GDT 9.1.4 and GUL 7.7.1 sources.
+            // App/NSE-owned APIs. Firebase 13.0.1 and its dependencies ship separate manifests.
             let expectedReasons = [
                 "NSPrivacyAccessedAPICategoryUserDefaults": Set(["CA92.1", "1C8F.1"]),
                 "NSPrivacyAccessedAPICategoryFileTimestamp": Set(["C617.1"])
-            ].merging(url == app ? [
-                "NSPrivacyAccessedAPICategoryDiskSpace": Set(["E174.1"])
-            ] : [:]) { $1 }
+            ]
             let actualReasons = Dictionary(uniqueKeysWithValues: reasons.map {
                 ($0["NSPrivacyAccessedAPIType"] as! String, Set($0["NSPrivacyAccessedAPITypeReasons"] as! [String]))
             })
@@ -7514,9 +7515,6 @@ final class HardeningPolicyTests: XCTestCase {
             XCTAssertEqual(manifest["NSPrivacyTrackingDomains"] as? [String], [])
             let collected = try XCTUnwrap(manifest["NSPrivacyCollectedDataTypes"] as? [[String: Any]])
             let expectedData: [String: Set<String>] = url == app ? [
-                "NSPrivacyCollectedDataTypeDeviceID": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
-                "NSPrivacyCollectedDataTypeOtherDataTypes": ["NSPrivacyCollectedDataTypePurposeAnalytics"],
-                "NSPrivacyCollectedDataTypeOtherDiagnosticData": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"],
                 "NSPrivacyCollectedDataTypeOtherUserContent": ["NSPrivacyCollectedDataTypePurposeAppFunctionality"]
             ] : [:]
             XCTAssertEqual(Dictionary(uniqueKeysWithValues: collected.map {
@@ -7525,6 +7523,64 @@ final class HardeningPolicyTests: XCTestCase {
             for entry in collected {
                 XCTAssertEqual(entry["NSPrivacyCollectedDataTypeLinked"] as? Bool, false)
                 XCTAssertEqual(entry["NSPrivacyCollectedDataTypeTracking"] as? Bool, false)
+            }
+        }
+    }
+
+    func testFirebasePrivacyManifestsAreBundledWithTheirPublishedDeclarations() throws {
+        // The FID opt-in disables the token callbacks used to invalidate and rebuild topic bindings.
+        XCTAssertNotEqual(Bundle.main.object(forInfoDictionaryKey: "FirebaseMessagingInstallationIdEnabled") as? Bool, true)
+        let functionality = "NSPrivacyCollectedDataTypePurposeAppFunctionality"
+        let analytics = "NSPrivacyCollectedDataTypePurposeAnalytics"
+        let expectedData: [String: [String: Set<String>]] = [
+            "FirebaseCore": [:],
+            "FirebaseCoreInternal": [:],
+            "FirebaseInstallations": ["NSPrivacyCollectedDataTypeOtherDiagnosticData": [analytics]],
+            "FirebaseMessaging": [
+                "NSPrivacyCollectedDataTypeDeviceID": [functionality],
+                "NSPrivacyCollectedDataTypeOtherDataTypes": [analytics],
+                "NSPrivacyCollectedDataTypeOtherDiagnosticData": [functionality]
+            ],
+            "GoogleDataTransport": ["NSPrivacyCollectedDataTypeOtherDiagnosticData": [analytics]],
+            "GoogleUtilities-AppDelegateSwizzler": [:],
+            "GoogleUtilities-Environment": [:],
+            "GoogleUtilities-Logger": [:],
+            "GoogleUtilities-Network": [:],
+            "GoogleUtilities-NSData": [:],
+            "GoogleUtilities-Reachability": [:],
+            "GoogleUtilities-UserDefaults": [:],
+            "FBLPromises": [:],
+            "nanopb": [:]
+        ]
+        let expectedReasons: [String: [String: Set<String>]] = [
+            "FirebaseCore": ["NSPrivacyAccessedAPICategoryUserDefaults": ["CA92.1"]],
+            "FirebaseCoreInternal": ["NSPrivacyAccessedAPICategoryUserDefaults": ["1C8F.1"]],
+            "GoogleUtilities-Environment": ["NSPrivacyAccessedAPICategoryUserDefaults": ["C56D.1"]],
+            "GoogleUtilities-UserDefaults": ["NSPrivacyAccessedAPICategoryUserDefaults": ["1C8F.1", "C56D.1"]],
+            "GoogleUtilities-Network": ["NSPrivacyAccessedAPICategoryFileTimestamp": ["C617.1"]]
+        ]
+        // Validate the resources actually copied into the app, not just files in a checkout.
+        let bundles = try FileManager.default.contentsOfDirectory(at: Bundle.main.bundleURL,
+                                                                 includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "bundle" }
+        for (component, data) in expectedData {
+            let bundle = try XCTUnwrap(bundles.first { $0.lastPathComponent.hasSuffix("_\(component).bundle") },
+                                       "Missing privacy resource bundle for \(component)")
+            let manifestData = try Data(contentsOf: bundle.appendingPathComponent("PrivacyInfo.xcprivacy"))
+            let manifest = try XCTUnwrap(PropertyListSerialization.propertyList(from: manifestData, format: nil) as? [String: Any])
+            XCTAssertEqual(manifest["NSPrivacyTracking"] as? Bool, false, component)
+            XCTAssertEqual(manifest["NSPrivacyTrackingDomains"] as? [String], [], component)
+            let reasons = try XCTUnwrap(manifest["NSPrivacyAccessedAPITypes"] as? [[String: Any]])
+            XCTAssertEqual(Dictionary(uniqueKeysWithValues: reasons.map {
+                ($0["NSPrivacyAccessedAPIType"] as! String, Set($0["NSPrivacyAccessedAPITypeReasons"] as! [String]))
+            }), expectedReasons[component] ?? [:], component)
+            let collected = try XCTUnwrap(manifest["NSPrivacyCollectedDataTypes"] as? [[String: Any]])
+            XCTAssertEqual(Dictionary(uniqueKeysWithValues: collected.map {
+                ($0["NSPrivacyCollectedDataType"] as! String, Set($0["NSPrivacyCollectedDataTypePurposes"] as! [String]))
+            }), data, component)
+            for entry in collected {
+                XCTAssertEqual(entry["NSPrivacyCollectedDataTypeLinked"] as? Bool, false, component)
+                XCTAssertEqual(entry["NSPrivacyCollectedDataTypeTracking"] as? Bool, false, component)
             }
         }
     }

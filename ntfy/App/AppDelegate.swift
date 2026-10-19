@@ -188,6 +188,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 self.notificationAuthorizationStatus = settings.authorizationStatus
                 if FirebaseApp.app() != nil {
                     self.hasPhoneRegistration = Messaging.messaging().apnsToken != nil
+                    // Keep token mode: FID registration opts out of tokens used by the reconciler.
                     self.hasPushRegistration = !(Messaging.messaging().fcmToken ?? "").isEmpty
                 }
                 if #available(iOS 15.0, *) {
