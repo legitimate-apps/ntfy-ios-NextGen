@@ -10,7 +10,7 @@ enum ActiveAlert {
 struct NotificationListView: View {
     private let tag = "NotificationListView"
     
-    @EnvironmentObject private var delegate: AppDelegate
+    @Environment(\.presentationMode) private var presentationMode
     @EnvironmentObject private var store: Store
     @Environment(\.scenePhase) private var scenePhase
     
@@ -245,11 +245,6 @@ struct NotificationListView: View {
             TopicEncryptionView(subscription: subscription)
                 .environmentObject(store)
         }
-        .onDisappear {
-            if delegate.selectedBaseUrl == subscription.urlString() {
-                delegate.selectedBaseUrl = nil
-            }
-        }
     }
     
     /// The saved login and custom headers for this topic's server, so the copied commands ask for
@@ -385,7 +380,7 @@ struct NotificationListView: View {
     
     private func unsubscribe() {
         subscriptionManager.unsubscribe(subscription)
-        delegate.selectedBaseUrl = nil
+        presentationMode.wrappedValue.dismiss()
     }
     
     private func deleteAll() {

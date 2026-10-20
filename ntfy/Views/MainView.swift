@@ -28,14 +28,27 @@ struct MainView: View {
         // A new link returns to Notifications and discards navigation and sheet state belonging
         // to the previous destination, including sheets presented from Settings or a message.
         .id(linkRequest?.id)
-        .onContinueUserActivity(NSUserActivityTypeBrowsingWeb) { activity in
-            guard let url = activity.webpageURL else { return }
-            openTopicLink(url)
-        }
+        // SwiftUI delivers Universal Links as URLs, including on a cold launch.
+        .onOpenURL(perform: openTopicLink)
+        .onChange(of: delegate.selectedBaseUrl) { _ in openSelectedTopic() }
+        .onAppear(perform: openSelectedTopic)
     }
 
     private func openTopicLink(_ url: URL) {
         guard let route = TopicLinkRoute.resolve(url, subscriptionURLs: (store.getSubscriptions() ?? []).map { $0.urlString() }) else { return }
+        present(route)
+    }
+
+    private func openSelectedTopic() {
+        guard let url = delegate.selectedBaseUrl else { return }
+        // Consume the request even if its subscription was removed. Nothing should fire later
+        // when a row appears, and another tap on the same topic must be a new request.
+        delegate.selectedBaseUrl = nil
+        guard (store.getSubscriptions() ?? []).contains(where: { $0.urlString() == url }) else { return }
+        present(.open(url))
+    }
+
+    private func present(_ route: TopicLinkRoute) {
         let request = LinkRequest(route: route)
         let present = {
             delegate.selectedBaseUrl = nil

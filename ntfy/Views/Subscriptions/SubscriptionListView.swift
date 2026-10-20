@@ -20,6 +20,7 @@ struct SubscriptionListView: View {
     @Environment(\.scenePhase) private var scenePhase
     @State private var showingAddDialog = false
     @State private var handledTopicLink = false
+    @State private var openedSubscription: Subscription?
     /// Topics `RetiredDefaultServerMigration` moved to ntfy-me.com that the user hasn't been told about.
     @State private var movedTopicsNotice: [String] = []
     @State private var listVisible = false
@@ -84,6 +85,20 @@ struct SubscriptionListView: View {
                                         summary: subscriptionsModel.summaries[subscription.objectID])
             }
         }
+        // This link lives outside the lazy List rows, so an external request can open any topic.
+        .background(
+            NavigationLink(isActive: Binding(
+                get: { openedSubscription != nil },
+                set: { if !$0 { openedSubscription = nil } }
+            )) {
+                if let subscription = openedSubscription {
+                    NotificationListView(subscription: subscription)
+                }
+            } label: {
+                EmptyView()
+            }
+            .hidden()
+        )
         .listStyle(PlainListStyle())
         .navigationTitle("Subscribed topics")
         .toolbar {
@@ -133,8 +148,7 @@ struct SubscriptionListView: View {
                 switch linkRoute {
                 case .add: showingAddDialog = true
                 case .open(let url):
-                    // Let the links mount before selecting one, including on a cold launch.
-                    DispatchQueue.main.async { delegate.selectedBaseUrl = url }
+                    openedSubscription = (store.getSubscriptions() ?? []).first { $0.urlString() == url }
                 }
             }
             if linkRoute == nil {
@@ -171,7 +185,6 @@ struct SubscriptionListView: View {
 
 struct SubscriptionItemNavView: View {
     @EnvironmentObject private var store: Store
-    @EnvironmentObject private var delegate: AppDelegate
     @ObservedObject var subscription: Subscription
     let summary: Store.SubscriptionSummary?
     @State private var unsubscribeAlert = false
@@ -270,9 +283,7 @@ struct SubscriptionItemNavView: View {
     private var subscriptionRow: some View {
         ZStack {
             NavigationLink(
-                destination: LazyView(NotificationListView(subscription: subscription)),
-                tag: subscription.urlString(),
-                selection: $delegate.selectedBaseUrl
+                destination: LazyView(NotificationListView(subscription: subscription))
             ) {
                 EmptyView()
             }
