@@ -54,13 +54,21 @@ extension UNNotificationContent {
     /// decode failure). If the text is an end-to-end encrypted body, show the plain locked
     /// placeholder and nothing else the server supplied: no ciphertext, and no title, subtitle or
     /// attachment that an outsider could pair with a genuine-looking "Encrypted message".
+    /// Encoded transport bodies use the same normalization as JSON and direct push ingestion.
     /// Anything else is shown exactly as received.
     static func encryptionSafeFallback(_ content: UNNotificationContent) -> UNNotificationContent {
-        guard TopicEncryption.isEncrypted(content.body) || TopicEncryption.isEncrypted(content.title)
-                || TopicEncryption.isEncrypted(content.subtitle) else {
-            return content
+        var fallback = content
+        if let encoding = content.userInfo["encoding"] as? String, !encoding.isEmpty,
+           let safe = content.mutableCopy() as? UNMutableNotificationContent {
+            safe.body = Message.normalizedBody(content.userInfo["message"] as? String ?? content.body,
+                                               encoding: encoding) ?? ""
+            fallback = safe
         }
-        return replayedEncryptedMessage(content)
+        guard TopicEncryption.isEncrypted(fallback.body) || TopicEncryption.isEncrypted(fallback.title)
+                || TopicEncryption.isEncrypted(fallback.subtitle) else {
+            return fallback
+        }
+        return replayedEncryptedMessage(fallback)
     }
 
     /// What the extension shows for a replayed encrypted message (already stored, so not stored

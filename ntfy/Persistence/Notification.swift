@@ -382,6 +382,7 @@ struct Message: Decodable {
     enum CodingKeys: String, CodingKey {
         case id, time, event, topic, message, title, priority, tags, actions, click, attachment
         case pollId = "poll_id"
+        case encoding
         case contentType = "content_type"
         case icon
         case sequenceID = "sequence_id"
@@ -402,13 +403,14 @@ struct Message: Decodable {
         attachment: MessageAttachment? = nil,
         contentType: String? = nil,
         icon: String? = nil,
-        sequenceID: String? = nil
+        sequenceID: String? = nil,
+        encoding: String? = nil
     ) {
         self.id = id
         self.time = time
         self.event = event
         self.topic = topic
-        self.message = message
+        self.message = Self.normalizedBody(message, encoding: encoding)
         self.title = title
         self.priority = priority
         self.tags = tags
@@ -427,7 +429,8 @@ struct Message: Decodable {
         time = try container.decode(Int64.self, forKey: .time)
         event = try container.decode(String.self, forKey: .event)
         topic = try container.decode(String.self, forKey: .topic)
-        message = try container.decodeIfPresent(String.self, forKey: .message)
+        message = Self.normalizedBody(try container.decodeIfPresent(String.self, forKey: .message),
+                                      encoding: try container.decodeIfPresent(String.self, forKey: .encoding))
         title = try container.decodeIfPresent(String.self, forKey: .title)
         priority = try container.decodeIfPresent(Int16.self, forKey: .priority)
         tags = try container.decodeIfPresent([String].self, forKey: .tags)
@@ -440,6 +443,23 @@ struct Message: Decodable {
         sequenceID = try container.decodeIfPresent(String.self, forKey: .sequenceID)
     }
     
+    /// Normalize transport encoding at ingress, before storage, encryption or presentation.
+    /// The canonical message and its userInfo contain text only, so they cannot decode twice.
+    static func normalizedBody(_ body: String?, encoding: String?) -> String? {
+        guard let body, let encoding, !encoding.isEmpty else { return body }
+        guard encoding == "base64" else {
+            return "This message uses an unsupported encoding."
+        }
+        let encoded = body.components(separatedBy: .whitespacesAndNewlines).joined()
+        guard let data = Data(base64Encoded: encoded) else {
+            return "This message could not be decoded (invalid base64)."
+        }
+        guard let text = String(data: data, encoding: .utf8) else {
+            return "This message contains binary data and cannot be displayed as text."
+        }
+        return text
+    }
+
     func toUserInfo() -> [AnyHashable: Any] {
         // This should mimic the way that the ntfy server encodes a message.
         // See server_firebase.go for more details.
@@ -516,7 +536,8 @@ struct Message: Decodable {
             attachment: attachment,
             contentType: contentType,
             icon: icon,
-            sequenceID: userInfo["sequence_id"] as? String
+            sequenceID: userInfo["sequence_id"] as? String,
+            encoding: userInfo["encoding"] as? String
         )
     }
 }

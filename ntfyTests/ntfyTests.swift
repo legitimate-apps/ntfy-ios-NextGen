@@ -7829,3 +7829,104 @@ final class DeliveryHealthRoundThreeTests: XCTestCase {
         XCTAssertNil(store.getUser(baseUrl: base))
     }
 }
+
+final class Base64MessageTests: XCTestCase {
+    private let binaryExplanation = "This message contains binary data and cannot be displayed as text."
+
+    private func wire(_ body: String?, encoding: String? = "base64") throws -> Message {
+        var json: [String: Any] = ["id": "base64-test", "time": 1792521918,
+                                   "event": "message", "topic": "base64-regression"]
+        json["message"] = body
+        json["encoding"] = encoding
+        return try JSONDecoder().decode(Message.self, from: JSONSerialization.data(withJSONObject: json))
+    }
+
+    private func fixture() throws -> Message {
+        let url = try XCTUnwrap(Bundle(for: Self.self).url(forResource: "base64-binary", withExtension: "json"))
+        return try JSONDecoder().decode(Message.self, from: Data(contentsOf: url))
+    }
+
+    func testRealServerBinaryFixtureExplainsItsContent() throws {
+        // Captured from ntfy v2.31.1, attachments disabled, POST ?up=1.
+        // Source bytes: 48 65 6c 6c 6f 20 66 72 6f 6d 20 6e 74 66 79 ff fe 00.
+        XCTAssertEqual(try fixture().message, binaryExplanation)
+    }
+
+    func testUTF8Base64DecodesWithoutChangingUnicodeOrWhitespace() throws {
+        let text = " Hello, café 👋 👩‍👩‍👧‍👦\nhttps://example.org/ \t"
+        XCTAssertEqual(try wire(Data(text.utf8).base64EncodedString()).message, text)
+        XCTAssertEqual(try wire("").message, "")
+        XCTAssertNil(try wire(nil).message)
+    }
+
+    func testPlainMessageIsNeverGuessedToBeBase64() throws {
+        for encoding: String? in [nil, ""] {
+            XCTAssertEqual(try wire("SGVsbG8=", encoding: encoding).message, "SGVsbG8=")
+        }
+    }
+
+    func testMalformedAndUnsupportedEncodingUsePlainExplanations() throws {
+        XCTAssertEqual(try wire("not!base64").message, "This message could not be decoded (invalid base64).")
+        XCTAssertEqual(try wire("secret-wire-body", encoding: "future").message, "This message uses an unsupported encoding.")
+        XCTAssertEqual(try wire("U0dWc2JHOD0=").message, "SGVsbG8=")
+    }
+
+    func testValidUTF8ControlTextIsPreservedWithoutContentHeuristics() throws {
+        // UTF-8 validity is the contract; control scalars are not evidence of invalid bytes.
+        let text = String(decoding: [0, 1, 2, 27, 127, 0xc2, 0x85], as: UTF8.self)
+        XCTAssertEqual(try wire(Data(text.utf8).base64EncodedString()).message, text)
+    }
+
+    func testDirectPushDecodesAndNormalizedUserInfoNeverDecodesTwice() throws {
+        for (encoded, expected) in [("SGVsbG8=", "Hello"), ("U0dWc2JHOD0=", "SGVsbG8="),
+                                    ("//4A", binaryExplanation)] {
+            var info = try wire(nil, encoding: nil).toUserInfo()
+            info["message"] = encoded
+            info["encoding"] = "base64"
+            let message = try XCTUnwrap(Message.from(userInfo: info))
+            XCTAssertEqual(message.message, expected)
+            XCTAssertNil(message.toUserInfo()["encoding"])
+            XCTAssertEqual(Message.from(userInfo: message.toUserInfo())?.message, expected)
+        }
+    }
+
+    func testPollAndDirectPushStoreAndBannerUseTheSameNormalizedBody() throws {
+        let store = Store.shared
+        let sub = store.saveSubscription(baseUrl: "https://base64.invalid", topic: "base64-regression")
+        defer { store.delete(subscription: sub) }
+        let polled = try fixture()
+        store.save(notificationsFromMessages: [polled], withSubscription: sub)
+        let request = ntfy.Notification.fetchRequest()
+        request.predicate = NSPredicate(format: "subscription == %@", sub)
+        XCTAssertEqual(try store.context.fetch(request).first?.message, binaryExplanation)
+        var info = polled.toUserInfo()
+        info["id"] = "direct-base64"
+        info["message"] = "SGVsbG8="
+        info["encoding"] = "base64"
+        let pushed = try XCTUnwrap(Message.from(userInfo: info))
+        guard case .stored(let presentation) = store.ingest(pushedMessage: pushed, baseUrl: sub.baseUrl!, topic: sub.topic!) else {
+            return XCTFail("Direct push must be ingested")
+        }
+        XCTAssertEqual(presentation.message, "Hello")
+        let content = UNMutableNotificationContent()
+        content.modify(message: presentation, baseUrl: sub.baseUrl!, categoryRegistrationTimeout: 0)
+        XCTAssertEqual(content.body, "Hello")
+        XCTAssertEqual(try store.context.fetch(request).first(where: { $0.id == "direct-base64" })?.message, "Hello")
+        content.modify(message: polled, baseUrl: sub.baseUrl!, categoryRegistrationTimeout: 0)
+        XCTAssertEqual(content.body, binaryExplanation)
+    }
+
+    func testNSEEarlyFallbackAlsoNormalizesEncodedBody() throws {
+        let content = UNMutableNotificationContent()
+        var info = try wire(nil, encoding: nil).toUserInfo()
+        info["message"] = "//4A"
+        info["encoding"] = "base64"
+        content.userInfo = info
+        content.body = "//4A"
+        XCTAssertEqual(UNNotificationContent.encryptionSafeFallback(content).body, binaryExplanation)
+        info["message"] = Data("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..DA0ODxAREhMUFRYX.9W1edLGO1g4lI3ouB5e1eCfFVFU.y2sgqWt8XuVwv2WKtojYfg".utf8).base64EncodedString()
+        content.userInfo = info
+        content.body = info["message"] as! String
+        XCTAssertEqual(UNNotificationContent.encryptionSafeFallback(content).body, TopicEncryption.lockedPlaceholder)
+    }
+}

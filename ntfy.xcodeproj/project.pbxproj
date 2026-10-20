@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		B64119000000000000000001 /* base64-binary.json in Resources */ = {isa = PBXBuildFile; fileRef = B64119000000000000000002 /* base64-binary.json */; };
 		118B00010000000000000004 /* TopicLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000003 /* TopicLinkTests.swift */; };
 		118B00010000000000000002 /* TopicLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000001 /* TopicLink.swift */; };
 		BA1180000000000000000012 /* ServerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1180000000000000000011; };
@@ -146,6 +147,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		B64119000000000000000002 /* base64-binary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Fixtures/base64-binary.json; sourceTree = "<group>"; };
 		118B00010000000000000003 /* TopicLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLinkTests.swift; sourceTree = "<group>"; };
 		118B00010000000000000001 /* TopicLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLink.swift; sourceTree = "<group>"; };
 		BA1180000000000000000011 /* ServerContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerContractTests.swift; sourceTree = "<group>"; };
@@ -470,6 +472,7 @@
 			isa = PBXGroup;
 			children = (
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
+				B64119000000000000000002 /* base64-binary.json */,
                 BA1180000000000000000011 /* ServerContractTests.swift */,
 				A18000010000000000000002 /* RetentionTests.swift */,
 				118CAFE00000000000000002 /* RelayCheckTests.swift */,
@@ -609,6 +612,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				B64119000000000000000001 /* base64-binary.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
