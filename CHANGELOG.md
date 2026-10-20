@@ -8,6 +8,8 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 
 - Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new
   topic has its server and name filled in, ready for you to tap Subscribe.
+- Tapping a notification opens its topic right away, even when the topic is further down your
+  list.
 - Marking a topic read can update your other devices with fewer requests on ntfy-me.com and
   self-hosted servers that support it.
 - A server limit on sending no longer pauses message refreshes.
