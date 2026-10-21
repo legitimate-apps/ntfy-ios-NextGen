@@ -52,6 +52,7 @@
 		29C6D8322FBD1B750057C9AC /* DownloadDelegate.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29C6D8302FBD1B750057C9AC /* DownloadDelegate.swift */; };
 		29E8419B2FB417E400F927E4 /* SubscriptionListView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E841992FB417E400F927E4 /* SubscriptionListView.swift */; };
 		29E8419C2FB417E400F927E4 /* SubscriptionAddView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E841982FB417E400F927E4 /* SubscriptionAddView.swift */; };
+		118B00010000000000000006 /* TopicQRCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000005 /* TopicQRCode.swift */; };
 		29E841A52FB417EA00F927E4 /* NotificationAttachmentController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8419E2FB417EA00F927E4 /* NotificationAttachmentController.swift */; };
 		29E841A62FB417EA00F927E4 /* NotificationRowView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E841A32FB417EA00F927E4 /* NotificationRowView.swift */; };
 		29E841A72FB417EA00F927E4 /* NotificationAttachmentImageLoader.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29E8419F2FB417EA00F927E4 /* NotificationAttachmentImageLoader.swift */; };
@@ -190,6 +191,7 @@
 		C66C8F6A6B9A4307967D1B47 /* TopicSortOrderView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicSortOrderView.swift; sourceTree = "<group>"; };
 		29C6D8302FBD1B750057C9AC /* DownloadDelegate.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DownloadDelegate.swift; sourceTree = "<group>"; };
 		29E841982FB417E400F927E4 /* SubscriptionAddView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionAddView.swift; sourceTree = "<group>"; };
+		118B00010000000000000005 /* TopicQRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicQRCode.swift; sourceTree = "<group>"; };
 		29E841992FB417E400F927E4 /* SubscriptionListView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionListView.swift; sourceTree = "<group>"; };
 		29E8419D2FB417EA00F927E4 /* AttachmentFileStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentFileStore.swift; sourceTree = "<group>"; };
 		29AA10012FC0000100F927E4 /* CredentialStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CredentialStore.swift; sourceTree = "<group>"; };
@@ -303,6 +305,7 @@
 			isa = PBXGroup;
 			children = (
 				29E841982FB417E400F927E4 /* SubscriptionAddView.swift */,
+				118B00010000000000000005 /* TopicQRCode.swift */,
 				117A00022FD0000100F927E4 /* LaunchExperience.swift */,
 				29E841992FB417E400F927E4 /* SubscriptionListView.swift */,
                 F11900000000000000000012 /* TopicMuteView.swift */,
@@ -669,6 +672,7 @@
 				117A00012FD0000100F927E4 /* LaunchExperience.swift in Sources */,
 				29E8419B2FB417E400F927E4 /* SubscriptionListView.swift in Sources */,
 				29E8419C2FB417E400F927E4 /* SubscriptionAddView.swift in Sources */,
+				118B00010000000000000006 /* TopicQRCode.swift in Sources */,
 				94A3F7CA28386B2100C48E79 /* Config.swift in Sources */,
 				9474F1C3282F2AA700CDE4DD /* ContentView.swift in Sources */,
 				9474F20C283321C300CDE4DD /* Notification.swift in Sources */,

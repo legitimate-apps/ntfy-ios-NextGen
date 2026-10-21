@@ -33,6 +33,7 @@ struct NotificationListView: View {
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
     @State private var showMuteOptions = false
+    @State private var showQRCodeSheet = false
     @State private var sendingTest = false
     @State private var publishError = ""
     @State private var draftDisplayName = ""
@@ -160,6 +161,9 @@ struct NotificationListView: View {
                                 showCopyConfirmation()
                             }
                         }
+                        Button("Show QR code") {
+                            self.showQRCodeSheet = true
+                        }
                         Button("Send test notification") {
                             self.sendTestNotification()
                         }
@@ -252,6 +256,10 @@ struct NotificationListView: View {
         .sheet(isPresented: $showEncryptionSheet) {
             TopicEncryptionView(subscription: subscription)
                 .environmentObject(store)
+        }
+        .sheet(isPresented: $showQRCodeSheet) {
+            TopicQRCodeView(baseUrl: subscription.baseUrl ?? "", topic: subscription.topicName(),
+                            isShowing: $showQRCodeSheet)
         }
     }
     

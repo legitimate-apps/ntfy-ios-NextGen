@@ -19,6 +19,8 @@
 		<key>NSAllowsArbitraryLoads</key>
 		<true/>
 	</dict>
+	<key>NSCameraUsageDescription</key>
+	<string>NTFY me uses the camera only to scan QR codes for topics you want to subscribe to.</string>
 	<key>RetiredServerHosts</key>
 	<string>$(RETIRED_SERVER_HOSTS)</string>
 	<key>UIApplicationSceneManifest</key>

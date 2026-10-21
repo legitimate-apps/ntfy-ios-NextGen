@@ -21,13 +21,16 @@ struct SubscriptionAddView: View {
     @State private var loginError: String?
     /// The topic URL just subscribed to, while the notification-permission explanation is showing.
     @State private var primingTopicUrl: String?
+    @State private var showScanner = false
+    /// The topic address read from a QR code, filling the sheet the same way a Universal Link does.
+    @State private var scannedLink: TopicLink?
 
     init(isShowing: Binding<Bool>, topicLink: TopicLink? = nil) {
         self.topicLink = topicLink
         _isShowing = isShowing
         _topic = State(initialValue: topicLink?.topic ?? "")
         _useAnother = State(initialValue: topicLink != nil)
-        _baseUrl = State(initialValue: topicLink == nil ? "" : TopicLink.baseURL)
+        _baseUrl = State(initialValue: topicLink?.server ?? "")
     }
 
     private var subscriptionManager: SubscriptionManager {
@@ -110,6 +113,14 @@ struct SubscriptionAddView: View {
                             .disableAutocorrection(true)
                     }
                 }
+                Section {
+                    Button {
+                        showScanner = true
+                    } label: {
+                        Label("Scan QR code", systemImage: "qrcode.viewfinder")
+                    }
+                    .accessibilityHint("Fills in a topic and server from a QR code")
+                }
             }
             if let error = addError {
                 ErrorView(error: error)
@@ -117,6 +128,9 @@ struct SubscriptionAddView: View {
         }
         .navigationTitle("Add subscription")
         .navigationBarTitleDisplayMode(.inline)
+        .sheet(isPresented: $showScanner) {
+            TopicQRScannerView(isShowing: $showScanner, onCode: handleScannedCode)
+        }
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: cancelAction) {
@@ -349,10 +363,28 @@ struct SubscriptionAddView: View {
     }
     
     private var serverFooterText: String {
-        if topicLink != nil, selectedBaseUrl == TopicLink.baseURL {
-            return "This link uses ntfy-me.com. Review the topic above, then tap Subscribe to add it."
+        if let server = (scannedLink ?? topicLink)?.server, selectedBaseUrl == server {
+            return "This link uses \(shortUrl(url: server)). Review the topic above, then tap Subscribe to add it."
         }
         return Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
+    }
+
+    /// Routes a scanned code exactly as a Universal Link: a topic already subscribed opens, a new one
+    /// fills this sheet and still waits for Subscribe. Returns false for a code that isn't a topic address.
+    private func handleScannedCode(_ code: String) -> Bool {
+        let urls = (store.getSubscriptions() ?? []).map { $0.urlString() }
+        guard let route = TopicLinkRoute.resolve(scanned: code, subscriptionURLs: urls) else { return false }
+        switch route {
+        case .add(let link):
+            scannedLink = link
+            topic = link.topic
+            useAnother = true
+            baseUrl = link.server
+            addError = nil
+        case .open(let url):
+            resetAndHide(openingTopicUrl: url)
+        }
+        return true
     }
 
     private var selectedBaseUrl: String {
@@ -377,6 +409,7 @@ struct SubscriptionAddView: View {
             topic = ""
             useAnother = false
             primingTopicUrl = nil
+            scannedLink = nil
         }
     }
 }
