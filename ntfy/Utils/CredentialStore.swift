@@ -1,7 +1,7 @@
 import Foundation
 import Security
 
-/// Keychain-backed storage for per-server passwords.
+/// Keychain-backed storage for per-server logins.
 ///
 /// Passwords used to live as a plain `String` attribute on the Core Data `User` entity, which put
 /// them in the app-group SQLite in the clear. That store is sandboxed and covered by file-level
@@ -14,6 +14,9 @@ import Security
 /// share the app's default keychain access group — its default group is derived from its own bundle
 /// id. So both targets declare the shared group below in their entitlements.
 protocol CredentialStoring: AnyObject {
+    func readCredential(baseUrl: String, username: String) -> TopicSecretRead<ServerCredential>
+    @discardableResult
+    func setCredential(_ credential: ServerCredential, baseUrl: String) -> Bool
     @discardableResult
     func setPassword(_ password: String?, baseUrl: String) -> Bool
     func password(baseUrl: String) -> String?
@@ -68,6 +71,20 @@ enum HTTPHeadersReadResult: Equatable {
 }
 
 extension CredentialStoring {
+    // Legacy implementations remain password-only until they implement typed storage.
+    func readCredential(baseUrl: String, username: String) -> TopicSecretRead<ServerCredential> {
+        switch readPassword(baseUrl: baseUrl) {
+        case .found(let password): return .found(.basic(username: username, password: password))
+        case .notFound: return .notFound
+        case .failed(let status): return .failed(status)
+        }
+    }
+
+    func setCredential(_ credential: ServerCredential, baseUrl: String) -> Bool {
+        guard case .basic(_, let password) = credential else { return false }
+        return setPassword(password, baseUrl: baseUrl)
+    }
+
     /// Network requests fail closed when header storage cannot be read. Editors use
     /// `readHTTPHeaders` directly so they can distinguish that failure from an absent entry.
     func httpHeaders(baseUrl: String) -> [String: String] {
@@ -269,42 +286,45 @@ final class KeychainCredentialStore: CredentialStoring, TopicSecretStoring {
         return addStatus == errSecSuccess
     }
 
-    func password(baseUrl: String) -> String? {
-        guard let data = data(service: Self.passwordService, baseUrl: baseUrl, valueDescription: "password") else {
-            return nil
-        }
-        return String(data: data, encoding: .utf8)
+    @discardableResult
+    func setCredential(_ credential: ServerCredential, baseUrl: String) -> Bool {
+        guard let data = try? ServerCredentialCodec.encode(credential) else { return false }
+        return setData(data, service: Self.passwordService, baseUrl: baseUrl, valueDescription: "credential")
     }
 
-    func readPassword(baseUrl: String) -> TopicSecretRead<String> {
-        switch read(service: Self.passwordService, baseUrl: baseUrl, valueDescription: "password") {
+    func readCredential(baseUrl: String, username: String) -> TopicSecretRead<ServerCredential> {
+        switch read(service: Self.passwordService, baseUrl: baseUrl, valueDescription: "credential") {
         case .found(let data):
-            guard let password = String(data: data, encoding: .utf8) else { return .failed(errSecDecode) }
-            return .found(password)
+            guard let credential = ServerCredentialCodec.decode(data, legacyUsername: username) else {
+                return .failed(errSecDecode)
+            }
+            // Legacy 1.18 bytes are interpreted as a password credential without rewriting on
+            // read. This keeps background NSE reads from racing an app-side token replacement.
+            // The next explicit save writes the typed envelope to the same item.
+            // Typed envelopes carry the authoritative username with the secret. Only legacy
+            // raw bytes use the Core Data username supplied to the decoder.
+            return .found(credential)
         case .notFound: return .notFound
         case .failed(let status): return .failed(status)
         }
     }
 
-    private func data(service: String, baseUrl: String, valueDescription: String) -> Data? {
-        var attributes = Self.query(service: service, baseUrl: baseUrl)
-        attributes[kSecReturnData as String] = true
-        attributes[kSecMatchLimit as String] = kSecMatchLimitOne
+    func password(baseUrl: String) -> String? {
+        readPassword(baseUrl: baseUrl).value
+    }
 
-        var item: CFTypeRef?
-        let status = SecItemCopyMatching(attributes as CFDictionary, &item)
-        guard status == errSecSuccess, let data = item as? Data else {
-            if status != errSecItemNotFound {
-                Log.w(Self.tag, "Cannot read \(valueDescription) for \(baseUrl) (OSStatus \(status))")
-            }
-            return nil
+    func readPassword(baseUrl: String) -> TopicSecretRead<String> {
+        switch readCredential(baseUrl: baseUrl, username: "") {
+        case .found(.basic(_, let password)): return .found(password)
+        case .found(.accessToken): return .notFound
+        case .notFound: return .notFound
+        case .failed(let status): return .failed(status)
         }
-        return data
     }
 
     @discardableResult
     func deletePassword(baseUrl: String) -> Bool {
-        delete(service: Self.passwordService, baseUrl: baseUrl)
+        return delete(service: Self.passwordService, baseUrl: baseUrl)
     }
 
     private func delete(service: String, baseUrl: String) -> Bool {
@@ -415,5 +435,25 @@ final class KeychainCredentialStore: CredentialStoring, TopicSecretStoring {
         let probeBaseUrl = "__keychain_availability_\(UUID().uuidString)__"
         guard setPassword("probe", baseUrl: probeBaseUrl) else { return false }
         return deletePassword(baseUrl: probeBaseUrl)
+    }
+}
+
+/// 1.18 stored raw UTF-8 password bytes in this exact Keychain item. A non-UTF-8 marker
+/// distinguishes the new envelope from every possible old password, including JSON passwords.
+enum ServerCredentialCodec {
+    private static let marker = Data([0xff]) + Data("ntfy-credential-v1\0".utf8)
+
+    static func isTyped(_ data: Data) -> Bool { data.starts(with: marker) }
+
+    static func encode(_ credential: ServerCredential) throws -> Data {
+        marker + (try JSONEncoder().encode(credential))
+    }
+
+    static func decode(_ data: Data, legacyUsername: String) -> ServerCredential? {
+        if isTyped(data) {
+            return try? JSONDecoder().decode(ServerCredential.self, from: data.dropFirst(marker.count))
+        }
+        guard let password = String(data: data, encoding: .utf8) else { return nil }
+        return .basic(username: legacyUsername, password: password)
     }
 }

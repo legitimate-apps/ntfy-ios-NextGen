@@ -20,7 +20,7 @@ struct UserRowView: View {
             Image(systemName: "person.fill")
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(user.username ?? "?")
+                    Text(store.getBasicUser(baseUrl: user.baseUrl ?? "")?.username ?? "Sign-in required")
                     Text(user.baseUrl ?? "?")
                         .font(.subheadline)
                         .foregroundColor(.secondary)

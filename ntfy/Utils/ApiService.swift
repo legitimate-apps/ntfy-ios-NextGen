@@ -20,11 +20,11 @@ class ApiService {
         fetchJsonData(urlString: urlString, baseUrl: request.baseUrl, user: request.user, timeout: timeout, completionHandler: completionHandler)
     }
     
-    func poll(subscription: Subscription, messageId: String, user: BasicUser?, completionHandler: @escaping (Message?, Error?) -> Void) {
+    func poll(subscription: Subscription, messageId: String, user: ServerCredential?, completionHandler: @escaping (Message?, Error?) -> Void) {
         poll(baseUrl: subscription.baseUrl ?? "?", topic: subscription.topic ?? "?", messageId: messageId, user: user, completionHandler: completionHandler)
     }
 
-    func poll(baseUrl: String, topic: String, messageId: String, user: BasicUser?, timeout: TimeInterval = 30, completionHandler: @escaping (Message?, Error?) -> Void) {
+    func poll(baseUrl: String, topic: String, messageId: String, user: ServerCredential?, timeout: TimeInterval = 30, completionHandler: @escaping (Message?, Error?) -> Void) {
         guard let url = URL(string: "\(topicUrl(baseUrl: baseUrl, topic: topic))/json?poll=1&id=\(messageId)") else {
             completionHandler(nil, URLError(.badURL))
             return
@@ -117,7 +117,7 @@ class ApiService {
 
     func publish(
         subscription: Subscription,
-        user: BasicUser?,
+        user: ServerCredential?,
         message: String,
         title: String,
         priority: Int = 3,
@@ -174,7 +174,7 @@ class ApiService {
     /// headers, so the server only learns that something was sent.
     func publishRequest(
         subscription: Subscription,
-        user: BasicUser?,
+        user: ServerCredential?,
         message: String,
         title: String,
         priority: Int = 3,
@@ -187,7 +187,7 @@ class ApiService {
 
     func buildPublishRequest(
         subscription: Subscription,
-        user: BasicUser?,
+        user: ServerCredential?,
         message: String,
         title: String,
         priority: Int = 3,
@@ -238,7 +238,7 @@ class ApiService {
         }
     }
 
-    func checkAuth(baseUrl: String, topic: String, user: BasicUser?, session: URLSession? = nil, completionHandler: @escaping(AuthResult) -> Void) {
+    func checkAuth(baseUrl: String, topic: String, user: ServerCredential?, session: URLSession? = nil, completionHandler: @escaping(AuthResult) -> Void) {
         // Every exit from this method must call completionHandler: "Add subscription" clears its
         // loading spinner only from the handler, so dropping it hangs the sheet with no error.
         // A base URL can reach here unparseable — isAddViewValid() only checks `^https?://.+`,
@@ -283,7 +283,7 @@ class ApiService {
         }
     }
 
-    private func fetchJsonData<T: Decodable>(urlString: String, baseUrl: String, user: BasicUser?, timeout: TimeInterval = 30, completionHandler: @escaping ([T]?, Error?) -> ()) {
+    private func fetchJsonData<T: Decodable>(urlString: String, baseUrl: String, user: ServerCredential?, timeout: TimeInterval = 30, completionHandler: @escaping ([T]?, Error?) -> ()) {
         guard let url = URL(string: urlString) else {
             completionHandler(nil, URLError(.badURL))
             return
@@ -323,7 +323,7 @@ class ApiService {
         }
     }
     
-    func newRequest(url: URL, baseUrl: String, user: BasicUser?) -> URLRequest {
+    func newRequest(url: URL, baseUrl: String, user: ServerCredential?) -> URLRequest {
         var request = URLRequest(url: url)
         request.setValue(ApiService.userAgent, forHTTPHeaderField: "User-Agent")
         // Apply these last: an explicit custom Authorization or User-Agent is an intentional
@@ -375,17 +375,49 @@ struct PollRequest {
     let topicUrl: String
     /// The cursor the request asks from (`since=`), nil for the first poll.
     let since: String?
-    let user: BasicUser?
+    let user: ServerCredential?
 }
 
-struct BasicUser {
-    let username: String
-    let password: String
-    
-    func toHeader() -> String {
-        return "Basic " + String(format: "%@:%@", username, password).data(using: String.Encoding.utf8)!.base64EncodedString()
+/// A server has exactly one login, shared by API and attachment requests.
+enum ServerCredential: Codable, Equatable, CustomStringConvertible, CustomDebugStringConvertible {
+    case basic(username: String, password: String)
+    case accessToken(String)
+
+    init(username: String, password: String) {
+        self = .basic(username: username, password: password)
     }
+
+    /// Only a label is exposed for token accounts. The secret never becomes a username.
+    var username: String {
+        if case .basic(let username, _) = self { return username }
+        return "Access token"
+    }
+
+    var password: String {
+        if case .basic(_, let password) = self { return password }
+        return ""
+    }
+
+    var isAccessToken: Bool {
+        if case .accessToken = self { return true }
+        return false
+    }
+
+    func toHeader() -> String {
+        switch self {
+        case .basic(let username, let password):
+            return "Basic " + Data("\(username):\(password)".utf8).base64EncodedString()
+        case .accessToken(let token):
+            return "Bearer " + token
+        }
+    }
+
+    var description: String { isAccessToken ? "Access token (<redacted>)" : "Username and password (<redacted>)" }
+    var debugDescription: String { description }
 }
+
+// Existing polling and extension callers accept the same value type during this transition.
+typealias BasicUser = ServerCredential
 
 enum AuthResult {
     case Success
@@ -521,9 +553,9 @@ struct ClearRequest {
     let baseUrl: String
     let topic: String
     let sequence: String
-    let user: BasicUser?
+    let user: ServerCredential?
     let messageId: String?
-    init(baseUrl: String, topic: String, sequence: String, user: BasicUser?, messageId: String? = nil) {
+    init(baseUrl: String, topic: String, sequence: String, user: ServerCredential?, messageId: String? = nil) {
         self.baseUrl = baseUrl; self.topic = topic; self.sequence = sequence; self.user = user; self.messageId = messageId
     }
 }

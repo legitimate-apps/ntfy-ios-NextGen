@@ -28,7 +28,7 @@ struct SettingsView: View {
                 UrgentAlertsSettingView()
                 Section(
                     header: Text("Users"),
-                    footer: Text("To access read-protected topics, you may add or edit users here. All topics for a given server will use the same user.")
+                    footer: Text("Add or edit a password or access token for read-protected topics. All topics for a server use the same login.")
                 ) {
                     UserTableView(dialog: $userDialog)
                 }
@@ -49,14 +49,16 @@ struct SettingsView: View {
         .sheet(item: $userDialog) { dialog in
             UserEditorView(
                 selectedUser: dialog.user,
-                onSave: { baseUrl, username, password in
-                    let saved = store.saveUser(baseUrl: baseUrl, username: username, password: password)
+                onSave: { baseUrl, username, credential in
+                    guard let credential else { return false }
+                    let saved = store.saveUser(baseUrl: baseUrl, credential: credential)
                     if saved { userDialog = nil }
                     return saved
                 },
                 onDelete: { user in
-                    store.delete(user: user)
-                    userDialog = nil
+                    let deleted = store.delete(user: user)
+                    if deleted { userDialog = nil }
+                    return deleted
                 },
                 onCancel: {
                     userDialog = nil

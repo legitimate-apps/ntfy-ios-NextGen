@@ -87,10 +87,11 @@ enum PublishCommand {
     /// never put in the command: curl asks for the password, and header values are placeholders.
     struct Auth: Equatable {
         var username: String?
+        var accessToken = false
         var headerNames: [String] = []
 
         static let none = Auth()
-        var isEmpty: Bool { username == nil && headerNames.isEmpty }
+        var isEmpty: Bool { username == nil && !accessToken && headerNames.isEmpty }
     }
 
     /// Stands in for a custom header's value, which stays in the Keychain.
@@ -125,6 +126,9 @@ enum PublishCommand {
             // `--user name` without a password makes curl prompt for it, so it never lands in a
             // clipboard, shell history or a screenshot.
             parts += ["--user", shellQuoted(username)]
+        }
+        if auth.accessToken {
+            parts += ["-H", shellQuoted("Authorization: Bearer <token>")]
         }
         for name in auth.headerNames {
             parts += ["-H", shellQuoted("\(name): \(headerValuePlaceholder)")]

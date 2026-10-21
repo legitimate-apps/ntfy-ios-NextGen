@@ -14,8 +14,7 @@ struct SubscriptionAddView: View {
     @State private var baseUrl: String = ""
     
     @State private var showLogin: Bool = false
-    @State private var username: String = ""
-    @State private var password: String = ""
+    @State private var login = ServerLoginInput()
     
     @State private var loading = false
     @State private var addError: String?
@@ -146,20 +145,12 @@ struct SubscriptionAddView: View {
         VStack(alignment: .leading, spacing: 0) {
             Form {
                 Section(
-                    footer: Text("This topic requires that you log in with username and password. The user will be stored on your device, and will be re-used for other topics.")
+                    footer: Text("Sign in with a password or access token to read this topic. The login is stored securely and used for other topics on this server.")
                 ) {
-                    // textContentType is what lets iOS offer saved credentials (and store new
-                    // ones) here. Without it the Passwords AutoFill bar never appears, so a
-                    // read-protected topic means typing a server password by hand every time.
-                    TextField("Username", text: $username)
-                        .textContentType(.username)
-                        .disableAutocapitalization()
-                        .disableAutocorrection(true)
-                    SecureField("Password", text: $password)
-                        .textContentType(.password)
+                    ServerLoginFields(input: $login)
                 }
             }
-            if let notice = UrlSecurityNotice.message(for: selectedBaseUrl) {
+            if let notice = UrlSecurityNotice.message(for: selectedBaseUrl, isAccessToken: login.method == .token) {
                 Text(notice).font(.footnote).foregroundColor(.secondary).padding()
             }
             if let error = loginError {
@@ -222,10 +213,7 @@ struct SubscriptionAddView: View {
     }
     
     private func isLoginViewValid() -> Bool {
-        if username.isEmpty || password.isEmpty {
-            return false
-        }
-        return true
+        login.isValid && !loading
     }
     
     private func subscribeOrShowLoginAction() {
@@ -241,12 +229,14 @@ struct SubscriptionAddView: View {
                     subscriptionManager.subscribe(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
                     finishSubscribing()
                 case .Unauthorized:
-                    if let user = user {
-                        addError = "User \(user.username) is not authorized to read this topic"
-                    } else {
-                        addError = nil // Reset
-                        showLogin = true
+                    // A saved token may have expired or been revoked. Let the user replace it
+                    // here, using the same form as the first sign-in.
+                    if let user {
+                        login.method = user.isAccessToken ? .token : .password
+                        login.username = user.isAccessToken ? "" : user.username
                     }
+                    addError = nil
+                    showLogin = true
                     loading = false
                 case .Error(let err):
                     addError = err
@@ -259,13 +249,13 @@ struct SubscriptionAddView: View {
     private func subscribeWithUserAction() {
         loading = true
         loginError = nil
-        let user = BasicUser(username: username, password: password)
+        let user = login.credential
         // See subscribeOrShowLoginAction: the handler is off-main, so hop before touching @State or Core Data.
         ApiService.shared.checkAuth(baseUrl: selectedBaseUrl, topic: sanitizedTopic, user: user) { result in
             DispatchQueue.main.async {
                 switch result {
                 case .Success:
-                    guard store.saveUser(baseUrl: selectedBaseUrl, username: username, password: password) else {
+                    guard store.saveUser(baseUrl: selectedBaseUrl, credential: user) else {
                         loginError = HardeningCopy.saveLoginFailed
                         loading = false
                         return
@@ -273,7 +263,7 @@ struct SubscriptionAddView: View {
                     subscriptionManager.subscribe(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
                     finishSubscribing()
                 case .Unauthorized:
-                    loginError = "Invalid credentials, or user \(username) is not authorized to read this topic"
+                    loginError = "Invalid login or no read access to this topic. Check the password or access token and try again."
                     loading = false
                 case .Error(let err):
                     loginError = err

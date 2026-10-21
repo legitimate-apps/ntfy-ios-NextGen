@@ -251,7 +251,8 @@ struct NotificationListView: View {
     /// them instead of publishing anonymously and failing. Names only: no secret leaves the Keychain.
     private func publishAuth(baseUrl: String) -> PublishCommand.Auth {
         PublishCommand.Auth(
-            username: store.getBasicUser(baseUrl: baseUrl)?.username,
+            username: store.getBasicUser(baseUrl: baseUrl).flatMap { $0.isAccessToken ? nil : $0.username },
+            accessToken: store.getBasicUser(baseUrl: baseUrl)?.isAccessToken ?? false,
             headerNames: KeychainCredentialStore.shared.httpHeaders(baseUrl: baseUrl).keys.sorted()
         )
     }
