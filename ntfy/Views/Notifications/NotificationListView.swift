@@ -32,6 +32,7 @@ struct NotificationListView: View {
     @State private var showCopiedConfirmation = false
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
+    @State private var showMuteOptions = false
     @State private var sendingTest = false
     @State private var publishError = ""
     @State private var draftDisplayName = ""
@@ -111,6 +112,12 @@ struct NotificationListView: View {
                 }
             }
         }
+        .safeAreaInset(edge: .top, spacing: 0) {
+            TopicMuteStatus(subscription: subscription)
+                .padding(.horizontal)
+                .background(Color(UIColor.systemBackground))
+        }
+        .sheet(isPresented: $showMuteOptions) { TopicMuteView(subscription: subscription) }
         .listStyle(PlainListStyle())
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.editMode, self.$editMode)
@@ -127,6 +134,7 @@ struct NotificationListView: View {
                     editButton
                 } else {
                     Menu {
+                        TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                         if notificationsModel.notifications.count > 0 {
                             editButton
                         }

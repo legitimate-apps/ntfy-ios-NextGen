@@ -21,6 +21,7 @@ parser.add_argument("udid", help="dedicated leased simulator, already booted")
 parser.add_argument("app", type=Path, help="signed simulator ntfy.app")
 parser.add_argument("derived_data", type=Path, help="UI runner DerivedData, preferably external disk")
 parser.add_argument("output", type=Path)
+parser.add_argument("--result-bundle", type=Path, help="explicit xcresult path to preserve evidence outside automatic log pruning")
 parser.add_argument("--seed", action="store_true", help="replace subscriptions with 61 isolated fixture topics")
 parser.add_argument("--seed-only", action="store_true", help="prepare fixture without running the UI suite")
 parser.add_argument("--sort", choices=["name", "recentActivity"], default="name")
@@ -90,7 +91,9 @@ if args.seed_only:
     raise SystemExit(0)
 command = ["xcodebuild", "-project", str(root / "NavigationPilot.xcodeproj"), "-scheme", "NavigationPilot",
            "-destination", "platform=iOS Simulator,id=" + args.udid, "-derivedDataPath", str(args.derived_data),
-           "-parallel-testing-enabled", "NO", "NTFY_TEST_APP_ID=" + bundle_id,
+           "-parallel-testing-enabled", "NO", "-collect-test-diagnostics", "never", "NTFY_TEST_APP_ID=" + bundle_id,
            "NTFY_TEST_HARNESS=" + str(harness), "test"]
+if args.result_bundle:
+    command += ["-resultBundlePath", str(args.result_bundle.resolve())]
 command += ["-only-testing:NavigationPilotUITests/NavigationPilotUITests/" + name for name in args.only]
 run(*command)

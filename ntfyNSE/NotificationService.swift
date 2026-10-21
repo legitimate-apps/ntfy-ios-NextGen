@@ -1,3 +1,6 @@
+#if NTFY_NSE_TEST_HOST
+@testable import ntfy
+#endif
 import UserNotifications
 import CoreData
 import CryptoKit
@@ -17,6 +20,12 @@ class NotificationService: UNNotificationServiceExtension {
         set { if let newValue { attempt.replace(with: newValue) } }
     }
     private var deliveryGate: NotificationDeliveryGate?
+    private let presentationLock = NSLock()
+    private var processedMessage: Message?
+    private var presentationMessage: Message? {
+        get { presentationLock.lock(); defer { presentationLock.unlock() }; return processedMessage }
+        set { presentationLock.lock(); defer { presentationLock.unlock() }; processedMessage = newValue }
+    }
     
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         // On a Mac this process can outlive the banner and receive its taps; pass them to the app.
@@ -24,6 +33,7 @@ class NotificationService: UNNotificationServiceExtension {
         NotificationExtensionLifetime.shared.requestStarted()
         self.store = Store.shared
         self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
+        presentationMessage = nil
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)
 
         if let bestAttemptContent = bestAttemptContent {
@@ -71,7 +81,10 @@ class NotificationService: UNNotificationServiceExtension {
     }
 
     private func deliver(_ content: UNNotificationContent) {
-        guard deliveryGate?.deliver(content) == true else {
+        let final = content.mutableCopy() as! UNMutableNotificationContent
+        if let presentationMessage { final.configureInterruption(message: presentationMessage) }
+        final.applyTopicMute()
+        guard deliveryGate?.deliver(final) == true else {
             Log.w(tag, "Ignoring late notification delivery after the content handler already fired")
             return
         }
@@ -147,6 +160,7 @@ class NotificationService: UNNotificationServiceExtension {
             displayName: displayName,
             categoryRegistrationTimeout: NotificationServiceTiming.categoryRegistrationTimeout
         )
+        presentationMessage = message
         bestAttemptContent = content
         content.attachImageIfNeeded(
             message: message,

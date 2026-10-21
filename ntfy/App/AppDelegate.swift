@@ -381,6 +381,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         let content = UNMutableNotificationContent()
         content.modify(message: message, baseUrl: baseUrl, displayName: displayName)
         content.attachImageIfNeeded(message: message, baseUrl: baseUrl, user: user) {
+            content.configureInterruption(message: message)
+            content.applyTopicMute(baseUrl: baseUrl, topic: message.topic)
             let request = UNNotificationRequest(identifier: message.id, content: content, trigger: nil /* now */)
             UNUserNotificationCenter.current().add(request) { error in
                 if let error = error {
@@ -435,7 +437,8 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
                 return
             }
         }
-        completionHandler(notification.request.content.sound == nil ? [.list] : [.banner, .sound])
+        let muted = Store.shared.isNotificationMuted(userInfo: userInfo)
+        completionHandler(muted || notification.request.content.sound == nil ? [.list] : [.banner, .sound])
     }
     
     /// Executed when the user clicks on the notification.

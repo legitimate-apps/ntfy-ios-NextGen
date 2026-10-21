@@ -8,6 +8,11 @@
 
 /* Begin PBXBuildFile section */
 		B64119000000000000000001 /* base64-binary.json in Resources */ = {isa = PBXBuildFile; fileRef = B64119000000000000000002 /* base64-binary.json */; };
+        F11900000000000000000005 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9474F1E6282F3FFD00CDE4DD; };
+        F11900000000000000000001 /* TopicMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11900000000000000000011; };
+        F11900000000000000000002 /* TopicMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11900000000000000000011; };
+        F11900000000000000000003 /* TopicMuteView.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11900000000000000000012; };
+        F11900000000000000000004 /* TopicMuteTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11900000000000000000013; };
 		118B00010000000000000004 /* TopicLinkTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000003 /* TopicLinkTests.swift */; };
 		118B00010000000000000002 /* TopicLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000001 /* TopicLink.swift */; };
 		BA1180000000000000000012 /* ServerContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = BA1180000000000000000011; };
@@ -148,6 +153,10 @@
 
 /* Begin PBXFileReference section */
 		B64119000000000000000002 /* base64-binary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Fixtures/base64-binary.json; sourceTree = "<group>"; };
+        F11900000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicMute.swift; sourceTree = "<group>"; };
+        F11900000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicMuteView.swift; sourceTree = "<group>"; };
+        F11900000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicMuteTests.swift; sourceTree = "<group>"; };
+        F11900000000000000000014 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 8.xcdatamodel"; sourceTree = "<group>"; };
 		118B00010000000000000003 /* TopicLinkTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLinkTests.swift; sourceTree = "<group>"; };
 		118B00010000000000000001 /* TopicLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLink.swift; sourceTree = "<group>"; };
 		BA1180000000000000000011 /* ServerContractTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ServerContractTests.swift; sourceTree = "<group>"; };
@@ -296,6 +305,7 @@
 				29E841982FB417E400F927E4 /* SubscriptionAddView.swift */,
 				117A00022FD0000100F927E4 /* LaunchExperience.swift */,
 				29E841992FB417E400F927E4 /* SubscriptionListView.swift */,
+                F11900000000000000000012 /* TopicMuteView.swift */,
 			);
 			path = Subscriptions;
 			sourceTree = "<group>";
@@ -402,6 +412,7 @@
 				29E8419F2FB417EA00F927E4 /* NotificationAttachmentImageLoader.swift */,
 				E27008112AF1030A006E33BA /* NotificationsObservable.swift */,
                 A18000110000000000000002 /* Retention.swift */,
+                F11900000000000000000011 /* TopicMute.swift */,
 				94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */,
 				6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */,
 				94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */,
@@ -475,6 +486,7 @@
 				B64119000000000000000002 /* base64-binary.json */,
                 BA1180000000000000000011 /* ServerContractTests.swift */,
 				A18000010000000000000002 /* RetentionTests.swift */,
+                F11900000000000000000013 /* TopicMuteTests.swift */,
 				118CAFE00000000000000002 /* RelayCheckTests.swift */,
                 C11800010000000000000005 /* ClearThroughTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
@@ -662,7 +674,9 @@
 				9474F20C283321C300CDE4DD /* Notification.swift in Sources */,
 				E27008122AF1030A006E33BA /* NotificationsObservable.swift in Sources */,
                 A18000110000000000000001 /* Retention.swift in Sources */,
+                F11900000000000000000001 /* TopicMute.swift in Sources */,
                 A18000120000000000000001 /* RetentionSettingsView.swift in Sources */,
+                F11900000000000000000003 /* TopicMuteView.swift in Sources */,
 				9486714A2841D0CE0093C7A4 /* ActionExecutor.swift in Sources */,
 				2E1C0B022FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				9474F1FF28316ACE00CDE4DD /* Subscription.swift in Sources */,
@@ -707,6 +721,7 @@
 				2968F2AE2FBA530200480665 /* AttachmentProgressState.swift in Sources */,
 				9474F2052831D51500CDE4DD /* Store.swift in Sources */,
                 A18000110000000000000003 /* Retention.swift in Sources */,
+                F11900000000000000000002 /* TopicMute.swift in Sources */,
 				2E1C0B032FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				29C6D8322FBD1B750057C9AC /* DownloadDelegate.swift in Sources */,
 				29F001032FB560E300F927E4 /* AttachmentFileStore.swift in Sources */,
@@ -727,6 +742,8 @@
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
                 BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
 				A18000010000000000000001 /* RetentionTests.swift in Sources */,
+                F11900000000000000000004 /* TopicMuteTests.swift in Sources */,
+                F11900000000000000000005 /* NotificationService.swift in Sources */,
 				118BEEF00000000000000002 /* RelayCheckTests.swift in Sources */,
                 C11800010000000000000004 /* ClearThroughTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
@@ -1001,6 +1018,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).ntfyTests";
+                SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NTFY_NSE_TEST_HOST";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1020,6 +1038,7 @@
 				GENERATE_INFOPLIST_FILE = YES;
 				IPHONEOS_DEPLOYMENT_TARGET = 15.0;
 				PRODUCT_BUNDLE_IDENTIFIER = "$(APP_BUNDLE_ID).ntfyTests";
+                SWIFT_ACTIVE_COMPILATION_CONDITIONS = "$(inherited) NTFY_NSE_TEST_HOST";
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SDKROOT = iphoneos;
 				SWIFT_EMIT_LOC_STRINGS = NO;
@@ -1102,8 +1121,9 @@
 				9474F1FD2830830700CDE4DD /* Model 5.xcdatamodel */,
 				C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */,
                 A18000130000000000000001 /* Model 7.xcdatamodel */,
+                F11900000000000000000014 /* Model 8.xcdatamodel */,
 			);
-			currentVersion = A18000130000000000000001 /* Model 7.xcdatamodel */;
+			currentVersion = F11900000000000000000014 /* Model 8.xcdatamodel */;
 			path = ntfy.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

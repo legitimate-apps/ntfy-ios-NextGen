@@ -160,4 +160,60 @@ final class NavigationPilotUITests: XCTestCase {
         XCTAssertFalse(app.staticTexts[target].exists)
     }
 
+    func muteScreenshot(_ name: String) {
+        let attachment = XCTAttachment(screenshot: app.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+    func revealMuteChoice(_ title: String, scrollingUp: Bool = true) -> XCUIElement {
+        let button = app.buttons[title]
+        for _ in 0..<4 {
+            if button.exists && button.isHittable { return button }
+            if scrollingUp { app.swipeUp() } else { app.swipeDown() }
+        }
+        XCTAssertTrue(button.exists && button.isHittable, "Mute choice must be reachable: \(title)")
+        return button
+    }
+    func testTopicMuteMenusPersistenceSwipeAndResume() {
+        launchList()
+        let row = app.staticTexts["aaa-nav-000"].firstMatch
+        XCTAssertTrue(row.waitForExistence(timeout: 5))
+        row.press(forDuration: 1)
+        muteScreenshot("mute-topic-context-menu")
+        app.buttons["Mute topic"].tap()
+        XCTAssertTrue(app.navigationBars["Mute topic"].waitForExistence(timeout: 3))
+        let largeText = app.buttons["30 minutes"].frame.height > 60
+        muteScreenshot("mute-duration-picker")
+        for choice in ["30 minutes", "1 hour", "2 hours", "8 hours", "Until tomorrow, 8:30 AM", "Until resumed"] {
+            _ = revealMuteChoice(choice)
+        }
+        if largeText {
+            app.swipeUp()
+            muteScreenshot("mute-duration-picker-scrolled")
+        }
+        revealMuteChoice("30 minutes", scrollingUp: false).tap()
+        let status = app.staticTexts.matching(NSPredicate(format: "label BEGINSWITH %@", "Notifications muted until ")).firstMatch
+        XCTAssertTrue(status.waitForExistence(timeout: 3))
+        muteScreenshot("muted-topic-list")
+        app.terminate(); app.launch()
+        XCTAssertTrue(status.waitForExistence(timeout: 5), "mute must survive a restart")
+        row.swipeLeft()
+        muteScreenshot("mute-swipe-actions")
+        app.buttons["Mute settings"].tap()
+        app.buttons["Unmute"].tap()
+        XCTAssertFalse(status.exists)
+        row.tap()
+        app.navigationBars.buttons["More"].tap()
+        muteScreenshot("mute-topic-menu")
+        app.buttons["Mute topic"].tap()
+        revealMuteChoice("Until resumed").tap()
+        XCTAssertTrue(app.staticTexts["Notifications muted until resumed"].waitForExistence(timeout: 3))
+        muteScreenshot("muted-topic-history")
+        app.navigationBars.buttons["More"].tap()
+        app.buttons["Mute settings"].tap()
+        app.buttons["Unmute"].tap()
+        XCTAssertFalse(app.staticTexts["Notifications muted until resumed"].exists)
+    }
+
 }

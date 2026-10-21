@@ -145,6 +145,24 @@ extension UNMutableNotificationContent {
         // and iOS has granted critical alert permission.
         self.threadIdentifier = topicUrl(baseUrl: baseUrl, topic: message.topic)
         
+        configureInterruption(message: message)
+
+        applyTopicMute(baseUrl: baseUrl, topic: message.topic)
+
+        // Carry the unread total on the badge (ntfy#1462). Both delivery paths — the notification
+        // service extension and the app's own background poll — persist the message before calling
+        // us, so this count already includes it. Setting it on the content is the only thing that
+        // can move the app icon while the app itself never runs; the app corrects the badge back
+        // down from `AppDelegate.startBadgeSync` as soon as the user reads anything.
+        self.badge = NSNumber(value: Store.shared.totalUnreadCount())
+
+        // Make sure the userInfo matches, so that when the notification is tapped, the AppDelegate
+        // can properly navigate to the right topic and re-assemble the message.
+        self.userInfo = message.toUserInfo()
+        self.userInfo["base_url"] = baseUrl
+    }
+
+    func configureInterruption(message: Message) {
         // Map priorities to interruption level (light up screen, ...) and relevance (order)
         switch message.priority {
         case 1:
@@ -178,18 +196,6 @@ extension UNMutableNotificationContent {
             self.sound = nil
             self.interruptionLevel = .passive
         }
-
-        // Carry the unread total on the badge (ntfy#1462). Both delivery paths — the notification
-        // service extension and the app's own background poll — persist the message before calling
-        // us, so this count already includes it. Setting it on the content is the only thing that
-        // can move the app icon while the app itself never runs; the app corrects the badge back
-        // down from `AppDelegate.startBadgeSync` as soon as the user reads anything.
-        self.badge = NSNumber(value: Store.shared.totalUnreadCount())
-
-        // Make sure the userInfo matches, so that when the notification is tapped, the AppDelegate
-        // can properly navigate to the right topic and re-assemble the message.
-        self.userInfo = message.toUserInfo()
-        self.userInfo["base_url"] = baseUrl
     }
 
     func attachImageIfNeeded(

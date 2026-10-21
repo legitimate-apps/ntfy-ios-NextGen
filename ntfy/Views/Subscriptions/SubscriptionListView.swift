@@ -188,6 +188,7 @@ struct SubscriptionItemNavView: View {
     @ObservedObject var subscription: Subscription
     let summary: Store.SubscriptionSummary?
     @State private var unsubscribeAlert = false
+    @State private var showMuteOptions = false
     
     private var subscriptionManager: SubscriptionManager {
         return SubscriptionManager(store: store)
@@ -213,7 +214,9 @@ struct SubscriptionItemNavView: View {
                     }
                     .tint(PinBadge.tint)
                 }
-                .swipeActions(edge: .trailing) {
+                .swipeActions(edge: .trailing, allowsFullSwipe: false) {
+                    TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
+                        .tint(.gray)
                     // Named for what it does: the confirmation is "Unsubscribe", and a swipe that
                     // said "Delete" read as deleting messages, not leaving the topic.
                     Button(role: .destructive) {
@@ -225,6 +228,7 @@ struct SubscriptionItemNavView: View {
                 // Long-press offers the same actions for anyone who never tries a swipe. A blind
                 // setup test looked for pin here, found nothing and concluded the app had none.
                 .contextMenu {
+                    TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                     Button {
                         toggleRead()
                     } label: {
@@ -293,6 +297,9 @@ struct SubscriptionItemNavView: View {
             SubscriptionItemRowView(subscription: subscription, summary: summary)
         }
         .accessibilityElement(children: .combine)
+        .sheet(isPresented: $showMuteOptions) {
+            TopicMuteView(subscription: subscription)
+        }
         .alert(isPresented: $unsubscribeAlert) {
             Alert(
                 title: Text("Unsubscribe"),
@@ -388,6 +395,7 @@ struct SubscriptionItemRowView: View {
                     .foregroundColor(Color(UIColor.tertiaryLabel))
                 Spacer(minLength: 0)
             }
+            TopicMuteStatus(subscription: subscription)
             if let health = deliveryHealth.topics[subscription.objectID.uriRepresentation().absoluteString], let label = health.label {
                 HStack(alignment: .firstTextBaseline, spacing: 5) {
                     if health.needsAttention {
