@@ -59,6 +59,7 @@ struct NotificationAttachmentSectionView: View {
                     }) {
                         HStack(alignment: .center, spacing: 10) {
                             Image(systemName: attachment.systemImageName())
+                                .accessibilityHidden(true)
                                 .font(.title3)
                                 .foregroundColor(.secondary)
                                 .frame(width: 24, height: 24)
@@ -169,6 +170,7 @@ struct NotificationAttachmentSectionView: View {
                             ProgressView()
                         } else {
                             Image(systemName: "photo")
+                                .accessibilityHidden(true)
                                 .font(.title2)
                                 .foregroundColor(.secondary)
                         }
@@ -264,6 +266,8 @@ struct NotificationAttachmentSectionView: View {
                 .background(.ultraThinMaterial, in: Circle())
         }
         .menuStyle(.borderlessButton)
+        .accessibilityLabel("Attachment actions")
+        .accessibilityValue(attachment.displayName())
         .fixedSize()
     }
 

@@ -181,6 +181,7 @@ struct NotificationListView: View {
                         Image(systemName: "ellipsis.circle")
                             .padding([.leading], 40)
                     }
+                    .accessibilityLabel("Topic actions")
                 }
             }
             ToolbarItem(placement: .navigationBarLeading) {

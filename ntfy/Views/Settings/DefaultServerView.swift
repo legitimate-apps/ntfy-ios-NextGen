@@ -44,12 +44,14 @@ struct DefaultServerView: View {
                             TextField(Config.appBaseUrl, text: $newDefaultBaseUrl)
                                 .disableAutocapitalization()
                                 .disableAutocorrection(true)
+                                .accessibilityLabel("Default server")
                             if !newDefaultBaseUrl.isEmpty {
                                 Button {
                                     newDefaultBaseUrl = ""
                                 } label: {
                                     Image(systemName: "clear.fill")
                                 }
+                                .accessibilityLabel("Clear default server")
                             }
                         }
                     }

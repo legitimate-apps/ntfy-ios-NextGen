@@ -93,6 +93,7 @@ struct CriticalAlertsSettingView: View {
         )) {
             HStack(spacing: 14) {
                 Image(systemName: "exclamationmark.triangle.fill")
+                    .accessibilityHidden(true)
                     .foregroundColor(.red)
                     .font(.system(size: 22))
 

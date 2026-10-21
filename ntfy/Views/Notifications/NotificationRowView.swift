@@ -116,6 +116,7 @@ struct NotificationRowView: View {
                                 .resizable()
                                 .scaledToFit()
                                 .frame(width: 16, height: 16)
+                                .accessibilityLabel(priorityLabel)
                         }
                         switch notification.encryptionState {
                         case .none:
@@ -156,6 +157,7 @@ struct NotificationRowView: View {
                     }
                     .frame(width: 40, height: 40)
                     .clipShape(RoundedRectangle(cornerRadius: 8))
+                    .accessibilityHidden(true)
                     Spacer()
                 }
                 .padding([.bottom], 4)
@@ -256,8 +258,19 @@ struct NotificationRowView: View {
                 .padding(.vertical, 4)
         }
         .menuStyle(.borderlessButton)
+        .accessibilityLabel("Message actions")
     }
     
+    private var priorityLabel: String {
+        switch notification.priority {
+        case 1: return "Minimum priority"
+        case 2: return "Low priority"
+        case 4: return "High priority"
+        case 5: return "Maximum priority"
+        default: return "Default priority"
+        }
+    }
+
     private func copyMessage() {
         UIPasteboard.general.setValue(notification.formatMessage(), forPasteboardType: UTType.plainText.identifier)
         UINotificationFeedbackGenerator().notificationOccurred(.success)

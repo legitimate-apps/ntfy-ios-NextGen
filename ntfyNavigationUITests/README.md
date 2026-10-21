@@ -19,3 +19,15 @@ Assertions cover cold/warm URLs and responses, an off-screen destination, repeat
 The mute regression can be selected with `--only testTopicMuteMenusPersistenceSwipeAndResume` after `--seed`. It uses the first pinned fixture topic and drives long press, all duration choices, restart persistence, swipe, the topic menu and Unmute. It attaches screenshots of the duration picker and the muted list/history. Repeat after `simctl ui <udid> appearance dark` and `simctl ui <udid> content_size accessibility-extra-extra-extra-large` for visual review; export and compress the attachments before inspecting them. Restore appearance/text size and re-seed between independent cases.
 
 This response harness does not run the Notification Service Extension. `simctl push` on some simulator runtimes delivers the original APNs alert without starting the NSE; do not count that as NSE verification. Real local-message delivery can be exercised through a loopback ntfy server and the app's `~poll` background callback. Actual APNs/NSE launch and locked-device/Focus behavior still need device evidence when the runtime cannot execute the extension.
+
+The fixture also includes a high-priority message, emoji tags, a local one-pixel image and a synthetic legacy login. The app migrates its fixture password into the dedicated simulator's Keychain; it is not a real server credential. Accessibility regressions require semantic labels for Add subscription, Topic actions, Message actions, High priority and Attachment actions. The capture tests attach text accessibility trees and screenshots for the list, menus, image viewer, add sheet, settings, saved user and editors, server headers and What's new. The existing navigation and mute assertions use the explicit Add subscription and Topic actions labels.
+
+The capture traversal checks both sign-in choices, their selected state, and Username, Password and Access token field names. `testTopicQRControlsHaveSpokenNames` checks the topic QR image, Share, Done, Scan QR code and the no-camera scanner screen. The mute regression also attaches text trees for its menus, duration picker and muted status.
+
+The empty-list capture runs separately because it needs a different fixture:
+
+```sh
+python3 ntfyNavigationUITests/run.py "$UDID" "$APP_PATH" "$UI_DERIVED_DATA" "$EVIDENCE_DIRECTORY" --seed --empty-fixture --only testAccessibilityEmptyList
+```
+
+For matched large-text captures, set `xcrun simctl ui "$UDID" content_size accessibility-extra-extra-extra-large` and repeat the capture tests. Use `appearance light` and `appearance dark` for the two appearances. Export attachments with `xcrun xcresulttool export attachments --path <result.xcresult> --output-path <directory>`. Shrink exported screenshots before viewing or sharing them.

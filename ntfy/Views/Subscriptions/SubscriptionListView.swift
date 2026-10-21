@@ -46,6 +46,7 @@ struct SubscriptionListView: View {
                             } label: {
                                 Image(systemName: "arrow.clockwise")
                             }
+                            .accessibilityLabel("Refresh")
                         }
                     }
             }
@@ -108,6 +109,7 @@ struct SubscriptionListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
+                .accessibilityLabel("Add subscription")
             }
         }
         .overlay(Group {

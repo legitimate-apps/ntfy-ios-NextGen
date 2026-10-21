@@ -150,6 +150,8 @@ struct SubscriptionAddView: View {
                     .fixedSize(horizontal: true, vertical: false)
 
                 }
+                .accessibilityLabel("Subscribe")
+                .accessibilityValue(loading ? "In progress" : "")
                 .disabled(!isAddViewValid())
             }
         }
@@ -183,6 +185,8 @@ struct SubscriptionAddView: View {
                         Text("Subscribe")
                     }
                 }
+                .accessibilityLabel("Subscribe")
+                .accessibilityValue(loading ? "In progress" : "")
                 .disabled(!isLoginViewValid())
             }
         }
@@ -453,6 +457,7 @@ struct ErrorView: View {
     var body: some View {
         HStack {
             Image(systemName: "exclamationmark.triangle.fill")
+                .accessibilityHidden(true)
                 .foregroundColor(.red)
                 .font(.title2)
             Text(error)

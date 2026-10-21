@@ -34,13 +34,16 @@ struct NotificationAttachmentImageView: View {
     }
 
     private func renderedImage(_ image: UIImage) -> some View {
-        Image(uiImage: image)
-            .resizable()
-            .scaledToFit()
-            .clipShape(RoundedRectangle(cornerRadius: 12))
-            .onTapGesture {
-                imagePresentation = PresentedImage(image: image)
-            }
+        Button {
+            imagePresentation = PresentedImage(image: image)
+        } label: {
+            Image(uiImage: image)
+                .resizable()
+                .scaledToFit()
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+        }
+        .buttonStyle(.plain)
+        .accessibilityLabel("Open image")
     }
 
     private var loadingPlaceholder: some View {
@@ -63,6 +66,7 @@ struct NotificationAttachmentImageView: View {
             .frame(height: 120)
             .overlay {
                 Image(systemName: "photo")
+                    .accessibilityLabel("Image preview unavailable")
                     .font(.title2)
                     .foregroundColor(.secondary)
             }
@@ -122,6 +126,8 @@ private struct ZoomableImageScrollView: UIViewRepresentable {
 
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
+        imageView.isAccessibilityElement = true
+        imageView.accessibilityLabel = "Image attachment"
         imageView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(imageView)
         context.coordinator.imageView = imageView

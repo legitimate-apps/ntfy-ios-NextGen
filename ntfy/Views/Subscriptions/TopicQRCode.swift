@@ -293,6 +293,7 @@ struct TopicQRScannerView: View {
                 }
         case .needsPermission:
             ProgressView()
+                .accessibilityLabel("Requesting camera access")
         case .denied:
             message(
                 icon: "camera",

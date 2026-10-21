@@ -5,6 +5,7 @@ Uses an already-built app. Seeding modifies ONLY that simulator's app-group stor
 No app source changes, provisioning changes, or third-party Python packages.
 """
 import argparse
+import base64
 import plistlib
 from pathlib import Path
 import sqlite3
@@ -22,6 +23,7 @@ parser.add_argument("app", type=Path, help="signed simulator ntfy.app")
 parser.add_argument("derived_data", type=Path, help="UI runner DerivedData, preferably external disk")
 parser.add_argument("output", type=Path)
 parser.add_argument("--result-bundle", type=Path, help="explicit xcresult path to preserve evidence outside automatic log pruning")
+parser.add_argument("--empty-fixture", action="store_true", help="seed no subscriptions for the empty-state capture")
 parser.add_argument("--seed", action="store_true", help="replace subscriptions with 61 isolated fixture topics")
 parser.add_argument("--seed-only", action="store_true", help="prepare fixture without running the UI suite")
 parser.add_argument("--sort", choices=["name", "recentActivity"], default="name")
@@ -66,7 +68,7 @@ if args.seed:
         # This command is explicitly for a dedicated simulator, never a user's installation.
         db.execute("DELETE FROM ZNOTIFICATION")
         db.execute("DELETE FROM ZSUBSCRIPTION")
-        for index in range(61):
+        for index in range(0 if args.empty_fixture else 61):
             topic = f"aaa-nav-{index:03}" if index < 60 else "zz-nav-118-regression"
             server = "http://127.0.0.1:1" if index < 60 else "https://ntfy-me.com"
             db.execute("INSERT INTO ZSUBSCRIPTION (Z_PK,Z_ENT,Z_OPT,ZENCRYPTED,ZFCMSUBSCRIBED,ZLASTEVENTTIME,"
@@ -86,6 +88,18 @@ if args.seed:
             db.execute("DELETE FROM ZPREFERENCE WHERE ZKEY=?", (key,))
             db.execute("INSERT INTO ZPREFERENCE VALUES (?,3,1,?,?)", (pk, key, value))
         db.execute("UPDATE Z_PRIMARYKEY SET Z_MAX=? WHERE Z_NAME='Preference'", (pk,))
+    if not args.empty_fixture:
+        with sqlite3.connect(store) as db:
+            db.execute("DELETE FROM ZUSER")
+            # A synthetic legacy password lets the current app migrate a real named login.
+            db.execute("INSERT INTO ZUSER VALUES (1,6,1,'http://127.0.0.1:1','accessibility-fixture-password','accessibility-user')")
+            db.execute("UPDATE Z_PRIMARYKEY SET Z_MAX=1 WHERE Z_NAME='User'")
+        image = store.parent / "accessibility-fixture.png"
+        image.write_bytes(base64.b64decode("iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aX1sAAAAASUVORK5CYII="))
+        with sqlite3.connect(store) as db:
+            db.execute("UPDATE ZNOTIFICATION SET ZPRIORITY=4,ZTAGS='warning,heart',ZMESSAGE='Accessibility fixture',"
+                       "ZATTACHMENTNAME='Fixture image.png',ZATTACHMENTTYPE='image/png',ZATTACHMENTURL='http://127.0.0.1:1/image.png',"
+                       "ZATTACHMENTLOCALPATH=? WHERE Z_PK=1", (str(image),))
     print("Seeded 61 subscriptions; target last; default server differs from link server; sort=" + args.sort, flush=True)
 if args.seed_only:
     raise SystemExit(0)

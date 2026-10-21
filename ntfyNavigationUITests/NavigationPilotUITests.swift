@@ -31,7 +31,7 @@ final class NavigationPilotUITests: XCTestCase {
     func assertTarget() {
         XCTAssertTrue(app.navigationBars.staticTexts[target].waitForExistence(timeout: 8), "off-screen target must open without scrolling")
         XCTAssertTrue(app.navigationBars.buttons["Subscribed topics"].exists)
-        XCTAssertTrue(app.buttons["More"].exists)
+        XCTAssertTrue(app.buttons["Topic actions"].exists)
     }
     func testURLNewCold() {
         app.terminate()
@@ -68,7 +68,7 @@ final class NavigationPilotUITests: XCTestCase {
             Thread.sleep(forTimeInterval: 1)
             XCTAssertFalse(app.navigationBars["Add subscription"].exists)
         }
-        app.buttons["Add"].tap()
+        app.buttons["Add subscription"].tap()
         XCTAssertTrue(app.navigationBars["Add subscription"].waitForExistence(timeout: 5))
         app.open(URL(string: "https://ntfy-me.com/" + target)!)
         assertTarget()
@@ -80,7 +80,7 @@ final class NavigationPilotUITests: XCTestCase {
         CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName("ntfy.navigation.fixture.response" as CFString), nil, nil, true)
         assertTarget()
         app.navigationBars.buttons["Subscribed topics"].tap()
-        app.buttons["Add"].tap()
+        app.buttons["Add subscription"].tap()
         XCTAssertTrue(app.navigationBars["Add subscription"].waitForExistence(timeout: 5))
         CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName("ntfy.navigation.fixture.response" as CFString), nil, nil, true)
         assertTarget()
@@ -139,7 +139,7 @@ final class NavigationPilotUITests: XCTestCase {
         confirmUnsubscribe()
     }
     func confirmUnsubscribe() {
-        app.buttons["More"].tap()
+        app.buttons["Topic actions"].tap()
         app.buttons["Unsubscribe"].tap()
         XCTAssertTrue(app.alerts["Unsubscribe"].waitForExistence(timeout: 3))
         app.alerts["Unsubscribe"].buttons["Unsubscribe"].tap()
@@ -161,10 +161,7 @@ final class NavigationPilotUITests: XCTestCase {
     }
 
     func muteScreenshot(_ name: String) {
-        let attachment = XCTAttachment(screenshot: app.screenshot())
-        attachment.name = name
-        attachment.lifetime = .keepAlways
-        add(attachment)
+        captureAX(name)
     }
     func revealMuteChoice(_ title: String, scrollingUp: Bool = true) -> XCUIElement {
         let button = app.buttons[title]
@@ -204,16 +201,162 @@ final class NavigationPilotUITests: XCTestCase {
         app.buttons["Unmute"].tap()
         XCTAssertFalse(status.exists)
         row.tap()
-        app.navigationBars.buttons["More"].tap()
+        app.navigationBars.buttons["Topic actions"].tap()
         muteScreenshot("mute-topic-menu")
         app.buttons["Mute topic"].tap()
         revealMuteChoice("Until resumed").tap()
         XCTAssertTrue(app.staticTexts["Notifications muted until resumed"].waitForExistence(timeout: 3))
         muteScreenshot("muted-topic-history")
-        app.navigationBars.buttons["More"].tap()
+        app.navigationBars.buttons["Topic actions"].tap()
         app.buttons["Mute settings"].tap()
         app.buttons["Unmute"].tap()
         XCTAssertFalse(app.staticTexts["Notifications muted until resumed"].exists)
     }
 
+    func captureAX(_ name: String) {
+        print("AXTREE-BEGIN " + name + "\n" + app.debugDescription + "\nAXTREE-END " + name)
+        let tree = XCTAttachment(string: app.debugDescription)
+        tree.name = name + ".txt"
+        tree.lifetime = .keepAlways
+        add(tree)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = name
+        shot.lifetime = .keepAlways
+        add(shot)
+    }
+    func tapEither(_ label: String, _ old: String) {
+        let named = app.buttons[label].firstMatch
+        if named.exists { named.tap() }
+        else if label == "Message actions" { app.buttons.matching(identifier: old).element(boundBy: 1).tap() }
+        else if label == "Attachment actions" { app.buttons.matching(identifier: old).element(boundBy: 2).tap() }
+        else { app.buttons[old].firstMatch.tap() }
+    }
+    func testAccessibilityControlNames() {
+        continueAfterFailure = true
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Subscribed topics"].waitForExistence(timeout: 8))
+        captureAX("regression-list")
+        XCTAssertTrue(app.buttons["Add subscription"].exists, "The primary action needs its spoken name")
+        app.staticTexts["aaa-nav-000"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["aaa-nav-000"].waitForExistence(timeout: 5))
+        captureAX("regression-topic")
+        XCTAssertTrue(app.buttons["Topic actions"].exists)
+        XCTAssertTrue(app.buttons["Message actions"].firstMatch.exists)
+        XCTAssertTrue(app.images["High priority"].exists)
+        XCTAssertFalse(app.images["priority-4"].exists)
+        XCTAssertTrue(app.buttons["Attachment actions"].firstMatch.exists)
+        XCTAssertTrue(app.buttons["Open image"].exists)
+    }
+    // Run separately with --seed --empty-fixture, after the navigation suite.
+    func testAccessibilityEmptyList() throws {
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Subscribed topics"].waitForExistence(timeout: 8))
+        guard !app.staticTexts["aaa-nav-000"].exists else { throw XCTSkip("Run with --seed --empty-fixture") }
+        captureAX("empty-topic-list")
+        XCTAssertTrue(app.staticTexts["It looks like you don't have any subscriptions yet"].exists)
+    }
+    func testCaptureSavedUserRow() {
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Subscribed topics"].waitForExistence(timeout: 8))
+        app.buttons["Settings"].tap()
+        let user = app.buttons.matching(NSPredicate(format: "label CONTAINS 'accessibility-user'")).firstMatch
+        for _ in 0..<16 { if user.exists && user.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(user.isHittable)
+        captureAX("saved-user-row")
+        user.tap()
+        captureAX("edit-user")
+        app.buttons["Cancel"].tap()
+    }
+    func testCaptureAccessibilityScreens() {
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Subscribed topics"].waitForExistence(timeout: 8))
+        captureAX("topic-list")
+        tapEither("Add subscription", "Add")
+        XCTAssertTrue(app.navigationBars["Add subscription"].waitForExistence(timeout: 5))
+        captureAX("add-subscription")
+        app.buttons["Cancel"].tap()
+        app.staticTexts["aaa-nav-000"].firstMatch.tap()
+        XCTAssertTrue(app.navigationBars.staticTexts["aaa-nav-000"].waitForExistence(timeout: 5))
+        captureAX("topic-and-attachments")
+        tapEither("Message actions", "More")
+        captureAX("message-menu")
+        app.tapCoordinateOutsideMenu()
+        tapEither("Attachment actions", "More")
+        captureAX("attachment-menu")
+        app.tapCoordinateOutsideMenu()
+        if app.buttons["Open image"].exists { app.buttons["Open image"].tap() }
+        else { app.images.matching(NSPredicate(format: "label == ''")).firstMatch.tap() }
+        captureAX("fullscreen-image")
+        app.buttons["Close"].tap()
+        tapEither("Topic actions", "More")
+        captureAX("topic-menu")
+        app.tapCoordinateOutsideMenu()
+        app.navigationBars.buttons["Subscribed topics"].tap()
+        app.buttons["Settings"].tap()
+        captureAX("settings-top")
+        app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Default server'")).firstMatch.tap()
+        captureAX("default-server")
+        let field = app.textFields.firstMatch
+        field.tap(); field.typeText("http://localhost:8080")
+        captureAX("default-server-clear")
+        app.buttons["Cancel"].tap()
+        for _ in 0..<16 { if app.buttons["Add user"].isHittable { break }; app.swipeUp() }
+        captureAX("settings-users")
+        app.buttons["Add user"].tap()
+        captureAX("user-editor")
+        XCTAssertTrue(app.buttons["Username and password"].isSelected)
+        XCTAssertEqual(app.textFields["server-username"].label, "Username")
+        XCTAssertEqual(app.secureTextFields["server-password"].label, "Password")
+        app.buttons["Access token"].tap()
+        XCTAssertTrue(app.buttons["Access token"].isSelected)
+        XCTAssertEqual(app.secureTextFields["server-access-token"].label, "Access token")
+        XCTAssertFalse(app.textFields["server-username"].exists)
+        captureAX("user-editor-access-token")
+        app.buttons["Cancel"].tap()
+        for _ in 0..<16 { if app.buttons["Custom HTTP headers"].isHittable { break }; app.swipeUp() }
+        app.buttons["Custom HTTP headers"].tap()
+        captureAX("server-headers")
+        app.navigationBars.buttons["Settings"].tap()
+        app.terminate()
+        app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.17.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["What's new"].waitForExistence(timeout: 8))
+        captureAX("whats-new")
+    }
+
+    func testTopicQRControlsHaveSpokenNames() {
+        launchList()
+        app.staticTexts["aaa-nav-000"].firstMatch.tap()
+        app.buttons["Topic actions"].tap()
+        app.buttons["Show QR code"].tap()
+        XCTAssertTrue(app.navigationBars["QR code"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.images["QR code for 127.0.0.1:1/aaa-nav-000"].exists)
+        XCTAssertTrue(app.buttons["Share"].exists)
+        XCTAssertTrue(app.buttons["Done"].exists)
+        captureAX("topic-qr-code")
+        app.buttons["Done"].tap()
+        app.navigationBars.buttons["Subscribed topics"].tap()
+        app.buttons["Add subscription"].tap()
+        let scan = app.buttons["Scan QR code"]
+        for _ in 0..<6 { if scan.isHittable { break }; app.swipeUp() }
+        XCTAssertTrue(scan.isHittable)
+        captureAX("add-subscription-scan-entry")
+        scan.tap()
+        XCTAssertTrue(app.navigationBars["Scan QR code"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts["This device has no camera. Type the topic and server in instead."].exists)
+        XCTAssertFalse(app.images["camera"].exists)
+        let cancelScan = app.navigationBars["Scan QR code"].buttons["Cancel"]
+        XCTAssertTrue(cancelScan.exists)
+        captureAX("topic-qr-scanner")
+        cancelScan.tap()
+        XCTAssertTrue(app.navigationBars["Add subscription"].waitForExistence(timeout: 5))
+        app.buttons["Cancel"].tap()
+    }
+
+}
+
+private extension XCUIApplication {
+    func tapCoordinateOutsideMenu() {
+        coordinate(withNormalizedOffset: CGVector(dx: 0.995, dy: 0.50)).tap()
+    }
 }

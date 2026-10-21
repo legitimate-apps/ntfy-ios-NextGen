@@ -31,6 +31,7 @@ struct ServerHeadersView: View {
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
+                    .accessibilityLabel("Server URL")
                 Button("Load saved headers", action: load)
             }
 

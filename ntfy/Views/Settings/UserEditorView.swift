@@ -239,9 +239,11 @@ struct ServerLoginFields: View {
                 .textContentType(.username)
                 .disableAutocapitalization()
                 .disableAutocorrection(true)
+                .accessibilityLabel("Username")
                 .accessibilityIdentifier("server-username")
             SecureField("Password", text: $input.secret)
                 .textContentType(.password)
+                .accessibilityLabel("Password")
                 .accessibilityIdentifier("server-password")
         } else {
             SecureField("Access token, tk_…", text: $input.secret)

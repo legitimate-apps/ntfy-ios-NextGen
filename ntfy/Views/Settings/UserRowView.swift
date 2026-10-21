@@ -18,6 +18,7 @@ struct UserRowView: View {
         
         HStack {
             Image(systemName: "person.fill")
+                .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
                     Text(store.getBasicUser(baseUrl: user.baseUrl ?? "")?.username ?? "Sign-in required")
@@ -28,6 +29,7 @@ struct UserRowView: View {
             }
             Spacer()
             Image(systemName: "chevron.forward")
+                .accessibilityHidden(true)
                 .font(.caption)
                 .foregroundColor(.secondary)
         }

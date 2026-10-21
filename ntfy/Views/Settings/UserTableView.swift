@@ -49,6 +49,7 @@ struct UserTableView: View {
         }) {
             HStack {
                 Image(systemName: "plus")
+                    .accessibilityHidden(true)
                 Text("Add user")
             }
             .foregroundColor(.primary)

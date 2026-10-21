@@ -181,7 +181,7 @@ struct WhatsNewView: View {
                             Text(entry.version).font(.headline).accessibilityAddTraits(.isHeader)
                             ForEach(entry.bullets, id: \.self) { bullet in
                                 HStack(alignment: .top) {
-                                    Text("•")
+                                    Text("•").accessibilityHidden(true)
                                     Text(bullet).fixedSize(horizontal: false, vertical: true)
                                 }
                             }
