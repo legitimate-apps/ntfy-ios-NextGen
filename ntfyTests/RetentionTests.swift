@@ -69,6 +69,7 @@ final class RetentionTests: XCTestCase {
     func testRetentionRemovesExpiredRowsAndFilesButKeepsBoundaryAndFreshWrites() throws {
         let isolated = Store(inMemory: true)
         isolated.saveNotificationRetention(.month)
+        isolated.retentionContext.performAndWait {} // the save starts a prune; finish it before inserting rows
         let context = isolated.context
         let subscription = isolated.saveSubscription(baseUrl: "https://retention.example", topic: "expiry")
         let now = Date()
@@ -615,6 +616,7 @@ final class RetentionTests: XCTestCase {
         let isolated = Store(inMemory: true, storeURL: url)
         diskStores.append(isolated)
         isolated.saveNotificationRetention(.day)
+        isolated.retentionContext.performAndWait {} // the save starts a prune; finish it before inserting rows
         let sub = isolated.saveSubscription(baseUrl: "https://retention.example", topic: "review")
         let now = Date()
         for i in 0..<3 {
