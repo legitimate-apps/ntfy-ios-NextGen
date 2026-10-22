@@ -55,7 +55,7 @@ final class RelayCheckTests: XCTestCase {
         let check = RelayCheck(cooldown: nil, discover: { _ in discovered = true })
         check.prepare(baseUrl: "http://private.example", topic: "topic")
         XCTAssertFalse(discovered)
-        XCTAssertTrue(check.state.message!.contains("requires HTTPS"))
+        XCTAssertEqual(check.state.message, String(localized: "An automatic relay check requires HTTPS for both your topic server and the relay. No test message was sent."))
     }
     func testInsecureRelayAndEmbeddedCredentialsAreRejected() {
         XCTAssertFalse(RelayCheck.isSecureBase("https://user:pass@example.com"))
@@ -128,20 +128,20 @@ final class RelayCheckTests: XCTestCase {
     func testRateLimitStateChangeStopsWithoutRetry() {
         replies = [(429,"",["Retry-After-Condition":"state-change"])]
         let check = make(); prepare(check); approve(check)
-        XCTAssertTrue(check.state.message!.contains("state to change"))
+        XCTAssertTrue(check.state.message!.contains(String(localized: "Wait for the relevant server state to change before trying again.")))
         XCTAssertEqual(reads.count, 1); XCTAssertTrue(pending.isEmpty); XCTAssertEqual(publishes, 0)
     }
     func testRateLimitRequestChangeStopsWithoutRetry() {
         replies = [(429,"",["Retry-After-Condition":"request-change"])]
         let check = make(); prepare(check); approve(check)
-        XCTAssertTrue(check.state.message!.contains("different request")); XCTAssertTrue(pending.isEmpty)
+        XCTAssertTrue(check.state.message!.contains(String(localized: "The server requires a different request before it can accept this check."))); XCTAssertTrue(pending.isEmpty)
     }
     func testTimedRateLimitRetainsDailyDelayInsteadOf3600Cap() {
         replies = [(429,"",["Retry-After-Condition":"time","Retry-After":"86400"])]
         let check = make(); prepare(check); approve(check)
-        XCTAssertTrue(check.state.message!.contains("86400 seconds")); XCTAssertTrue(pending.isEmpty)
+        XCTAssertTrue(check.state.message!.contains(String(format: NSLocalizedString("Wait at least %lld seconds before trying again.", comment: ""), locale: DeliveryHealthCopy.retryIntervalLocale(), 86400))); XCTAssertTrue(pending.isEmpty)
         prepare(check)
-        XCTAssertTrue(check.state.message!.contains("86400 seconds"))
+        XCTAssertTrue(check.state.message!.contains(String(format: NSLocalizedString("Wait at least %lld seconds before trying again.", comment: ""), locale: DeliveryHealthCopy.retryIntervalLocale(), 86400)))
         XCTAssertEqual(reads.count, 1)
     }
     func testTimedCooldownSurvivesANewRelayViewAndSkipsAllHTTP() {
@@ -161,7 +161,7 @@ final class RelayCheckTests: XCTestCase {
         second.approve { _ in XCTFail("New view must retain the shared cooldown") }
         XCTAssertEqual(discoveryCalls, 0)
         XCTAssertEqual(httpCalls, 0)
-        XCTAssertTrue(second.state.message!.contains("pausing requests"))
+        XCTAssertEqual(second.state.message, String(localized: "The relay is pausing requests after a rate limit. Wait for the requested delay or the relevant server or request change before trying again."))
     }
     func testUnsupportedEndpointStopsReads() {
         replies = [(404,"",[:])]
@@ -171,13 +171,13 @@ final class RelayCheckTests: XCTestCase {
     func testMalformedSnapshotDoesNotPublish() {
         replies = [(200,"{\"relayed\":false,\"relayed_at\":123,\"window_seconds\":120}",[:])]
         let check = make(); prepare(check); approve(check)
-        XCTAssertEqual(publishes, 0); XCTAssertTrue(check.state.message!.contains("valid check result"))
+        XCTAssertEqual(publishes, 0); XCTAssertEqual(check.state.message, String(localized: "The relay did not return a valid check result (HTTP \(200)). This does not establish whether forwarding works."))
     }
     func testPublishFailureStopsReads() {
         replies = [(200,json(),[:])]
         let check = make(); prepare(check); approve(check, error: "HTTP 403")
         XCTAssertEqual(reads.count, 1); XCTAssertTrue(pending.isEmpty)
-        XCTAssertTrue(check.state.message!.contains("could not be confirmed"))
+        XCTAssertEqual(check.state.message, String(localized: "The test message could not be confirmed: \("HTTP 403") No relay result is available."))
     }
     func testCancellationPreventsScheduledRead() {
         replies = [(200,json(),[:])]
@@ -193,14 +193,12 @@ final class RelayCheckTests: XCTestCase {
     }
     func testReceivedCopyDoesNotClaimPhoneDelivery() {
         let message = RelayCheck.State.received(stamp).message!
-        XCTAssertTrue(message.contains("FCM accepted"))
-        XCTAssertTrue(message.contains("does not prove your phone received"))
-        XCTAssertTrue(message.contains("this test caused"))
+        let time = DateFormatter.localizedString(from: Date(timeIntervalSince1970: Double(stamp) / 1000), dateStyle: .none, timeStyle: .medium)
+        XCTAssertEqual(message, String(localized: "ntfy-me.com received a wake-up for this topic at \(time), and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up."))
     }
     func testNoObservationCopyDoesNotAssertWrongConfigurationOrTwoMinuteTest() {
         let message = RelayCheck.State.notObserved.message!
-        XCTAssertTrue(message.contains("about 10 seconds"))
-        XCTAssertTrue(message.contains("Network or FCM trouble"))
+        XCTAssertEqual(message, String(localized: "No newer forwarded wake-up was observed during this check (about 10 seconds). Check upstream-base-url: https://ntfy-me.com, the canonical base-url, outbound HTTPS, and the relay's status. Network or FCM trouble, delays, or evicted history can give the same result."))
         XCTAssertFalse(message.contains("in 2 minutes"))
     }
 

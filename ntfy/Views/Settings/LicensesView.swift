@@ -10,6 +10,13 @@ struct OpenSourceComponent: Identifiable, Hashable {
 
     var id: String { name }
     var fullText: String { [notice, licenseText].compactMap { $0 }.joined(separator: "\n\n") }
+    // Legal terms and notices are canonical in every locale; only the surrounding UI is translated.
+    var localizedFullText: String { fullText }
+    /// The detail screen: the translated description, then the canonical notice and license text.
+    var displayText: String {
+        Bundle.main.localizedString(forKey: detail, value: detail, table: nil) + "\n\n"
+            + OpenSourceLicenses.reflowed(localizedFullText)
+    }
 }
 
 enum OpenSourceLicenses {
@@ -31,16 +38,16 @@ enum OpenSourceLicenses {
 struct LicensesView: View {
     var body: some View {
         List {
-            Section(footer: Text("NTFY me is built on these open-source projects.")) {
+            Section(footer: Text(String(localized: "NTFY me is built on these open-source projects."))) {
                 ForEach(OpenSourceLicenses.components) { component in
                     NavigationLink {
-                        LicenseTextView(text: component.detail + "\n\n" + OpenSourceLicenses.reflowed(component.fullText))
+                        LicenseTextView(text: component.displayText)
                             .navigationTitle(component.name)
                             .navigationBarTitleDisplayMode(.inline)
                     } label: {
                         VStack(alignment: .leading, spacing: 2) {
                             Text(component.name)
-                            Text(component.licenseName)
+                            Text(LocalizedStringKey(component.licenseName))
                                 .font(.subheadline)
                                 .foregroundColor(.secondary)
                         }
@@ -48,7 +55,7 @@ struct LicensesView: View {
                 }
             }
         }
-        .navigationTitle("Licenses")
+        .navigationTitle(String(localized: "Licenses"))
     }
 }
 

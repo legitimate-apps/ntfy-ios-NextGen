@@ -30,7 +30,7 @@ struct AttachmentAutoDownloadView: View {
         Button {
             showingOptions = true
         } label: {
-            ValueRow("Download attachments", value: title(for: currentValue))
+            ValueRow(String(localized: "Download attachments"), value: title(for: currentValue))
                 .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
@@ -43,24 +43,24 @@ struct AttachmentAutoDownloadView: View {
                 }
             }
 
-            Button("Cancel", role: .cancel) {}
+            Button(String(localized: "Cancel"), role: .cancel) {}
         }
     }
 
     private var options: [AttachmentAutoDownloadOption] {
         [
-            .init(value: Store.autoDownloadNever, title: "Never"),
-            .init(value: Store.autoDownloadAlways, title: "Always"),
-            .init(value: Store.autoDownload100KB, title: "Under 100 KB"),
-            .init(value: Store.autoDownload500KB, title: "Under 500 KB"),
-            .init(value: Store.autoDownloadDefault, title: "Under 1 MB"),
-            .init(value: Store.autoDownload5MB, title: "Under 5 MB"),
-            .init(value: Store.autoDownload10MB, title: "Under 10 MB"),
-            .init(value: Store.autoDownload50MB, title: "Under 50 MB")
+            .init(value: Store.autoDownloadNever, title: String(localized: "Never")),
+            .init(value: Store.autoDownloadAlways, title: String(localized: "Always")),
+            .init(value: Store.autoDownload100KB, title: String(localized: "Under 100 KB")),
+            .init(value: Store.autoDownload500KB, title: String(localized: "Under 500 KB")),
+            .init(value: Store.autoDownloadDefault, title: String(localized: "Under 1 MB")),
+            .init(value: Store.autoDownload5MB, title: String(localized: "Under 5 MB")),
+            .init(value: Store.autoDownload10MB, title: String(localized: "Under 10 MB")),
+            .init(value: Store.autoDownload50MB, title: String(localized: "Under 50 MB"))
         ]
     }
 
     private func title(for value: Int64) -> String {
-        options.first(where: { $0.value == value })?.title ?? "Under 1 MB"
+        options.first(where: { $0.value == value })?.title ?? String(localized: "Under 1 MB")
     }
 }

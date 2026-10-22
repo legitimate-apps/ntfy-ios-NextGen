@@ -47,12 +47,27 @@ final class LicensesTests: XCTestCase {
         }
     }
 
+    func testDisplayKeepsEveryCanonicalCharacter() {
+        for component in OpenSourceLicenses.components {
+            XCTAssertEqual(component.localizedFullText, component.fullText, component.name)
+        }
+    }
+
     func testReflowKeepsEveryWordAndParagraph() {
         for component in OpenSourceLicenses.components {
             let original = component.fullText.split(whereSeparator: \.isWhitespace)
-            let shown = OpenSourceLicenses.reflowed(component.fullText).split(whereSeparator: \.isWhitespace)
+            let shown = OpenSourceLicenses.reflowed(component.localizedFullText).split(whereSeparator: \.isWhitespace)
             XCTAssertEqual(original, shown, component.name)
         }
         XCTAssertEqual(OpenSourceLicenses.reflowed("a\n  b\n\n\nc\nd"), "a b\n\nc d")
+    }
+
+    func testDetailShowsCanonicalTextReflowedForAPhone() throws {
+        let app = try XCTUnwrap(OpenSourceLicenses.components.first { $0.name == "ntfy for iOS" })
+        XCTAssertTrue(app.fullText.contains("obtaining a copy\nof this software"), "fixture: the file wraps here")
+        XCTAssertTrue(app.displayText.contains("obtaining a copy of this software"))
+        for component in OpenSourceLicenses.components {
+            XCTAssertTrue(component.displayText.hasSuffix(OpenSourceLicenses.reflowed(component.fullText)), component.name)
+        }
     }
 }

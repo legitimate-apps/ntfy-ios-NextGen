@@ -137,7 +137,7 @@ class NotificationService: UNNotificationServiceExtension {
         // A custom relay may wrap a control in an alert. Suppressing that alert entirely needs
         // the filtering entitlement; use a passive receipt instead of the original placeholder.
         content.title = "ntfy"
-        content.body = "Notification state synchronized"
+        content.body = String(localized: "Notification state synchronized")
         content.subtitle = ""
         content.attachments = []
         content.categoryIdentifier = ""

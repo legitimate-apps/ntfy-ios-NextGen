@@ -141,39 +141,39 @@ struct NotificationListView: View {
                         }
                         // Pin lives on the topic list's swipe and long-press too; here it is
                         // where people look for a topic's settings.
-                        Button(subscription.pinned ? "Unpin topic" : "Pin topic") {
+                        Button(subscription.pinned ? String(localized: "Unpin topic") : String(localized: "Pin topic")) {
                             UIImpactFeedbackGenerator(style: .light).impactOccurred()
                             store.setPinned(!subscription.pinned, forSubscription: subscription)
                         }
-                        Button("Rename") {
+                        Button(String(localized: "Rename")) {
                             self.draftDisplayName = subscription.customDisplayName ?? ""
                             self.showRenameSheet = true
                         }
-                        Button("End-to-end encryption") {
+                        Button(String(localized: "End-to-end encryption")) {
                             self.showEncryptionSheet = true
                         }
                         // The publish URL is what every script needs. Once a topic has messages the
                         // empty-state copy buttons are gone, so keep it one tap away here.
-                        Button("Copy publish URL") {
+                        Button(String(localized: "Copy publish URL")) {
                             if let baseUrl = subscription.baseUrl {
                                 UIPasteboard.general.string = PublishCommand.publishUrl(
                                     baseUrl: baseUrl, topic: subscription.topicName())
                                 showCopyConfirmation()
                             }
                         }
-                        Button("Show QR code") {
+                        Button(String(localized: "Show QR code")) {
                             self.showQRCodeSheet = true
                         }
-                        Button("Send test notification") {
+                        Button(String(localized: "Send test notification")) {
                             self.sendTestNotification()
                         }
                         if searchText.isEmpty && notificationsModel.notifications.count > 0 {
-                            Button("Clear all notifications") {
+                            Button(String(localized: "Clear all notifications")) {
                                 self.showAlert = true
                                 self.activeAlert = .clear
                             }
                         }
-                        Button("Unsubscribe") {
+                        Button(String(localized: "Unsubscribe")) {
                             self.showAlert = true
                             self.activeAlert = .unsubscribe
                         }
@@ -181,7 +181,7 @@ struct NotificationListView: View {
                         Image(systemName: "ellipsis.circle")
                             .padding([.leading], 40)
                     }
-                    .accessibilityLabel("Topic actions")
+                    .accessibilityLabel(String(localized: "Topic actions"))
                 }
             }
             ToolbarItem(placement: .navigationBarLeading) {
@@ -190,7 +190,7 @@ struct NotificationListView: View {
                         self.showAlert = true
                         self.activeAlert = .selected
                     }) {
-                        Text("Delete")
+                        Text(String(localized: "Delete"))
                             .foregroundColor(.red)
                     }
                 }
@@ -200,43 +200,43 @@ struct NotificationListView: View {
             switch activeAlert {
             case .clear:
                 return Alert(
-                    title: Text("Clear notifications"),
-                    message: Text("Do you really want to delete all of the notifications in this topic?"),
+                    title: Text(String(localized: "Clear notifications")),
+                    message: Text(String(localized: "Do you really want to delete all of the notifications in this topic?")),
                     primaryButton: .destructive(
-                        Text("Permanently delete"),
+                        Text(String(localized: "Permanently delete")),
                         action: deleteAll
                     ),
                     secondaryButton: .cancel())
             case .unsubscribe:
                 return Alert(
-                    title: Text("Unsubscribe"),
-                    message: Text("Do you really want to unsubscribe from this topic and delete all of the notifications you received?"),
+                    title: Text(String(localized: "Unsubscribe")),
+                    message: Text(String(localized: "Do you really want to unsubscribe from this topic and delete all of the notifications you received?")),
                     primaryButton: .destructive(
-                        Text("Unsubscribe"),
+                        Text(String(localized: "Unsubscribe")),
                         action: unsubscribe
                     ),
                     secondaryButton: .cancel())
             case .selected:
                 return Alert(
-                    title: Text("Delete"),
-                    message: Text("Do you really want to delete these selected notifications?"),
+                    title: Text(String(localized: "Delete")),
+                    message: Text(String(localized: "Do you really want to delete these selected notifications?")),
                     primaryButton: .destructive(
-                        Text("Delete"),
+                        Text(String(localized: "Delete")),
                         action: deleteSelected
                     ),
                     secondaryButton: .cancel())
             case .publishFailed:
-                return Alert(title: Text("Test notification not sent"), message: Text(publishError))
+                return Alert(title: Text(String(localized: "Test notification not sent")), message: Text(publishError))
             case .encryptionUnavailable:
                 return Alert(
-                    title: Text("Not sent"),
-                    message: Text("This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your phone, or set the password again.")
+                    title: Text(String(localized: "Not sent")),
+                    message: Text(String(localized: "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your phone, or set the password again."))
                 )
             }
         }
         .overlay(Group {
             if showCopiedConfirmation {
-                Text("Copied to Clipboard")
+                Text(String(localized: "Copied to Clipboard"))
                     .font(.body)
                     .foregroundColor(.white)
                     .padding(.horizontal, 14)
@@ -307,22 +307,22 @@ struct NotificationListView: View {
     private var renameSheet: some View {
         NavigationView {
             Form {
-                Section(footer: Text("Set a custom name for this subscription. Leave empty to use the topic name.")) {
+                Section(footer: Text(String(localized: "Set a custom name for this subscription. Leave empty to use the topic name."))) {
                     TextField(subscription.topicName(), text: $draftDisplayName)
                         .autocapitalization(.none)
                         .disableAutocorrection(true)
                 }
             }
-            .navigationTitle("Display name")
+            .navigationTitle(String(localized: "Display name"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Cancel") {
+                    Button(String(localized: "Cancel")) {
                         showRenameSheet = false
                     }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
-                    Button("Save") {
+                    Button(String(localized: "Save")) {
                         store.updateSubscription(subscription: subscription, displayName: draftDisplayName)
                         showRenameSheet = false
                     }
@@ -337,14 +337,14 @@ struct NotificationListView: View {
                 self.editMode = .active
                 self.selection = Set<Notification>()
             }) {
-                Text("Select messages")
+                Text(String(localized: "Select messages"))
             }
         } else {
             return Button(action: {
                 self.editMode = .inactive
                 self.selection = Set<Notification>()
             }) {
-                Text("Done")
+                Text(String(localized: "Done"))
             }
         }
     }
@@ -372,8 +372,8 @@ struct NotificationListView: View {
         ApiService.shared.publish(
             subscription: subscription,
             user: user,
-            message: firstRun ? FirstTopicTest.body : "This is a test notification from NTFY me. It has a priority of \(priority). If you send another one, it may look different.",
-            title: firstRun ? FirstTopicTest.title : "Test: You can set a title if you like",
+            message: firstRun ? FirstTopicTest.body : String(localized: "This is a test notification from NTFY me. It has a priority of \(priority). If you send another one, it may look different."),
+            title: firstRun ? FirstTopicTest.title : String(localized: "Test: You can set a title if you like"),
             priority: priority,
             tags: tags,
             // A topic with a password gets an encrypted test message, so this button also proves the
@@ -462,10 +462,10 @@ struct TopicPublishHelpView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("No messages yet")
+            Text(String(localized: "No messages yet"))
                 .font(.title3.bold())
             Button(action: onTest) {
-                Text("Send a test notification")
+                Text(String(localized: "Send a test notification"))
                     .font(.headline)
                     .multilineTextAlignment(.center)
                     .fixedSize(horizontal: false, vertical: true)
@@ -477,15 +477,14 @@ struct TopicPublishHelpView: View {
             .buttonStyle(.borderless)
             .disabled(sendingTest)
             .opacity(sendingTest ? 0.5 : 1)
-            Text("Send a message to this topic from any computer, server or script. Copy a command and "
-                 + "run it in a terminal:")
+            Text(String(localized: "Send a message to this topic from any computer, server or script. Copy a command and run it in a terminal:"))
                 .foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
-            copyBlock(title: "Send a message",
+            copyBlock(title: String(localized: "Send a message"),
                       text: PublishCommand.simple(baseUrl: baseUrl, topic: topic, auth: auth))
-            copyBlock(title: "With a title and high priority",
+            copyBlock(title: String(localized: "With a title and high priority"),
                       text: PublishCommand.titled(baseUrl: baseUrl, topic: topic, auth: auth))
-            copyBlock(title: "Publish URL",
+            copyBlock(title: String(localized: "Publish URL"),
                       text: PublishCommand.publishUrl(baseUrl: baseUrl, topic: topic))
             if !auth.isEmpty {
                 Text(authNote)
@@ -494,19 +493,18 @@ struct TopicPublishHelpView: View {
                     .fixedSize(horizontal: false, vertical: true)
             }
             if encrypted {
-                Text("These commands send unencrypted messages. For encrypted ones, open End-to-end "
-                     + "encryption in the ••• menu.")
+                Text(String(localized: "These commands send unencrypted messages. For encrypted ones, open End-to-end encryption in the ••• menu."))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
             if let help = URL(string: Config.helpUrl) {
-                Link("Quick start and more examples", destination: help)
+                Link(String(localized: "Quick start and more examples"), destination: help)
                     .font(.footnote)
                     .buttonStyle(.borderless)
             }
             if let docs = URL(string: Config.docsUrl) {
-                Link("Full ntfy reference docs", destination: docs)
+                Link(String(localized: "Full ntfy reference docs"), destination: docs)
                     .font(.footnote)
                     .buttonStyle(.borderless)
             }
@@ -517,14 +515,12 @@ struct TopicPublishHelpView: View {
     private var authNote: String {
         var lines: [String] = []
         if let username = auth.username {
-            lines.append("This server uses your login (\(username)). curl asks for the password, so it "
-                         + "is never in the copied text.")
+            lines.append(String(localized: "This server uses your login (\(username)). curl asks for the password, so it is never in the copied text."))
         }
         if !auth.headerNames.isEmpty {
-            lines.append("Replace \(PublishCommand.headerValuePlaceholder) with the value of "
-                         + auth.headerNames.joined(separator: ", ") + " from Settings.")
+            lines.append(String(localized: "Replace \(PublishCommand.headerValuePlaceholder) with the value of \(auth.headerNames.joined(separator: ", ")) from Settings."))
         }
-        lines.append("Sending needs write access to this topic; read access alone isn't enough.")
+        lines.append(String(localized: "Sending needs write access to this topic; read access alone isn't enough."))
         return lines.joined(separator: " ")
     }
 
@@ -554,7 +550,7 @@ struct TopicPublishHelpView: View {
                 .cornerRadius(8)
             }
             .buttonStyle(.borderless)
-            .accessibilityLabel("Copy: \(title)")
+            .accessibilityLabel(String(localized: "Copy: \(title)"))
             .accessibilityValue(text)
         }
     }
@@ -579,6 +575,6 @@ struct NotificationListView_Previews: PreviewProvider {
 /// A first notification should use the default priority, so it does not arrive silently.
 enum FirstTopicTest {
     static let priority = 3
-    static let title = "NTFY me test"
-    static let body = "This is a test notification from NTFY me. Your topic is ready."
+    static let title = String(localized: "NTFY me test")
+    static let body = String(localized: "This is a test notification from NTFY me. Your topic is ready.")
 }

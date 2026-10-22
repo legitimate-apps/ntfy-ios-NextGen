@@ -11,15 +11,15 @@ struct SettingsView: View {
         NavigationView {
             Form {
                 Section(
-                    header: Text("General"),
-                    footer: Text("When subscribing to new topics, this server will be used as a default.")
+                    header: Text(String(localized: "General")),
+                    footer: Text(String(localized: "When subscribing to new topics, this server will be used as a default."))
                 ) {
                     DefaultServerView()
                     TopicSortOrderView()
                 }
                 Section(
-                    header: Text("Notifications"),
-                    footer: Text("Automatically download attachments up to the selected size. Attachments larger than this limit must be downloaded manually.")
+                    header: Text(String(localized: "Notifications")),
+                    footer: Text(String(localized: "Automatically download attachments up to the selected size. Attachments larger than this limit must be downloaded manually."))
                 ) {
                     AttachmentAutoDownloadView()
                 }
@@ -27,24 +27,24 @@ struct SettingsView: View {
                 RetentionSettingsView(store: store)
                 UrgentAlertsSettingView()
                 Section(
-                    header: Text("Users"),
-                    footer: Text("Add or edit a password or access token for read-protected topics. All topics for a server use the same login.")
+                    header: Text(String(localized: "Users")),
+                    footer: Text(String(localized: "Add or edit a password or access token for read-protected topics. All topics for a server use the same login."))
                 ) {
                     UserTableView(dialog: $userDialog)
                 }
                 Section(
-                    header: Text("Server headers"),
-                    footer: Text("Add credentials required by Cloudflare Access or another reverse proxy. Values are stored in the Keychain.")
+                    header: Text(String(localized: "Server headers")),
+                    footer: Text(String(localized: "Add credentials required by Cloudflare Access or another reverse proxy. Values are stored in the Keychain."))
                 ) {
-                    NavigationLink("Custom HTTP headers") {
+                    NavigationLink(String(localized: "Custom HTTP headers")) {
                         ServerHeadersView(defaultBaseUrl: store.getDefaultBaseUrl())
                     }
                 }
-                Section(header: Text("About")) {
+                Section(header: Text(String(localized: "About"))) {
                     AboutView()
                 }
             }
-            .navigationTitle("Settings")
+            .navigationTitle(String(localized: "Settings"))
         }
         .sheet(item: $userDialog) { dialog in
             UserEditorView(

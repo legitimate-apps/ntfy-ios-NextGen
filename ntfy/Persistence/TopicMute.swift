@@ -9,12 +9,16 @@ enum TopicMuteDuration: String, CaseIterable, Identifiable {
     var id: String { rawValue }
     var title: String {
         switch self {
-        case .minutes30: return "30 minutes"
-        case .hour1: return "1 hour"
-        case .hours2: return "2 hours"
-        case .hours8: return "8 hours"
-        case .tomorrow: return "Until tomorrow, 8:30 AM"
-        case .untilResumed: return "Until resumed"
+        case .minutes30: return String(localized: "\(30) minutes")
+        case .hour1: return String(localized: "\(1) hours")
+        case .hours2: return String(localized: "\(2) hours")
+        case .hours8: return String(localized: "\(8) hours")
+        case .tomorrow:
+            // Preserve the existing AM/PM spacing while honoring the locale and clock preference.
+            let time = DateFormatter.localizedString(from: deadline(), dateStyle: .none, timeStyle: .short)
+                .replacingOccurrences(of: "\u{202F}", with: " ")
+            return String(localized: "Until tomorrow, \(time)")
+        case .untilResumed: return String(localized: "Until resumed")
         }
     }
     func deadline(now: Date = Date(), calendar: Calendar = .current) -> Date {
@@ -37,8 +41,8 @@ enum TopicMute {
     }
     static func status(until: Date?, now: Date = Date()) -> String? {
         guard let until, isMuted(until: until, now: now) else { return nil }
-        if until == .distantFuture { return "Notifications muted until resumed" }
-        return "Notifications muted until " + DateFormatter.localizedString(from: until, dateStyle: .medium, timeStyle: .short)
+        if until == .distantFuture { return String(localized: "Notifications muted until resumed") }
+        return String(localized: "Notifications muted until \(DateFormatter.localizedString(from: until, dateStyle: .medium, timeStyle: .short))")
     }
 }
 

@@ -229,11 +229,11 @@ class ApiService {
 
         var userMessage: String {
             switch self {
-            case .invalidTopicUrl: return "The topic URL is not valid."
-            case .tooLargeToEncrypt(let bytes): return "The encrypted message would be \(bytes) bytes; the limit is \(TopicEncryption.maxMessageBytes). Shorten it. Nothing was sent."
-            case .encryptionFailed: return "The message could not be encrypted, so it was not sent."
-            case .network(let description): return "Could not reach the server: \(description)"
-            case .http(let status): return "The server refused the message (HTTP \(status.map(String.init) ?? "?"))."
+            case .invalidTopicUrl: return String(localized: "The topic URL is not valid.")
+            case .tooLargeToEncrypt(let bytes): return String(localized: "The encrypted message would be \(bytes) bytes; the limit is \(TopicEncryption.maxMessageBytes). Shorten it. Nothing was sent.")
+            case .encryptionFailed: return String(localized: "The message could not be encrypted, so it was not sent.")
+            case .network(let description): return String(localized: "Could not reach the server: \(description)")
+            case .http(let status): return String(localized: "The server refused the message (HTTP \(status.map(String.init) ?? "?")).")
             }
         }
     }
@@ -245,7 +245,7 @@ class ApiService {
         // which accepts e.g. an internal space ("https://my server.com") that URL(string:) rejects.
         guard let url = URL(string: topicAuthUrl(baseUrl: baseUrl, topic: topic)) else {
             Log.e(tag, "Cannot build auth URL for baseUrl=\(baseUrl), topic=\(topic)")
-            completionHandler(.Error("Invalid server URL"))
+            completionHandler(.Error(String(localized: "Invalid server URL")))
             return
         }
         let request = newRequest(url: url, baseUrl: baseUrl, user: user)
@@ -258,7 +258,7 @@ class ApiService {
                 if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
                     completionHandler(.Unauthorized)
                 } else {
-                    completionHandler(.Error("Unexpected response from server: \(httpResponse.statusCode)"))
+                    completionHandler(.Error(String(localized: "Unexpected response from server: \(httpResponse.statusCode)")))
                 }
             } else if let data = data {
                 do {
@@ -267,18 +267,18 @@ class ApiService {
                     if result.success == true {
                         completionHandler(.Success)
                     } else {
-                        completionHandler(.Error("Unexpected response from server"))
+                        completionHandler(.Error(String(localized: "Unexpected response from server")))
                     }
                 } catch {
                     Log.e(self.tag, "Error handling auth response: \(error)")
-                    completionHandler(.Error("Unexpected response from server. Is this a ntfy server?"))
+                    completionHandler(.Error(String(localized: "Unexpected response from server. Is this a ntfy server?")))
                 }
             } else {
                 // Not reached today (URLSession hands back empty Data, not nil, for a bodyless
                 // response), but the chain above had no terminal branch — so any future shape
                 // that satisfies none of them would silently hang the sheet. Fail loudly instead.
                 Log.e(self.tag, "Auth check produced no error, no HTTP status and no data")
-                completionHandler(.Error("Unexpected response from server"))
+                completionHandler(.Error(String(localized: "Unexpected response from server")))
             }
         }
     }
@@ -390,7 +390,7 @@ enum ServerCredential: Codable, Equatable, CustomStringConvertible, CustomDebugS
     /// Only a label is exposed for token accounts. The secret never becomes a username.
     var username: String {
         if case .basic(let username, _) = self { return username }
-        return "Access token"
+        return String(localized: "Access token")
     }
 
     var password: String {

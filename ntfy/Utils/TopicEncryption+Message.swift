@@ -65,8 +65,8 @@ enum PushedMessageResult {
 }
 
 extension TopicEncryption {
-    static let lockedPlaceholder = "Encrypted message"
-    static let unencryptedMarker = "⚠︎ Not encrypted"
+    static let lockedPlaceholder = String(localized: "Encrypted message")
+    static let unencryptedMarker = String(localized: "⚠︎ Not encrypted")
 
     /// Passwords are trimmed on entry: a space picked up when pasting would otherwise produce a
     /// different key from the sender's, and nothing would ever decrypt.

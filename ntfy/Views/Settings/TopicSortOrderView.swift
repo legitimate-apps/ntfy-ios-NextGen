@@ -9,9 +9,9 @@ struct TopicSortOrderView: View {
     @State private var order: Store.TopicSortOrder = .default
 
     var body: some View {
-        Picker("Sort topics by", selection: $order) {
-            Text("Name").tag(Store.TopicSortOrder.name)
-            Text("Recent activity").tag(Store.TopicSortOrder.recentActivity)
+        Picker(String(localized: "Sort topics by"), selection: $order) {
+            Text(String(localized: "Name")).tag(Store.TopicSortOrder.name)
+            Text(String(localized: "Recent activity")).tag(Store.TopicSortOrder.recentActivity)
         }
         .onAppear {
             // Read on appear rather than in an initializer: the store is an @EnvironmentObject and

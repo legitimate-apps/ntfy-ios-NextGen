@@ -48,7 +48,7 @@ struct NotificationStatusView: View {
             ForEach(selfHostedSubscriptions, id: \.objectID) { subscription in
                 NavigationLink(destination: RelayTopicCheckView(subscription: subscription)) {
                     VStack(alignment: .leading, spacing: 3) {
-                        Text("Check self-hosted wake-ups")
+                        Text(String(localized: "Check self-hosted wake-ups"))
                         Text(subscription.displayName()).font(.subheadline).foregroundColor(.secondary)
                     }
                 }
@@ -140,12 +140,12 @@ struct RelayTopicCheckView: View {
         let keyState = Store.shared.topicKeyState(for: subscription)
         check.approve { completion in
             guard keyState != .unavailable else {
-                completion("The encryption key is unavailable. Nothing was sent.")
+                completion(String(localized: "The encryption key is unavailable. Nothing was sent."))
                 return
             }
             ApiService.shared.publish(subscription: subscription,
                 user: Store.shared.getBasicUser(baseUrl: subscription.baseUrl ?? ""),
-                message: Store.testMessagePrefix + " (wake-up forwarding check).", title: "Wake-up forwarding test",
+                message: String(localized: "This is a test notification from NTFY me (wake-up forwarding check)."), title: String(localized: "Wake-up forwarding test"),
                 encryptionKey: keyState.key,
                 completionHandler: { completion(nil) }, failureHandler: { completion($0.userMessage) })
         }
@@ -164,41 +164,41 @@ struct RelayCheckContentView: View {
 
     var body: some View {
         Form {
-            Section(header: Text("Self-hosted wake-ups")) {
+            Section(header: Text(String(localized: "Self-hosted wake-ups"))) {
                 Text(topicName).fixedSize(horizontal: false, vertical: true)
                 Text(baseUrl).font(.footnote).foregroundColor(.secondary)
-                Text("Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone.")
+                Text(String(localized: "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone."))
                     .fixedSize(horizontal: false, vertical: true)
                 if state != .consent {
-                    Button("Check relay support") {
+                    Button(String(localized: "Check relay support")) {
                         prepare()
                     }.disabled(state.isBusy)
                 }
             }
             if state == .consent {
-                Section(header: Text("Send a visible test?")) {
-                    Text("This sends one ordinary test message to this topic, visible to everyone subscribed. It uses your topic server's credentials and encryption settings. The relay receives only the topic hash, without your message or credentials.")
+                Section(header: Text(String(localized: "Send a visible test?"))) {
+                    Text(String(localized: "This sends one ordinary test message to this topic, visible to everyone subscribed. It uses your topic server's credentials and encryption settings. The relay receives only the topic hash, without your message or credentials."))
                         .fixedSize(horizontal: false, vertical: true)
-                    Button("Send one test message", action: approve)
-                    Button("Cancel", action: cancel)
+                    Button(String(localized: "Send one test message"), action: approve)
+                    Button(String(localized: "Cancel"), action: cancel)
                 }
             }
             if let message = state.message {
-                Section(header: Text("Check result")) {
+                Section(header: Text(String(localized: "Check result"))) {
                     Text(message).fixedSize(horizontal: false, vertical: true)
                         .accessibilityIdentifier("relay-check-result")
                     if state.isBusy {
-                        Button("Cancel check", action: cancel)
+                        Button(String(localized: "Cancel check"), action: cancel)
                     }
                 }
             }
-            Section(header: Text("Server setup")) {
-                Text("Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report phone delivery.")
+            Section(header: Text(String(localized: "Server setup"))) {
+                Text(String(localized: "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report phone delivery."))
                     .font(.footnote).foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
-        .navigationTitle("Wake-up check")
+        .navigationTitle(String(localized: "Wake-up check"))
     }
 
 }

@@ -2,6 +2,7 @@ import XCTest
 import UserNotifications
 import CoreData
 import UIKit
+import CoreText
 import Security
 @testable import ntfy
 
@@ -2397,7 +2398,7 @@ final class ntfyTests: XCTestCase {
         // still gets the name/size line, which is the same fallback a failed download produces.
         setAutoDownloadPolicy(Store.autoDownloadNever)
         let content = runAttachImage(imageAttachmentMessage(size: 1024))
-        XCTAssertTrue(content.body.contains("Attachment: shot.png"),
+        XCTAssertTrue(content.body.contains(String(localized: "Attachment: \("shot.png")")),
                       "expected an attachment summary in the body, got: \(content.body)")
         XCTAssertEqual(content.attachments.count, 0)
     }
@@ -5802,11 +5803,16 @@ final class ntfyTests: XCTestCase {
     }
 
     @available(iOS 16.0, *)
-    private func makeMessageTextView(_ body: String, width: CGFloat, style: MessageTextStyle = .body) -> MessageTextView {
+    private func makeMessageTextView(_ body: String, width: CGFloat, style: MessageTextStyle = .body, language: String? = nil) -> MessageTextView {
         let textView = MessageTextView(frame: CGRect(x: 0, y: 0, width: width, height: 500))
         configureMessageTextView(textView, isInteractionEnabled: true)
-        textView.setMessageText(
+        let text = NSMutableAttributedString(attributedString:
             makeMessageNSAttributedString(renderMessageBody(body, contentType: nil), style: style))
+        if let language {
+            text.addAttribute(NSAttributedString.Key(kCTLanguageAttributeName as String), value: language,
+                              range: NSRange(location: 0, length: text.length))
+        }
+        textView.setMessageText(text)
         return textView
     }
 
@@ -5870,7 +5876,8 @@ final class ntfyTests: XCTestCase {
     func testOrdinaryProseStillBreaksAtWordBoundaries() throws {
         guard #available(iOS 16.0, *) else { throw XCTSkip("TextKit 2 inspection needs iOS 16") }
         let prose = "Deployment finished successfully on production cluster with zero downtime reported"
-        let textView = makeMessageTextView(prose, width: 200)
+        // Keep this English prose fixture independent of the app language and its hyphenator.
+        let textView = makeMessageTextView(prose, width: 200, language: "en")
         let lines = laidOutLines(textView)
         XCTAssertGreaterThan(lines.count, 1)
         for line in lines.dropLast() {
@@ -5949,54 +5956,51 @@ final class ntfyTests: XCTestCase {
 /// so every command the app shows must carry the full URL.
 final class NewcomerSetupTests: XCTestCase {
 
-    // Both footers must distinguish ntfy.sh's official-app push project from a configurable server.
+    private var ntfyShHint: String {
+        String(localized: "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open the app or refresh. For banners, move your topic to \("ntfy-me.com"). See \("https://ntfy-me.com/docs/migrate").")
+    }
+    private var ownServerHint: String {
+        String(localized: "For instant delivery from your own server, add \"\("upstream-base-url: https://ntfy-me.com")\" to its config. Without it, messages may arrive with significant delay. A server has one upstream; using \("ntfy-me.com") stops instant delivery to the official ntfy iOS app on that server. See \("https://ntfy-me.com/docs/self-hosting").")
+    }
+    private var builtInFooter: String {
+        String(localized: "New topics use \(Config.appServerDescription). Any ntfy server works: turn on \"Use another server\" or change the default in Settings. Your scripts must send to \("ntfy-me.com"); the same topic name on ntfy.sh is a different topic.")
+    }
+
+    // Assert complete localized messages rather than English fragments whose word order varies.
     func testNtfyShVariantsExplainForegroundDeliveryAndMigration() {
-        let hint = "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open "
-            + "the app or refresh. For banners, move your topic to ntfy-me.com. "
-            + "See https://ntfy-me.com/docs/migrate."
-        let prefix = "When subscribing to new topics, this server will be used as a default. Leave it empty "
-            + "to use \(Config.appServerDescription). "
+        let hint = ntfyShHint
+        let expectedDefault = String(localized: "When subscribing to new topics, this server will be used as a default. Leave it empty to use \(Config.appServerDescription). \(hint)")
         for url in ["https://ntfy.sh", "http://ntfy.sh", "https://ntfy.sh/", "http://ntfy.sh///",
                     "HTTPS://NTFY.SH/", "http://Ntfy.Sh", "  https://NTFY.SH/\n"] {
             let normalized = normalizeBaseUrl(url)
             XCTAssertEqual(Config.ntfyShDeliveryHint(baseUrl: normalized), hint, url)
             XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: normalized, useAnother: true), hint, url)
             XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: normalized, useAnother: false), hint, url)
-            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), prefix + hint, url)
+            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), expectedDefault, url)
         }
     }
 
     func testSelfHostedFootersExplainTheOfficialAppTradeoff() {
-        let ownServerHint = "For instant delivery from your own server, add \"upstream-base-url: https://ntfy-me.com\" "
-            + "to its config. Without it, messages may arrive with significant delay. A server has one upstream; using "
-            + "ntfy-me.com stops instant delivery to the official ntfy iOS app on that server. "
-            + "See https://ntfy-me.com/docs/self-hosting."
-        let defaultHint = "When subscribing to new topics, this server will be used as a default. Leave it empty "
-            + "to use \(Config.appServerDescription). " + ownServerHint
+        let hint = ownServerHint
+        let expectedDefault = String(localized: "When subscribing to new topics, this server will be used as a default. Leave it empty to use \(Config.appServerDescription). \(hint)")
         for url in ["https://ntfy-me.com", "http://ntfy.home.lan:8080", "https://ntfy.sh.example.com",
                     "https://example.com/ntfy.sh"] {
             XCTAssertNil(Config.ntfyShDeliveryHint(baseUrl: url), url)
-            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: url, useAnother: true), ownServerHint, url)
-            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), defaultHint, url)
+            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: url, useAnother: true), hint, url)
+            XCTAssertEqual(Config.defaultServerFooter(baseUrl: url), expectedDefault, url)
         }
-        XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false),
-                       "New topics use \(Config.appServerDescription). Any ntfy server works: turn on "
-                        + "\"Use another server\" or change the default in Settings. "
-                        + "Your scripts must send to ntfy-me.com; the same topic name on ntfy.sh is a different topic.")
+        XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false), builtInFooter)
         XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "http://ntfy.home.lan:8080", useAnother: false),
-                       "New topics use your default server, ntfy.home.lan:8080.")
-        XCTAssertEqual(Config.defaultServerFooter(baseUrl: ""), defaultHint)
+                       String(localized: "New topics use your default server, \("ntfy.home.lan:8080")."))
+        XCTAssertEqual(Config.defaultServerFooter(baseUrl: ""), expectedDefault)
     }
 
-    /// Typing a name with the toggle off creates a topic on the built-in server, not ntfy.sh.
     func testBuiltInServerWarnsScriptsMustMoveAndTopicNamesAreSeparate() {
-        let warning = "Your scripts must send to ntfy-me.com; the same topic name on ntfy.sh is a different topic."
-        XCTAssertTrue(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false)
-            .hasSuffix(warning))
-        for (url, useAnother) in [("https://ntfy-me.com", true), ("https://ntfy.sh", false),
-                                  ("https://ntfy.home.io", false)] {
-            XCTAssertFalse(Config.subscriptionServerFooter(baseUrl: url, useAnother: useAnother)
-                .contains(warning), "Only the built-in default should show this warning: \(url)")
+        XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: "https://ntfy-me.com", useAnother: false), builtInFooter)
+        for (url, useAnother, expected) in [("https://ntfy-me.com", true, ownServerHint),
+                                           ("https://ntfy.sh", false, ntfyShHint),
+                                           ("https://ntfy.home.io", false, String(localized: "New topics use your default server, \("ntfy.home.io")."))] {
+            XCTAssertEqual(Config.subscriptionServerFooter(baseUrl: url, useAnother: useAnother), expected, url)
         }
     }
 
@@ -6813,8 +6817,8 @@ extension ntfyTests {
 final class FirstTopicTestTests: XCTestCase {
     func testFirstNotificationUsesDefaultPriorityAndPlainAppCopy() {
         XCTAssertEqual(FirstTopicTest.priority, 3)
-        XCTAssertEqual(FirstTopicTest.title, "NTFY me test")
-        XCTAssertEqual(FirstTopicTest.body, "This is a test notification from NTFY me. Your topic is ready.")
+        XCTAssertEqual(FirstTopicTest.title, String(localized: "NTFY me test"))
+        XCTAssertEqual(FirstTopicTest.body, String(localized: "This is a test notification from NTFY me. Your topic is ready."))
     }
 }
 
@@ -6964,7 +6968,7 @@ final class UrgentAlertsStateTests: XCTestCase {
         XCTAssertEqual(state.status, .on)
         XCTAssertFalse(state.showsSettingsButton)
         XCTAssertFalse(state.showsCriticalToggle)
-        XCTAssertEqual(state.criticalText, "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app.")
+        XCTAssertEqual(state.criticalText, String(localized: "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app."))
     }
 
     func testDisabledOrUnsupportedTimeSensitiveShowsOffAndRecovery() {
@@ -6994,7 +6998,7 @@ final class UrgentAlertsStateTests: XCTestCase {
         for critical: UNNotificationSetting in [.enabled, .disabled] {
             let state = UrgentAlertsState(timeSensitive: .disabled, critical: critical, authorization: .authorized)
             XCTAssertTrue(state.showsCriticalToggle)
-            XCTAssertEqual(state.criticalText, "When enabled, priority 5 messages can play sound even when silenced.")
+            XCTAssertEqual(state.criticalText, String(localized: "When enabled, priority 5 messages can play sound even when silenced."))
         }
     }
 
@@ -7004,7 +7008,7 @@ final class UrgentAlertsStateTests: XCTestCase {
     }
 
     func testExplanationNamesPrioritiesAndBothSystemControlsWithPermissionCondition() {
-        XCTAssertEqual(UrgentAlertsState.explanation, "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings.")
+        XCTAssertEqual(UrgentAlertsState.explanation, String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings."))
     }
 }
 
@@ -7019,7 +7023,7 @@ final class DeliveryHealthPolicyTests: XCTestCase {
     func testFailureLabelsAndSuccessClearsState() {
         var state = TopicDeliveryHealth()
         state.record(.unreachable)
-        XCTAssertEqual(state.label, "Can't reach the server")
+        XCTAssertEqual(state.label, String(localized: "Can't reach the server"))
         XCTAssertFalse(state.needsAttention)
         state.record(.unreachable)
         XCTAssertFalse(state.needsAttention)
@@ -7029,9 +7033,9 @@ final class DeliveryHealthPolicyTests: XCTestCase {
         XCTAssertNil(state.label)
         XCTAssertEqual(state.consecutiveFailures, 0)
         state.record(.unauthorized)
-        XCTAssertEqual(state.label, "Sign-in failed")
+        XCTAssertEqual(state.label, String(localized: "Sign-in failed"))
         state.record(.rateLimited)
-        XCTAssertEqual(state.label, "The server is limiting requests")
+        XCTAssertEqual(state.label, String(localized: "The server is limiting requests"))
     }
 
     func testHTTPClassificationRetainsStatusAndRetryAfter() {
@@ -7074,7 +7078,7 @@ final class DeliveryHealthPolicyTests: XCTestCase {
         incoming.userInfo = ["topic": "wake-hash", "base_url": "https://example.org", "click": "https://untrusted.example.org", "actions": "unfetched"]
         let content = NotificationHealth.fetchFailureContent(incoming, topic: "garden", baseUrl: "https://garden.example.org")
         XCTAssertEqual(content.title, "garden")
-        XCTAssertEqual(content.body, "New message on garden. Open the app to load it.")
+        XCTAssertEqual(content.body, String(localized: "New message on \("garden"). Open the app to load it."))
         XCTAssertEqual(content.subtitle, "")
         XCTAssertTrue(content.attachments.isEmpty)
         XCTAssertEqual(content.userInfo["topic"] as? String, "garden")
@@ -7311,15 +7315,15 @@ final class DeliveryHealthPresentationTests: XCTestCase {
 final class DeliveryHealthRepairResultTests: XCTestCase {
     func testRepairDoesNotClaimSetupIsCompleteWithoutPermissionAndRegistration() {
         XCTAssertEqual(NotificationHealth.repairResult(permission: .denied, registered: true, bindingsComplete: true),
-                       "Notifications are turned off for this app.")
+                       String(localized: "Notifications are turned off for this app."))
         XCTAssertEqual(NotificationHealth.repairResult(permission: .notDetermined, registered: true, bindingsComplete: true),
-                       "Allow notifications to receive alerts.")
+                       String(localized: "Allow notifications to receive alerts."))
         XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: false, bindingsComplete: true),
-                       "Push setup is still finishing. Check again in a moment.")
+                       String(localized: "Push setup is still finishing. Check again in a moment."))
         XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: true, bindingsComplete: false),
-                       "Push setup is still incomplete. Try again later.")
+                       String(localized: "Push setup is still incomplete. Try again later."))
         XCTAssertEqual(NotificationHealth.repairResult(permission: .provisional, registered: true, bindingsComplete: true),
-                       "Push setup is complete. This does not check delivery from your server.")
+                       String(localized: "Push setup is complete. This does not check delivery from your server."))
     }
 }
 
@@ -7384,7 +7388,7 @@ final class DeliveryHealthRoundTwoTests: XCTestCase {
         incoming.body = "untrusted ciphertext"
         let content = NotificationHealth.fetchFailureContent(incoming, topic: "garden", event: "message_clear")
         XCTAssertEqual(content.title, "garden")
-        XCTAssertEqual(content.body, "Open the app to update notifications for garden.")
+        XCTAssertEqual(content.body, String(localized: "Open the app to update notifications for \("garden")."))
         XCTAssertNil(content.sound)
         XCTAssertEqual(content.interruptionLevel, .passive)
         let attempt = NotificationBestAttempt(content)
@@ -7568,7 +7572,7 @@ final class HardeningPolicyTests: XCTestCase {
     }
 
     func testHTTPLoginNoticeAndReleaseLogging() {
-        XCTAssertEqual(UrlSecurityNotice.message(for: "http://lan.example.org"), "This server uses HTTP. Your password is sent without encryption.")
+        XCTAssertEqual(UrlSecurityNotice.message(for: "http://lan.example.org"), String(localized: "This server uses HTTP. Your password is sent without encryption."))
         XCTAssertNil(UrlSecurityNotice.message(for: "https://lan.example.org"))
         XCTAssertEqual(FirebaseLogPolicy.level(debug: false), .min)
         XCTAssertEqual(FirebaseLogPolicy.level(debug: true), .max)
@@ -7812,7 +7816,7 @@ final class DeliveryHealthRoundThreeTests: XCTestCase {
         }
         XCTAssertNil(result)
         scheduled?() // Exhaust the wait before callbacks land.
-        XCTAssertEqual(result, "Push setup is still finishing. Check again in a moment.")
+        XCTAssertEqual(result, String(localized: "Push setup is still finishing. Check again in a moment."))
         ready = true // The previous text remains truthful when callbacks land after the wait.
         XCTAssertFalse(result!.contains("not ready"))
         XCTAssertEqual(NotificationHealth.repairResult(permission: .authorized, registered: ready, bindingsComplete: ready), DeliveryHealthCopy.repairComplete)
@@ -7937,7 +7941,7 @@ final class Base64MessageTests: XCTestCase {
         XCTAssertEqual(content.body, "Hello")
         XCTAssertEqual(try store.context.fetch(request).first(where: { $0.id == "direct-base64" })?.message, "Hello")
         content.modify(message: polled, baseUrl: sub.baseUrl!, categoryRegistrationTimeout: 0)
-        XCTAssertEqual(content.body, binaryExplanation)
+        XCTAssertEqual(content.body, String(localized: "This message contains binary data and cannot be displayed as text."))
     }
 
     func testNSEEarlyFallbackAlsoNormalizesEncodedBody() throws {
@@ -7947,7 +7951,7 @@ final class Base64MessageTests: XCTestCase {
         info["encoding"] = "base64"
         content.userInfo = info
         content.body = "//4A"
-        XCTAssertEqual(UNNotificationContent.encryptionSafeFallback(content).body, binaryExplanation)
+        XCTAssertEqual(UNNotificationContent.encryptionSafeFallback(content).body, String(localized: "This message contains binary data and cannot be displayed as text."))
         info["message"] = Data("eyJhbGciOiJkaXIiLCJlbmMiOiJBMjU2R0NNIn0..DA0ODxAREhMUFRYX.9W1edLGO1g4lI3ouB5e1eCfFVFU.y2sgqWt8XuVwv2WKtojYfg".utf8).base64EncodedString()
         content.userInfo = info
         content.body = info["message"] as! String

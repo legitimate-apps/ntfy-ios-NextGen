@@ -21,7 +21,7 @@ struct UserRowView: View {
                 .accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 0) {
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(store.getBasicUser(baseUrl: user.baseUrl ?? "")?.username ?? "Sign-in required")
+                    Text(store.getBasicUser(baseUrl: user.baseUrl ?? "")?.username ?? String(localized: "Sign-in required"))
                     Text(user.baseUrl ?? "?")
                         .font(.subheadline)
                         .foregroundColor(.secondary)

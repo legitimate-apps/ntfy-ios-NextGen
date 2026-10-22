@@ -50,7 +50,7 @@ struct UserTableView: View {
             HStack {
                 Image(systemName: "plus")
                     .accessibilityHidden(true)
-                Text("Add user")
+                Text(String(localized: "Add user"))
             }
             .foregroundColor(.primary)
         }

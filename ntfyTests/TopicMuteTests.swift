@@ -13,7 +13,7 @@ final class TopicMuteTests: XCTestCase {
         XCTAssertTrue(TopicMute.isMuted(until: now.addingTimeInterval(1), now: now))
         XCTAssertTrue(TopicMute.isMuted(until: .distantFuture, now: now))
         XCTAssertNil(TopicMute.status(until: now, now: now))
-        XCTAssertEqual(TopicMute.status(until: .distantFuture, now: now), "Notifications muted until resumed")
+        XCTAssertEqual(TopicMute.status(until: .distantFuture, now: now), String(localized: "Notifications muted until resumed"))
     }
 
     func testAndroidDurationsAndTomorrowAt0830AcrossDaylightSaving() throws {

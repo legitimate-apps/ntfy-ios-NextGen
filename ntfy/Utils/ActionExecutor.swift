@@ -87,8 +87,8 @@ struct ActionExecutor {
         guard let permit = ServerCooldown.shared.claimAttempt(server: server, manual: attempt == 1, kind: .action) else {
             let seconds = max(1, Int(ceil(ServerCooldown.shared.deadline(for: server, kind: .action).timeIntervalSinceNow)))
             let detail = ServerCooldown.shared.hasNonTimeRefusal(server: server, kind: .action)
-                ? "The server or action request must change before trying again."
-                : "The server is limiting this action. Try again in \(seconds) seconds."
+                ? String(localized: "The server or action request must change before trying again.")
+                : String(format: NSLocalizedString("The server is limiting this action. Try again in %lld seconds.", comment: "Retry interval in seconds"), locale: DeliveryHealthCopy.retryIntervalLocale(), seconds)
             notifyActionResult(action, success: false, detail: detail)
             return
         }
@@ -260,7 +260,7 @@ struct ActionExecutor {
             if http.statusCode == 429, case .time(let seconds) = RetryDirective.parse(
                 condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
                 retryAfter: http.value(forHTTPHeaderField: "Retry-After")) {
-                return .failure("The server is limiting this action. Try again in \(Int(ceil(seconds))) seconds.")
+                return .failure(String(format: NSLocalizedString("The server is limiting this action. Try again in %lld seconds.", comment: "Retry interval in seconds"), locale: DeliveryHealthCopy.retryIntervalLocale(), Int(ceil(seconds))))
             }
             return .failure("HTTP \(http.statusCode)")
         }
@@ -277,7 +277,7 @@ struct ActionExecutor {
     /// only feedback channel that works from a banner tap, where there is no in-app UI.
     private static func notifyActionResult(_ action: Action, success: Bool, detail: String?) {
         let content = UNMutableNotificationContent()
-        content.title = success ? "✅ \(action.label)" : "⚠️ \(action.label) failed"
+        content.title = success ? "✅ \(action.label)" : String(localized: "⚠️ \(action.label) failed")
         if !success, let detail = detail {
             content.body = detail
         }

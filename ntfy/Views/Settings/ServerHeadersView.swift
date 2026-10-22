@@ -24,27 +24,27 @@ struct ServerHeadersView: View {
     var body: some View {
         Form {
             Section(
-                header: Text("Server"),
-                footer: Text("Headers are scoped to this normalized server URL. They are never sent to another origin.")
+                header: Text(String(localized: "Server")),
+                footer: Text(String(localized: "Headers are scoped to this normalized server URL. They are never sent to another origin."))
             ) {
                 TextField("https://ntfy.example.com", text: $baseUrl)
                     .textInputAutocapitalization(.never)
                     .autocorrectionDisabled()
                     .keyboardType(.URL)
-                    .accessibilityLabel("Server URL")
-                Button("Load saved headers", action: load)
+                    .accessibilityLabel(String(localized: "Server URL"))
+                Button(String(localized: "Load saved headers"), action: load)
             }
 
             Section(
-                header: Text("Headers"),
-                footer: Text("Values are credentials stored in the shared Keychain and are masked here. An explicitly configured Authorization or User-Agent overrides the app default.")
+                header: Text(String(localized: "Headers")),
+                footer: Text(String(localized: "Values are credentials stored in the shared Keychain and are masked here. An explicitly configured Authorization or User-Agent overrides the app default."))
             ) {
                 ForEach($headers) { $header in
                     VStack(alignment: .leading, spacing: 8) {
-                        TextField("Header name", text: $header.name)
+                        TextField(String(localized: "Header name"), text: $header.name)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
-                        SecureField("Header value", text: $header.value)
+                        SecureField(String(localized: "Header value"), text: $header.value)
                             .textInputAutocapitalization(.never)
                             .autocorrectionDisabled()
                     }
@@ -54,18 +54,18 @@ struct ServerHeadersView: View {
                 Button {
                     headers.append(HeaderDraft(name: "", value: ""))
                 } label: {
-                    Label("Add header", systemImage: "plus")
+                    Label(String(localized: "Add header"), systemImage: "plus")
                 }
             }
 
             Section {
-                Button("Save", action: save)
-                Button("Delete saved headers", role: .destructive, action: delete)
+                Button(String(localized: "Save"), action: save)
+                Button(String(localized: "Delete saved headers"), role: .destructive, action: delete)
             }
         }
-        .navigationTitle("Server headers")
+        .navigationTitle(String(localized: "Server headers"))
         .onAppear(perform: load)
-        .alert("Server headers", isPresented: Binding(
+        .alert(String(localized: "Server headers"), isPresented: Binding(
             get: { alertMessage != nil },
             set: { if !$0 { alertMessage = nil } }
         )) {
@@ -80,7 +80,7 @@ struct ServerHeadersView: View {
         guard let components = URLComponents(string: normalized),
               ["http", "https"].contains(components.scheme?.lowercased() ?? ""),
               components.host?.isEmpty == false else {
-            alertMessage = "Enter a valid HTTP or HTTPS server URL."
+            alertMessage = String(localized: "Enter a valid HTTP or HTTPS server URL.")
             return nil
         }
         return normalized
@@ -92,7 +92,7 @@ struct ServerHeadersView: View {
             from: credentialStore.readHTTPHeaders(baseUrl: normalized)
         ) else {
             saveBlockedBaseUrls.insert(normalized)
-            alertMessage = "The saved headers could not be read from the Keychain. The current form was left unchanged."
+            alertMessage = String(localized: "The saved headers could not be read from the Keychain. The current form was left unchanged.")
             return
         }
         saveBlockedBaseUrls.remove(normalized)
@@ -145,13 +145,13 @@ struct ServerHeadersView: View {
             hasUnresolvedReadFailure: saveBlockedBaseUrls.contains(normalized)
         ) {
         case .blockedByReadFailure:
-            alertMessage = "The saved headers must be loaded successfully before changes can be saved."
+            alertMessage = String(localized: "The saved headers must be loaded successfully before changes can be saved.")
             return
         case .nothingToSave:
-            alertMessage = "There are no headers to save. To remove the headers stored for this server, use \"Delete saved headers\"."
+            alertMessage = String(localized: "There are no headers to save. To remove the headers stored for this server, use \"Delete saved headers\".")
             return
         case .duplicateName:
-            alertMessage = "Header names must be unique, ignoring capitalization."
+            alertMessage = String(localized: "Header names must be unique, ignoring capitalization.")
             return
         case .persist(let parsed):
             values = parsed
@@ -161,22 +161,22 @@ struct ServerHeadersView: View {
             return
         }
         guard credentialStore.setHTTPHeaders(values, baseUrl: normalized) else {
-            alertMessage = "The headers could not be saved to the Keychain."
+            alertMessage = String(localized: "The headers could not be saved to the Keychain.")
             return
         }
         baseUrl = normalized
         saveBlockedBaseUrls.remove(normalized)
-        alertMessage = "Headers saved."
+        alertMessage = String(localized: "Headers saved.")
     }
 
     private func delete() {
         guard let normalized = validatedBaseUrl() else { return }
         guard credentialStore.deleteHTTPHeaders(baseUrl: normalized) else {
-            alertMessage = "The saved headers could not be deleted from the Keychain."
+            alertMessage = String(localized: "The saved headers could not be deleted from the Keychain.")
             return
         }
         saveBlockedBaseUrls.remove(normalized)
         headers = [HeaderDraft(name: "", value: "")]
-        alertMessage = "Saved headers were deleted."
+        alertMessage = String(localized: "Saved headers were deleted.")
     }
 }

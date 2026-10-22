@@ -9,31 +9,31 @@ enum NotificationRetention: Int64, CaseIterable {
     var seconds: Int64 { rawValue * 86_400 }
     var label: String {
         switch self {
-        case .forever: return "Forever"
-        case .day: return "1 day"
-        case .threeDays: return "3 days"
-        case .week: return "1 week"
-        case .month: return "1 month (30 days)"
-        case .threeMonths: return "3 months (90 days)"
+        case .forever: return String(localized: "Forever")
+        case .day: return String(localized: "1 day")
+        case .threeDays: return String(localized: "3 days")
+        case .week: return String(localized: "1 week")
+        case .month: return String(localized: "1 month (30 days)")
+        case .threeMonths: return String(localized: "3 months (90 days)")
         }
     }
 }
 
 enum NotificationHistoryStrings {
-    static let title = "Keep notifications"
-    static let section = "Notification history"
-    static let explanation = "Notifications older than this are permanently deleted from this device, read or unread, with downloaded attachments and matching banners in Notification Center. Age counts from the message date. Deletion runs while the app is open. Messages that just arrived and recently downloaded files are kept for an hour. Other devices are not affected."
-    static let loadOlder = "Load older notifications"
-    static let noMatches = "No notifications match your search."
-    static let search = "Search all notifications"
+    static let title = String(localized: "Keep notifications")
+    static let section = String(localized: "Notification history")
+    static let explanation = String(localized: "Notifications older than this are permanently deleted from this device, read or unread, with downloaded attachments and matching banners in Notification Center. Age counts from the message date. Deletion runs while the app is open. Messages that just arrived and recently downloaded files are kept for an hour. Other devices are not affected.")
+    static let loadOlder = String(localized: "Load older notifications")
+    static let noMatches = String(localized: "No notifications match your search.")
+    static let search = String(localized: "Search all notifications")
     static func confirmation(_ count: Int, _ policy: NotificationRetention) -> String {
-        "Delete \(count) notifications older than \(policy.label)?"
+        String(localized: "Delete \(count) notifications older than \(policy.label)?")
     }
-    static let confirmExplanation = "This permanently deletes eligible notifications and their downloaded attachments from this device, including unread notifications. Messages in the one-hour grace period are kept until they expire."
-    static let delete = "Delete notifications"
-    static let cancel = "Cancel"
-    static let saveError = "Could not save the setting"
-    static let saveErrorExplanation = "Your previous retention setting is still in use. Try again."
+    static let confirmExplanation = String(localized: "This permanently deletes eligible notifications and their downloaded attachments from this device, including unread notifications. Messages in the one-hour grace period are kept until they expire.")
+    static let delete = String(localized: "Delete notifications")
+    static let cancel = String(localized: "Cancel")
+    static let saveError = String(localized: "Could not save the setting")
+    static let saveErrorExplanation = String(localized: "Your previous retention setting is still in use. Try again.")
 }
 
 extension Store {
@@ -264,7 +264,7 @@ extension Store {
     }
 
     func archivePresentedDeliveries(_ rows: [Notification], in context: NSManagedObjectContext) throws {
-        let times = rows.filter { $0.presented && !($0.message ?? "").hasPrefix(Self.testMessagePrefix) }.map(\.time)
+        let times = rows.filter { $0.presented && !Self.isOwnTestMessage($0.message ?? "") }.map(\.time)
         guard !times.isEmpty else { return }
         var (pref, evidence) = try archivedDeliveries(in: context)
         evidence.count += times.count

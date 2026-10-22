@@ -12,18 +12,18 @@ struct AboutView: View {
         Group {
             // Primary help is the default server's quick start: its examples publish to ntfy-me.com.
             // ntfy's own docs stay as the full protocol reference, labelled as such.
-            linkRow("Getting started", detail: shortUrl(url: normalizeBaseUrl(Config.helpUrl)), icon: "questionmark.circle",
+            linkRow(String(localized: "Getting started"), detail: shortUrl(url: normalizeBaseUrl(Config.helpUrl)), icon: "questionmark.circle",
                     url: Config.helpUrl)
-            linkRow("ntfy reference docs", detail: "ntfy.sh/docs", icon: "book", url: Config.docsUrl)
+            linkRow(String(localized: "ntfy reference docs"), detail: "ntfy.sh/docs", icon: "book", url: Config.docsUrl)
             // The support page explains how to reach us.
-            linkRow("Get help or report a bug", detail: "ntfy NextGen support", icon: "lifepreserver",
+            linkRow(String(localized: "Get help or report a bug"), detail: String(localized: "ntfy NextGen support"), icon: "lifepreserver",
                     url: Config.supportUrl)
             // Only a build with an App Store id (APP_STORE_ID) has a listing to rate.
             if let reviewUrl = Config.reviewUrl {
-                linkRow("Rate the app", detail: "App Store", icon: "star.fill", url: reviewUrl)
+                linkRow(String(localized: "Rate the app"), detail: "App Store", icon: "star.fill", url: reviewUrl)
             }
-            NavigationLink("Licenses") { LicensesView() }
-            ValueRow("Version", value: "ntfy \(Config.version) (\(Config.build))")
+            NavigationLink(String(localized: "Licenses")) { LicensesView() }
+            ValueRow(String(localized: "Version"), value: "ntfy \(Config.version) (\(Config.build))")
         }
         .foregroundColor(.primary)
     }

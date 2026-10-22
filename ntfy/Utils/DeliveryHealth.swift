@@ -1,45 +1,51 @@
 import Foundation
 import UserNotifications
 
-/// English copy for delivery health, shared with the notification extension.
-/// Keep these together until this feature is localized.
+/// Localized delivery health copy, shared with the notification extension.
 enum DeliveryHealthCopy {
-    static let notificationsOff = "Notifications are turned off for this app."
-    static let openSettings = "Open Settings"
-    static let allowNotifications = "Allow notifications"
-    static let permissionNeeded = "Allow notifications to receive alerts."
-    static let status = "Notification status"
-    static let permission = "Permission"
-    static let phoneRegistration = "Phone registration"
-    static let pushRegistration = "Push registration"
-    static let registered = "Registered"
-    static let waiting = "Not registered yet"
-    static let pendingTopics = "Topics waiting for push"
-    static let repair = "Repair"
-    static let repairing = "Repairing…"
-    static let repairComplete = "Push setup is complete. This does not check delivery from your server."
-    static let repairWaiting = "Push setup is still finishing. Check again in a moment."
-    static let repairPending = "Push setup is still incomplete. Try again later."
-    static let repairTimeout = "Repair is still running. Check again in a moment."
-    static let unreachable = "Can't reach the server"
-    static let unauthorized = "Sign-in failed"
-    static let rateLimited = "The server is limiting requests"
-    static func controlFailure(topic: String) -> String { "Open the app to update notifications for \(topic)." }
-    static let otherFailure = "Couldn't refresh this topic"
+    // Keep the established ungrouped English retry counts. Other languages need an explicit
+    // locale so plural selection includes forms such as Polish few/many.
+    static func retryIntervalLocale(language: String = Bundle.main.preferredLocalizations.first ?? "en",
+                                    locale: Locale = .current) -> Locale? {
+        language == "en" ? nil : locale
+    }
+
+    static let notificationsOff = String(localized: "Notifications are turned off for this app.")
+    static let openSettings = String(localized: "Open Settings")
+    static let allowNotifications = String(localized: "Allow notifications")
+    static let permissionNeeded = String(localized: "Allow notifications to receive alerts.")
+    static let status = String(localized: "Notification status")
+    static let permission = String(localized: "Permission")
+    static let phoneRegistration = String(localized: "Phone registration")
+    static let pushRegistration = String(localized: "Push registration")
+    static let registered = String(localized: "Registered")
+    static let waiting = String(localized: "Not registered yet")
+    static let pendingTopics = String(localized: "Topics waiting for push")
+    static let repair = String(localized: "Repair")
+    static let repairing = String(localized: "Repairing…")
+    static let repairComplete = String(localized: "Push setup is complete. This does not check delivery from your server.")
+    static let repairWaiting = String(localized: "Push setup is still finishing. Check again in a moment.")
+    static let repairPending = String(localized: "Push setup is still incomplete. Try again later.")
+    static let repairTimeout = String(localized: "Repair is still running. Check again in a moment.")
+    static let unreachable = String(localized: "Can't reach the server")
+    static let unauthorized = String(localized: "Sign-in failed")
+    static let rateLimited = String(localized: "The server is limiting requests")
+    static func controlFailure(topic: String) -> String { String(localized: "Open the app to update notifications for \(topic).") }
+    static let otherFailure = String(localized: "Couldn't refresh this topic")
 
     static func permissionLabel(_ state: UNAuthorizationStatus) -> String {
         switch state {
-        case .denied: return "Turned off"
-        case .authorized: return "Allowed"
-        case .provisional: return "Quiet delivery"
-        case .ephemeral: return "Allowed temporarily"
-        case .notDetermined: return "Not requested yet"
-        @unknown default: return "Unknown"
+        case .denied: return String(localized: "Turned off")
+        case .authorized: return String(localized: "Allowed")
+        case .provisional: return String(localized: "Quiet delivery")
+        case .ephemeral: return String(localized: "Allowed temporarily")
+        case .notDetermined: return String(localized: "Not requested yet")
+        @unknown default: return String(localized: "Unknown")
         }
     }
 
     static func fetchFailure(topic: String) -> String {
-        "New message on \(topic). Open the app to load it."
+        String(localized: "New message on \(topic). Open the app to load it.")
     }
 }
 

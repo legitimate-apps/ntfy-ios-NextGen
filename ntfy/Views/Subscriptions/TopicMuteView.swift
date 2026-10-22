@@ -6,7 +6,7 @@ struct TopicMuteButton: View {
 
     var body: some View {
         Button { showingOptions = true } label: {
-            Label(TopicMute.isMuted(until: subscription.mutedUntil) ? "Mute settings" : "Mute topic", systemImage: "bell.slash")
+            Label(TopicMute.isMuted(until: subscription.mutedUntil) ? String(localized: "Mute settings") : String(localized: "Mute topic"), systemImage: "bell.slash")
         }
     }
 }
@@ -20,10 +20,10 @@ struct TopicMuteView: View {
     var body: some View {
         NavigationView {
             List {
-                Section(header: Text(subscription.shortDisplayName()), footer: Text("Messages will still arrive and stay in your history. Notifications will appear quietly in Notification Center, with no sound or banner. Unread counts and the app badge will still update.")) {
+                Section(header: Text(subscription.shortDisplayName()), footer: Text(String(localized: "Messages will still arrive and stay in your history. Notifications will appear quietly in Notification Center, with no sound or banner. Unread counts and the app badge will still update."))) {
                     if TopicMute.isMuted(until: subscription.mutedUntil) {
                         TopicMuteStatus(subscription: subscription)
-                        Button("Unmute") { save(nil) }
+                        Button(String(localized: "Unmute")) { save(nil) }
                             .foregroundColor(.primary)
                     }
                     ForEach(TopicMuteDuration.allCases) { duration in
@@ -33,15 +33,15 @@ struct TopicMuteView: View {
                 }
             }
             .listStyle(InsetGroupedListStyle())
-            .navigationTitle("Mute topic")
+            .navigationTitle(String(localized: "topic.mute.title", defaultValue: "Mute topic"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .cancellationAction) {
-                    Button("Cancel") { presentationMode.wrappedValue.dismiss() }
+                    Button(String(localized: "Cancel")) { presentationMode.wrappedValue.dismiss() }
                 }
             }
             .alert(isPresented: $saveFailed) {
-                Alert(title: Text("Couldn't save mute setting"), message: Text("Please try again."), dismissButton: .default(Text("OK")))
+                Alert(title: Text(String(localized: "Couldn't save mute setting")), message: Text(String(localized: "Please try again.")), dismissButton: .default(Text("OK")))
             }
         }
     }

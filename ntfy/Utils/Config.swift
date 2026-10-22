@@ -8,8 +8,7 @@ enum Config {
     /// Who runs the built-in server, for copy that names it. Shipped builds pin `AppBaseURL` to
     /// ntfy-me.com (scripts/verify-app-base-url.sh gates the archive), which this app's publisher runs.
     static var appServerDescription: String {
-        "\(shortUrl(url: normalizeBaseUrl(appBaseUrl))), a free public server run by the "
-            + "publisher of this app (not affiliated with ntfy.sh or the ntfy project)"
+        String(localized: "\(shortUrl(url: normalizeBaseUrl(appBaseUrl))), a free public server run by the publisher of this app (not affiliated with ntfy.sh or the ntfy project)")
     }
 
     // MARK: - Build identity
@@ -41,9 +40,7 @@ enum Config {
     /// ntfy.sh pushes to the official app's Firebase project, not this app's.
     static func ntfyShDeliveryHint(baseUrl: String) -> String? {
         guard URL(string: normalizeBaseUrl(baseUrl))?.host?.lowercased() == "ntfy.sh" else { return nil }
-        return "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open "
-            + "the app or refresh. For banners, move your topic to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))). "
-            + "See \(migrateUrl)."
+        return String(localized: "Topics on ntfy.sh have no instant banners in this app. Messages appear when you open the app or refresh. For banners, move your topic to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))). See \(migrateUrl).")
     }
 
     static func subscriptionServerFooter(baseUrl: String, useAnother: Bool) -> String {
@@ -52,25 +49,19 @@ enum Config {
             return selfHostedDeliveryHint
         }
         if baseUrl == normalizeBaseUrl(appBaseUrl) {
-            return "New topics use \(appServerDescription). Any ntfy server works: turn on "
-                + "\"Use another server\" or change the default in Settings. "
-                + "Your scripts must send to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))); the same topic name on ntfy.sh is a different topic."
+            return String(localized: "New topics use \(appServerDescription). Any ntfy server works: turn on \"Use another server\" or change the default in Settings. Your scripts must send to \(shortUrl(url: normalizeBaseUrl(appBaseUrl))); the same topic name on ntfy.sh is a different topic.")
         }
-        return "New topics use your default server, \(shortUrl(url: baseUrl))."
+        return String(localized: "New topics use your default server, \(shortUrl(url: baseUrl)).")
     }
 
     static func defaultServerFooter(baseUrl: String) -> String {
         let deliveryHint = ntfyShDeliveryHint(baseUrl: baseUrl)
             ?? selfHostedDeliveryHint
-        return "When subscribing to new topics, this server will be used as a default. Leave it empty "
-            + "to use \(appServerDescription). \(deliveryHint)"
+        return String(localized: "When subscribing to new topics, this server will be used as a default. Leave it empty to use \(appServerDescription). \(deliveryHint)")
     }
 
     static var selfHostedDeliveryHint: String {
-        "For instant delivery from your own server, add \"\(upstreamConfigLine)\" to its config. "
-            + "Without it, messages may arrive with significant delay. A server has one upstream; using "
-            + "\(shortUrl(url: normalizeBaseUrl(appBaseUrl))) stops instant delivery to the official ntfy iOS app on that server. "
-            + "See \(selfHostingUrl)."
+        String(localized: "For instant delivery from your own server, add \"\(upstreamConfigLine)\" to its config. Without it, messages may arrive with significant delay. A server has one upstream; using \(shortUrl(url: normalizeBaseUrl(appBaseUrl))) stops instant delivery to the official ntfy iOS app on that server. See \(selfHostingUrl).")
     }
 
     static var build: String {

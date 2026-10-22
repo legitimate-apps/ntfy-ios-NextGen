@@ -193,13 +193,13 @@ enum AttachmentDownloadError: LocalizedError {
     var errorDescription: String? {
         switch self {
         case .missingUrl:
-            return "Attachment URL is missing."
+            return String(localized: "Attachment URL is missing.")
         case .badResponse:
-            return "Attachment download failed."
+            return String(localized: "Attachment download failed.")
         case .tooLarge:
-            return "Attachment is larger than the auto-download limit."
+            return String(localized: "Attachment is larger than the auto-download limit.")
         case .containerUnavailable:
-            return "Attachment storage is unavailable."
+            return String(localized: "Attachment storage is unavailable.")
         }
     }
 }

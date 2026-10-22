@@ -16,9 +16,9 @@ struct UrgentAlertsState: Equatable {
         case notificationsOff = "Notifications off"
     }
 
-    static let explanation = "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings."
-    static let criticalUnavailable = "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app."
-    static let criticalExplanation = "When enabled, priority 5 messages can play sound even when silenced."
+    static let explanation = String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings.")
+    static let criticalUnavailable = String(localized: "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app.")
+    static let criticalExplanation = String(localized: "When enabled, priority 5 messages can play sound even when silenced.")
 
     let status: Status
     let showsCriticalToggle: Bool
@@ -50,16 +50,16 @@ struct UrgentAlertsSettingView: View {
     }
 
     var body: some View {
-        Section(header: Text("Urgent alerts")) {
+        Section(header: Text(String(localized: "Urgent alerts"))) {
             Text(UrgentAlertsState.explanation)
             VStack(alignment: .leading, spacing: 4) {
-                Text("Time Sensitive notifications")
-                Text(state.status.rawValue)
+                Text(String(localized: "Time Sensitive notifications"))
+                Text(LocalizedStringKey(state.status.rawValue))
                     .foregroundColor(.secondary)
             }
             .accessibilityElement(children: .combine)
             if state.showsSettingsButton {
-                Button("Open Notification Settings") {
+                Button(String(localized: "Open Notification Settings")) {
                     delegate.openNotificationSettings()
                 }
             }
@@ -97,17 +97,17 @@ struct CriticalAlertsSettingView: View {
                     .foregroundColor(.red)
                     .font(.system(size: 22))
 
-                Text("Critical Alerts")
+                Text(String(localized: "Critical Alerts"))
                     .foregroundColor(.primary)
             }
         }
-        .alert("Enable Critical Alerts", isPresented: $showingSettingsAlert) {
-            Button("Open Notification Settings") {
+        .alert(String(localized: "Enable Critical Alerts"), isPresented: $showingSettingsAlert) {
+            Button(String(localized: "Open Notification Settings")) {
                 delegate.openNotificationSettings()
             }
-            Button("Cancel", role: .cancel) {}
+            Button(String(localized: "Cancel"), role: .cancel) {}
         } message: {
-            Text("Critical alerts were not allowed. You can enable them in the iOS notification settings for ntfy.")
+            Text(String(localized: "Critical alerts were not allowed. You can enable them in the iOS notification settings for ntfy."))
         }
     }
 

@@ -360,3 +360,212 @@ private extension XCUIApplication {
         coordinate(withNormalizedOffset: CGVector(dx: 0.995, dy: 0.50)).tap()
     }
 }
+
+/// These assertions launch the actual app in German, with server content kept verbatim.
+/// Run separately from the unchanged English navigation suite using run.py --german.
+final class GermanLocalizationUITests: XCTestCase {
+    lazy var app = XCUIApplication(bundleIdentifier: Bundle(for: Self.self).object(forInfoDictionaryKey: "NTFYTestAppID") as! String)
+    let firstTopic = "aaa-nav-000"
+    let language = ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE"]
+
+    override func setUp() {
+        continueAfterFailure = false
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.18.0", "-notificationPermissionPrimerOffered", "YES"]
+    }
+    func capture(_ name: String) {
+        let tree = XCTAttachment(string: app.debugDescription)
+        tree.name = "de-" + name + ".txt"; tree.lifetime = .keepAlways; add(tree)
+        let shot = XCTAttachment(screenshot: app.screenshot())
+        shot.name = "de-" + name; shot.lifetime = .keepAlways; add(shot)
+    }
+    func reveal(_ element: XCUIElement, up: Bool = true, attempts: Int = 40) {
+        for _ in 0..<attempts {
+            if element.exists && element.isHittable { return }
+            // Small steps keep short controls from being skipped on SE at accessibility sizes.
+            let start = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.70 : 0.45))
+            let end = app.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: up ? 0.45 : 0.70))
+            start.press(forDuration: 0.05, thenDragTo: end)
+        }
+        XCTAssertTrue(element.isHittable, "Expected a reachable German control: \(element)")
+    }
+    func launch() {
+        app.launch()
+        let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
+        for label in ["Erlauben", "Allow"] {
+            if springboard.buttons[label].waitForExistence(timeout: 1) { springboard.buttons[label].tap() }
+        }
+        capture("launch")
+        XCTAssertTrue(app.navigationBars["Abonnierte Themen"].waitForExistence(timeout: 8))
+        XCTAssertFalse(app.buttons["Add subscription"].exists)
+        XCTAssertTrue(app.buttons["Neues Abo"].exists)
+    }
+    func testGermanMainScreens() {
+        launch()
+        capture("topic-list")
+        app.staticTexts[firstTopic].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Themenaktionen"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Nachrichtenaktionen"].firstMatch.exists)
+        XCTAssertTrue(app.images["Hohe Priorität"].exists)
+        XCTAssertTrue(app.buttons["Anhangaktionen"].firstMatch.exists)
+        capture("topic-attachments")
+        app.buttons["Nachrichtenaktionen"].firstMatch.tap()
+        XCTAssertTrue(app.buttons["Nachricht kopieren"].exists)
+        capture("message-menu")
+        app.tapCoordinateOutsideMenu()
+        app.buttons["Anhangaktionen"].firstMatch.tap()
+        capture("attachment-menu")
+        app.tapCoordinateOutsideMenu()
+        app.buttons["Themenaktionen"].tap()
+        XCTAssertTrue(app.buttons["Thema stummschalten"].exists)
+        capture("topic-menu")
+        app.buttons["Thema stummschalten"].tap()
+        XCTAssertTrue(app.navigationBars["Stummschalten"].waitForExistence(timeout: 4))
+        capture("mute-top")
+        for name in ["30 Minuten", "1 Stunde", "2 Stunden", "8 Stunden", "Bis zur Reaktivierung"] {
+            reveal(app.buttons[name])
+            XCTAssertTrue(app.buttons[name].exists)
+        }
+        capture("mute-bottom")
+        app.buttons["Bis zur Reaktivierung"].tap()
+        XCTAssertTrue(app.staticTexts["Benachrichtigungen bis zur Reaktivierung stumm"].waitForExistence(timeout: 4))
+        capture("muted-topic")
+        app.buttons["Themenaktionen"].tap()
+        reveal(app.buttons["QR-Code anzeigen"])
+        app.buttons["QR-Code anzeigen"].tap()
+        XCTAssertTrue(app.navigationBars["QR-Code"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.images["QR-Code für 127.0.0.1:1/aaa-nav-000"].exists)
+        XCTAssertTrue(app.buttons["Teilen"].exists)
+        capture("qr-show")
+        app.swipeUp(); capture("qr-show-bottom")
+        app.buttons["Fertig"].tap()
+        app.navigationBars.buttons["Abonnierte Themen"].tap()
+        capture("muted-list")
+        app.buttons["Neues Abo"].tap()
+        XCTAssertTrue(app.navigationBars["Abo"].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons["Zufälliger Themenname"].exists)
+        capture("add-top")
+        reveal(app.buttons["QR-Code scannen"])
+        capture("add-bottom")
+        app.buttons["QR-Code scannen"].tap()
+        XCTAssertTrue(app.navigationBars["Scannen"].waitForExistence(timeout: 4))
+        XCTAssertTrue(app.staticTexts["Dieses Gerät hat keine Kamera. Gib Thema und Server von Hand ein."].exists)
+        capture("qr-scan-no-camera")
+        app.navigationBars["Scannen"].buttons["Abbrechen"].tap()
+        app.navigationBars["Abo"].buttons["Abbrechen"].tap()
+        app.buttons["Einstellungen"].tap()
+        XCTAssertTrue(app.navigationBars["Einstellungen"].waitForExistence(timeout: 4))
+        capture("settings-top")
+        app.swipeUp(); capture("settings-status")
+        reveal(app.buttons["Neues Konto"])
+        capture("settings-users")
+        app.buttons["Neues Konto"].tap()
+        XCTAssertTrue(app.buttons["Benutzername und Passwort"].isSelected)
+        XCTAssertEqual(app.textFields["server-username"].label, "Benutzername")
+        XCTAssertEqual(app.secureTextFields["server-password"].label, "Passwort")
+        capture("account-password")
+        reveal(app.secureTextFields["server-password"])
+        capture("account-password-bottom")
+        reveal(app.buttons["Zugriffstoken"], up: false)
+        app.buttons["Zugriffstoken"].tap()
+        XCTAssertTrue(app.buttons["Zugriffstoken"].isSelected)
+        XCTAssertEqual(app.secureTextFields["server-access-token"].label, "Zugriffstoken")
+        capture("account-token")
+        reveal(app.secureTextFields["server-access-token"])
+        capture("account-token-bottom")
+        app.buttons["Abbrechen"].tap()
+        let savedUser = app.buttons.matching(NSPredicate(format: "label CONTAINS 'accessibility-user'")).firstMatch
+        reveal(savedUser, up: false)
+        savedUser.tap()
+        XCTAssertTrue(app.navigationBars["Konto"].waitForExistence(timeout: 4))
+        capture("account-editor")
+        app.buttons["Abbrechen"].tap()
+        reveal(app.buttons["Eigene HTTP-Header"])
+        app.buttons["Eigene HTTP-Header"].tap()
+        capture("server-headers")
+        app.terminate()
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.17.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launch()
+        XCTAssertTrue(app.navigationBars["Neuigkeiten"].waitForExistence(timeout: 8))
+        capture("whats-new-top")
+        app.swipeUp(); capture("whats-new-middle")
+        reveal(app.buttons["Weiter"])
+        capture("whats-new-bottom")
+        app.buttons["Weiter"].tap()
+    }
+    func testGermanEmptyList() {
+        launch()
+        XCTAssertTrue(app.staticTexts["Du hast noch keine Themen abonniert"].exists)
+        capture("empty-list")
+    }
+    /// Requires the task-local HTTP fixture on loopback: it refuses /auth with 401.
+    func testGermanAddLoginChoices() {
+        app.launchEnvironment["NTFY_SIMULATED_QR_SCAN"] = "http://127.0.0.1:18091/zz-german-auth"
+        defer { app.launchEnvironment.removeValue(forKey: "NTFY_SIMULATED_QR_SCAN") }
+        launch()
+        app.buttons["Neues Abo"].tap()
+        reveal(app.buttons["QR-Code scannen"])
+        app.buttons["QR-Code scannen"].tap()
+        XCTAssertTrue(app.navigationBars["Abo"].waitForExistence(timeout: 8))
+        let server = app.textFields["Server-URL"]
+        reveal(server, up: false)
+        XCTAssertEqual(server.value as? String, "http://127.0.0.1:18091")
+        capture("add-server-filled")
+        app.navigationBars.buttons["Abonnieren"].tap()
+        XCTAssertTrue(app.navigationBars["Login"].waitForExistence(timeout: 8))
+        XCTAssertTrue(app.buttons["Benutzername und Passwort"].exists)
+        capture("add-login-password")
+        app.buttons["Zugriffstoken"].tap()
+        XCTAssertEqual(app.secureTextFields["server-access-token"].label, "Zugriffstoken")
+        capture("add-login-token")
+    }
+    func testGermanLicenseScreens() {
+        launch()
+        app.buttons["Einstellungen"].tap()
+        // Settings spans about fifteen screens at AX5; keep small, non-skipping scroll steps.
+        reveal(app.buttons["Lizenzen"], attempts: 80)
+        app.buttons["Lizenzen"].tap()
+        XCTAssertTrue(app.navigationBars["Lizenzen"].waitForExistence(timeout: 4))
+        capture("licenses-list")
+        app.staticTexts["ntfy for iOS"].tap()
+        let text = app.textViews["licenseText"]
+        XCTAssertTrue(text.waitForExistence(timeout: 4))
+        XCTAssertTrue((text.value as? String)?.contains("Permission is hereby granted") == true)
+        XCTAssertFalse((text.value as? String)?.contains("Hiermit wird jeder Person") == true)
+        // The file wraps "copy" and "of" onto separate lines; on a phone the paragraph is shown reflowed.
+        XCTAssertTrue((text.value as? String)?.contains("obtaining a copy of this software") == true)
+        capture("license-mit-top")
+        text.swipeUp(); capture("license-mit-bottom")
+        app.navigationBars.buttons["Lizenzen"].tap()
+        app.staticTexts["Firebase"].tap()
+        XCTAssertTrue(text.waitForExistence(timeout: 4))
+        XCTAssertTrue((text.value as? String)?.contains("TERMS AND CONDITIONS FOR USE, REPRODUCTION, AND DISTRIBUTION") == true)
+        capture("license-apache-top")
+        text.swipeUp(); capture("license-apache-middle")
+    }
+
+    func testGermanCompactHeaders() {
+        launch()
+        app.buttons["Neues Abo"].tap()
+        XCTAssertTrue(app.navigationBars["Abo"].waitForExistence(timeout: 4))
+        capture("compact-add")
+        reveal(app.buttons["QR-Code scannen"])
+        app.buttons["QR-Code scannen"].tap()
+        XCTAssertTrue(app.navigationBars["Scannen"].waitForExistence(timeout: 4))
+        capture("compact-scanner")
+        app.navigationBars["Scannen"].buttons["Abbrechen"].tap()
+        app.navigationBars["Abo"].buttons["Abbrechen"].tap()
+        app.buttons["Einstellungen"].tap()
+        reveal(app.buttons["Neues Konto"])
+        app.buttons["Neues Konto"].tap()
+        XCTAssertTrue(app.navigationBars["Konto"].waitForExistence(timeout: 4))
+        capture("compact-account")
+        app.buttons["Abbrechen"].tap()
+        let saved = app.buttons.matching(NSPredicate(format: "label CONTAINS 'accessibility-user'")).firstMatch
+        reveal(saved, up: false); saved.tap()
+        XCTAssertTrue(app.navigationBars["Konto"].waitForExistence(timeout: 4))
+        capture("compact-edit")
+        app.terminate()
+        testGermanAddLoginChoices()
+    }
+
+}

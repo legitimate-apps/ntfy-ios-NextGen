@@ -24,7 +24,7 @@ struct NotificationRowView: View {
                 Button {
                     store.setRead(!notification.read, forNotification: notification)
                 } label: {
-                    Label(notification.read ? "Mark unread" : "Mark read",
+                    Label(notification.read ? String(localized: "Mark unread") : String(localized: "Mark read"),
                           systemImage: notification.read ? "envelope.badge" : "envelope.open")
                 }
                 .tint(.blue)
@@ -33,7 +33,7 @@ struct NotificationRowView: View {
                 Button(role: .destructive) {
                     store.delete(notification: notification)
                 } label: {
-                    Label("Delete", systemImage: "trash.circle")
+                    Label(String(localized: "Delete"), systemImage: "trash.circle")
                 }
             }
             .sheet(item: $attachmentPresentation) { attachmentPresentation in
@@ -127,14 +127,14 @@ struct NotificationRowView: View {
                                 .foregroundColor(.secondary)
                                 .padding([.leading], 2)
                                 .accessibilityLabel(notification.encryptionState == .locked
-                                    ? "Encrypted, not readable yet"
-                                    : "End-to-end encrypted")
+                                    ? String(localized: "Encrypted, not readable yet")
+                                    : String(localized: "End-to-end encrypted"))
                         case .unencrypted:
-                            Label("Not encrypted", systemImage: "lock.open")
+                            Label(String(localized: "Not encrypted"), systemImage: "lock.open")
                                 .font(.caption)
                                 .foregroundColor(.orange)
                                 .padding([.leading], 2)
-                                .accessibilityLabel("Not encrypted: this topic has a password, but this message was sent without it")
+                                .accessibilityLabel(String(localized: "Not encrypted: this topic has a password, but this message was sent without it"))
                         }
                     }
                     Spacer()
@@ -175,7 +175,7 @@ struct NotificationRowView: View {
             }
             messageText
             if notification.encryptionState == .unencrypted {
-                Text("Sent without this topic's password. Anyone who knows the topic name could have sent it.")
+                Text(String(localized: "Sent without this topic's password. Anyone who knows the topic name could have sent it."))
                     .font(.footnote)
                     .foregroundColor(.orange)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -183,7 +183,7 @@ struct NotificationRowView: View {
                     .modifier(MessageRowTapModifier(enabled: installsMessageRegionTaps, action: handleRowTap))
             }
             if notification.encryptionState == .locked {
-                Text("Set this topic's password (topic menu → End-to-end encryption) to read it.")
+                Text(String(localized: "Set this topic's password (topic menu → End-to-end encryption) to read it."))
                     .font(.footnote)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -191,7 +191,7 @@ struct NotificationRowView: View {
                     .modifier(MessageRowTapModifier(enabled: installsMessageRegionTaps, action: handleRowTap))
             }
             if !notification.nonEmojiTags().isEmpty {
-                Text("Tags: " + notification.nonEmojiTags().joined(separator: ", "))
+                Text(String(localized: "Tags: \(notification.nonEmojiTags().joined(separator: ", "))"))
                     .font(.subheadline)
                     .foregroundColor(.secondary)
                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -242,13 +242,13 @@ struct NotificationRowView: View {
     
     private var messageActionsMenu: some View {
         Menu {
-            Button("Copy message") {
+            Button(String(localized: "Copy message")) {
                 copyMessage()
             }
             Button {
                 store.setRead(!notification.read, forNotification: notification)
             } label: {
-                Label(notification.read ? "Mark unread" : "Mark read",
+                Label(notification.read ? String(localized: "Mark unread") : String(localized: "Mark read"),
                       systemImage: notification.read ? "envelope.badge" : "envelope.open")
             }
         } label: {
@@ -258,16 +258,16 @@ struct NotificationRowView: View {
                 .padding(.vertical, 4)
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("Message actions")
+        .accessibilityLabel(String(localized: "Message actions"))
     }
     
     private var priorityLabel: String {
         switch notification.priority {
-        case 1: return "Minimum priority"
-        case 2: return "Low priority"
-        case 4: return "High priority"
-        case 5: return "Maximum priority"
-        default: return "Default priority"
+        case 1: return String(localized: "Minimum priority")
+        case 2: return String(localized: "Low priority")
+        case 4: return String(localized: "High priority")
+        case 5: return String(localized: "Maximum priority")
+        default: return String(localized: "Default priority")
         }
     }
 

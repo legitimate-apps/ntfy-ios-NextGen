@@ -212,11 +212,8 @@ enum RetiredDefaultServerMigration {
     static func noticeMessage(topics: [String]) -> String {
         let limit = 8
         var urls = topics.prefix(limit).map { "\(replacementBaseUrl)/\($0)" }
-        if topics.count > limit { urls.append("and \(topics.count - limit) more") }
-        return "The server this app used to default to is private, so these topics never received "
-            + "messages there. They now live on ntfy-me.com:\n\n" + urls.joined(separator: "\n")
-            + "\n\nAnything that sends to them, such as scripts or services, must now post to "
-            + "\(replacementBaseUrl)/<topic>."
+        if topics.count > limit { urls.append(String(localized: "and \(topics.count - limit) more")) }
+        return String(localized: "The server this app used to default to is private, so these topics never received messages there. They now live on ntfy-me.com:\n\n\(urls.joined(separator: "\n"))\n\nAnything that sends to them, such as scripts or services, must now post to \(replacementBaseUrl)/<topic>.")
     }
 
     // MARK: Matching

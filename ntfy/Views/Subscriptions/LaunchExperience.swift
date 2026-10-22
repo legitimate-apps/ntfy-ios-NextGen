@@ -12,25 +12,25 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
         ReleaseNotes(version: "1.18.0", bullets: [
-            "Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new topic has its server and name filled in, ready for you to tap Subscribe.",
-            "Marking a topic read can update your other devices with fewer requests on ntfy-me.com and self-hosted servers that support it.",
-            "A server limit on sending no longer pauses message refreshes.",
-            "For self-hosted HTTPS topics, Settings → Notification status can check whether ntfy-me.com receives forwarded wake-ups. It asks before sending one visible test message. This checks forwarding, not delivery to your phone."
+            String(localized: "Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new topic has its server and name filled in, ready for you to tap Subscribe."),
+            String(localized: "Marking a topic read can update your other devices with fewer requests on ntfy-me.com and self-hosted servers that support it."),
+            String(localized: "A server limit on sending no longer pauses message refreshes."),
+            String(localized: "For self-hosted HTTPS topics, Settings → Notification status can check whether ntfy-me.com receives forwarded wake-ups. It asks before sending one visible test message. This checks forwarding, not delivery to your phone.")
         ]),
         ReleaseNotes(version: "1.17.0", bullets: [
-            "If notifications are turned off for the app, or a topic can't refresh, the app now says why and how to fix it. Settings → Notification status checks that this phone is set up for push and can repair it.",
-            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings.",
-            "Swipe a message to mark it read or unread. Long-press a topic to pin it, mark it read or unsubscribe.",
-            "Settings → Notification history sets how long notifications are kept on this phone. Until you choose a limit, everything is kept. Long topics open on their newest messages, and you can search a topic's whole history.",
-            "Notification buttons can copy text, such as a code, to the clipboard.",
-            "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer."
+            String(localized: "If notifications are turned off for the app, or a topic can't refresh, the app now says why and how to fix it. Settings → Notification status checks that this phone is set up for push and can repair it."),
+            String(localized: "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings."),
+            String(localized: "Swipe a message to mark it read or unread. Long-press a topic to pin it, mark it read or unsubscribe."),
+            String(localized: "Settings → Notification history sets how long notifications are kept on this phone. Until you choose a limit, everything is kept. Long topics open on their newest messages, and you can search a topic's whole history."),
+            String(localized: "Notification buttons can copy text, such as a code, to the clipboard."),
+            String(localized: "A new topic has a \"Send a test notification\" button, so you can see a notification arrive without a computer.")
         ]),
         ReleaseNotes(version: "1.16.0", bullets: [
-            "On a Mac, notification buttons such as Approve now work right from the banner.",
-            "Tapping an action button twice sends it once, and a busy server is retried instead of showing a false failure.",
-            "Clearer server hints: topics on ntfy.sh explain that they get no instant banners in this app, adding a topic reminds you where your scripts must send, and the self-hosting and migration guides are one tap away.",
-            "Reading or dismissing notifications on a self-hosted topic now helps clear them on your other devices.",
-            "Settings → About → Licenses lists the open-source software the app is built on."
+            String(localized: "On a Mac, notification buttons such as Approve now work right from the banner."),
+            String(localized: "Tapping an action button twice sends it once, and a busy server is retried instead of showing a false failure."),
+            String(localized: "Clearer server hints: topics on ntfy.sh explain that they get no instant banners in this app, adding a topic reminds you where your scripts must send, and the self-hosting and migration guides are one tap away."),
+            String(localized: "Reading or dismissing notifications on a self-hosted topic now helps clear them on your other devices."),
+            String(localized: "Settings → About → Licenses lists the open-source software the app is built on.")
         ])
     ]
 }
@@ -187,7 +187,7 @@ struct WhatsNewView: View {
                             }
                         }
                     }
-                    Button("Continue", action: onContinue)
+                    Button(String(localized: "Continue"), action: onContinue)
                         .font(.headline)
                         .frame(maxWidth: .infinity)
                         .padding()
@@ -196,7 +196,7 @@ struct WhatsNewView: View {
                 }
                 .padding()
             }
-            .navigationTitle("What's new")
+            .navigationTitle(String(localized: "What's new"))
             .navigationBarTitleDisplayMode(.inline)
         }
         .navigationViewStyle(StackNavigationViewStyle())

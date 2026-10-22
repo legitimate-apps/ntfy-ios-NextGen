@@ -234,11 +234,11 @@ final class TopicQRCodeTests: XCTestCase {
 final class TopicQRScannerTextTests: XCTestCase {
     func testRejectedCodesNeverExposeTheirContents() {
         XCTAssertEqual(TopicQRScannerView.rejectionText("https://ntfy.sh/docs"),
-                       "That code isn't an ntfy topic address.")
+                       String(localized: "That code isn't an ntfy topic address."))
         for secret in ["https://user:password@example.org/topic", "http://example.org/docs?reset_token=abc#private",
                        "ntfy://example.org/docs?token=secret", "WIFI:S:Home;T:WPA;P:secret;;",
                        "BEGIN:VCARD\nFN:Someone\nEND:VCARD", "otpauth://totp/x?secret=ABC"] {
-            XCTAssertEqual(TopicQRScannerView.rejectionText(secret), "That code isn't an ntfy topic address.", secret)
+            XCTAssertEqual(TopicQRScannerView.rejectionText(secret), String(localized: "That code isn't an ntfy topic address."), secret)
         }
     }
 }

@@ -15,16 +15,16 @@ final class RelayCheck: ObservableObject {
         var message: String? {
             switch self {
             case .idle: return nil
-            case .discovering: return "Checking whether the relay supports this test…"
-            case .consent: return "The relay supports a wake-up check. Sending the test needs your approval."
-            case .checking: return "Waiting for a newer forwarded wake-up…"
-            case .unsupported: return "This relay does not offer an automatic check. On your server, check upstream-base-url: https://ntfy-me.com, its canonical base-url, and outbound HTTPS. No automatic result is available."
-            case .cancelled: return "Check cancelled. A test message already sent may still arrive."
+            case .discovering: return String(localized: "Checking whether the relay supports this test…")
+            case .consent: return String(localized: "The relay supports a wake-up check. Sending the test needs your approval.")
+            case .checking: return String(localized: "Waiting for a newer forwarded wake-up…")
+            case .unsupported: return String(localized: "This relay does not offer an automatic check. On your server, check upstream-base-url: https://ntfy-me.com, its canonical base-url, and outbound HTTPS. No automatic result is available.")
+            case .cancelled: return String(localized: "Check cancelled. A test message already sent may still arrive.")
             case .received(let milliseconds):
                 let date = Date(timeIntervalSince1970: Double(milliseconds) / 1000)
                 let time = DateFormatter.localizedString(from: date, dateStyle: .none, timeStyle: .medium)
-                return "ntfy-me.com received a wake-up for this topic at \(time), and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up."
-            case .notObserved: return "No newer forwarded wake-up was observed during this check (about 10 seconds). Check upstream-base-url: https://ntfy-me.com, the canonical base-url, outbound HTTPS, and the relay's status. Network or FCM trouble, delays, or evicted history can give the same result."
+                return String(localized: "ntfy-me.com received a wake-up for this topic at \(time), and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up.")
+            case .notObserved: return String(localized: "No newer forwarded wake-up was observed during this check (about 10 seconds). Check upstream-base-url: https://ntfy-me.com, the canonical base-url, outbound HTTPS, and the relay's status. Network or FCM trouble, delays, or evicted history can give the same result.")
             case .failed(let reason): return reason
             }
         }
@@ -98,14 +98,14 @@ final class RelayCheck: ObservableObject {
     func prepare(baseUrl: String, topic: String) {
         guard !state.isBusy, ProcessInfo.processInfo.systemUptime >= nextAllowed else { return }
         if let cooldown, !cooldown.claim(server: relayBaseUrl, manual: true, kind: .relay, consumingProbe: false) {
-            state = .failed("The relay is pausing requests after a rate limit. Wait for the requested delay or the relevant server or request change before trying again.")
+            state = .failed(String(localized: "The relay is pausing requests after a rate limit. Wait for the requested delay or the relevant server or request change before trying again."))
             return
         }
         generation = UUID()
         baseline = nil
         baselineRead = true
         guard Self.isSecureBase(baseUrl), Self.isSecureBase(relayBaseUrl), !topic.isEmpty else {
-            state = .failed("An automatic relay check requires HTTPS for both your topic server and the relay. No test message was sent.")
+            state = .failed(String(localized: "An automatic relay check requires HTTPS for both your topic server and the relay. No test message was sent."))
             return
         }
         topicBaseUrl = baseUrl
@@ -152,13 +152,13 @@ final class RelayCheck: ObservableObject {
     private func publish(id: UUID, using publish: @escaping (@escaping (String?) -> Void) -> Void) {
         let attempt = cooldown?.claimAttempt(server: topicBaseUrl, manual: true, kind: .publish)
         guard cooldown == nil || attempt != nil else {
-            state = .failed("Your topic server is pausing publishes after a rate limit. No test message was sent. Try again after its wait or state change.")
+            state = .failed(String(localized: "Your topic server is pausing publishes after a rate limit. No test message was sent. Try again after its wait or state change."))
             return
         }
         publish { [weak self] error in
             DispatchQueue.main.async {
                 guard let self, self.generation == id else { return }
-                if let error { self.state = .failed("The test message could not be confirmed: \(error) No relay result is available.") }
+                if let error { self.state = .failed(String(localized: "The test message could not be confirmed: \(error) No relay result is available.")) }
                 else {
                     if let attempt { self.cooldown?.succeeded(server: self.topicBaseUrl, attempt: attempt) }
                     self.poll(id: id, index: 0)
@@ -185,7 +185,7 @@ final class RelayCheck: ObservableObject {
               let url = URL(string: relayBaseUrl.trimmingCharacters(in: CharacterSet(charactersIn: "/")) + "/v1/ntfyme/relay-check") else { return }
         let attempt = cooldown?.claimAttempt(server: relayBaseUrl, manual: baselineRead, kind: .relay)
         guard cooldown == nil || attempt != nil else {
-            state = .failed("The relay is pausing requests after a rate limit. Wait for the requested delay or the relevant server or request change before trying again.")
+            state = .failed(String(localized: "The relay is pausing requests after a rate limit. Wait for the requested delay or the relevant server or request change before trying again."))
             return
         }
         baselineRead = false
@@ -197,7 +197,7 @@ final class RelayCheck: ObservableObject {
         read(request) { [weak self] data, response, error in
             guard let self, self.generation == id else { return }
             guard error == nil, let response else {
-                self.state = .failed("The relay could not be reached. This check cannot tell whether wake-ups are forwarding. Try again when the connection is available.")
+                self.state = .failed(String(localized: "The relay could not be reached. This check cannot tell whether wake-ups are forwarding. Try again when the connection is available."))
                 return
             }
             if response.statusCode == 404 || response.statusCode == 405 {
@@ -212,20 +212,20 @@ final class RelayCheck: ObservableObject {
                 let condition = response.value(forHTTPHeaderField: "Retry-After-Condition")
                 let seconds = response.value(forHTTPHeaderField: "Retry-After").flatMap(Double.init)
                 let guidance: String
-                if condition == "state-change" { guidance = "Wait for the relevant server state to change before trying again." }
-                else if condition == "request-change" { guidance = "The server requires a different request before it can accept this check." }
-                else if let seconds, seconds.isFinite, seconds > 0 { guidance = "Wait at least \(Int(ceil(min(seconds, Double(Int.max / 2))))) seconds before trying again." }
-                else { guidance = "Wait at least 60 seconds before trying again." }
+                if condition == "state-change" { guidance = String(localized: "Wait for the relevant server state to change before trying again.") }
+                else if condition == "request-change" { guidance = String(localized: "The server requires a different request before it can accept this check.") }
+                else if let seconds, seconds.isFinite, seconds > 0 { guidance = String(format: NSLocalizedString("Wait at least %lld seconds before trying again.", comment: "Retry interval in seconds"), locale: DeliveryHealthCopy.retryIntervalLocale(), Int(ceil(min(seconds, Double(Int.max / 2))))) }
+                else { guidance = String(localized: "Wait at least 60 seconds before trying again.") }
                 if condition != "state-change", condition != "request-change" {
                     let delay = seconds.flatMap { $0.isFinite && $0 > 0 ? $0 : nil } ?? 60
                     self.nextAllowed = ProcessInfo.processInfo.systemUptime + delay
                 }
-                self.state = .failed("The relay rate limited this check. \(guidance) No automatic retry will be sent.")
+                self.state = .failed(String(localized: "The relay rate limited this check. \(guidance) No automatic retry will be sent."))
                 return
             }
             guard response.statusCode == 200, let data,
                   let snapshot = try? JSONDecoder().decode(Snapshot.self, from: data), snapshot.isValid else {
-                self.state = .failed("The relay did not return a valid check result (HTTP \(response.statusCode)). This does not establish whether forwarding works.")
+                self.state = .failed(String(localized: "The relay did not return a valid check result (HTTP \(response.statusCode)). This does not establish whether forwarding works."))
                 return
             }
             if let attempt { self.cooldown?.succeeded(server: self.relayBaseUrl, attempt: attempt) }

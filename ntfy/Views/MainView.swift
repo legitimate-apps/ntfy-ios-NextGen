@@ -17,12 +17,12 @@ struct MainView: View {
             SubscriptionListView(linkRoute: linkRequest?.route)
                 .tabItem {
                     Image(systemName: "message.fill")
-                    Text("Notifications")
+                    Text(String(localized: "Notifications"))
                 }
             SettingsView()
                 .tabItem {
                     Image(systemName: "gearshape.fill")
-                    Text("Settings")
+                    Text(String(localized: "Settings"))
                 }
         }
         // A new link returns to Notifications and discards navigation and sheet state belonging

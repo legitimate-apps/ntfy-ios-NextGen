@@ -10,7 +10,7 @@ final class ServerContractTests: XCTestCase {
         let headers = ["Retry-After": "72000", "Retry-After-Condition": "time"]
         XCTAssertNil(ActionExecutor.retryDelay(response: response(headers), error: nil, attempt: 1))
         XCTAssertEqual(ActionExecutor.httpActionResult(response: response(headers), error: nil),
-                       .failure("The server is limiting this action. Try again in 72000 seconds."))
+                       .failure(String(format: NSLocalizedString("The server is limiting this action. Try again in %lld seconds.", comment: ""), locale: DeliveryHealthCopy.retryIntervalLocale(), 72000)))
         XCTAssertEqual(ActionExecutor.retryDelay(response: response(["Retry-After": "10", "Retry-After-Condition": "time"]), error: nil, attempt: 1), 10)
         XCTAssertEqual(ActionExecutor.retryDelay(response: response(["Retry-After": "72000"]), error: nil, attempt: 1), 10)
     }
@@ -47,7 +47,7 @@ final class ServerContractTests: XCTestCase {
         DispatchQueue.main.async { done.fulfill() }
         wait(for: [done], timeout: 2)
         XCTAssertEqual(reads, 1)
-        XCTAssertTrue(check.state.message?.contains("No test message was sent") == true)
+        XCTAssertEqual(check.state.message, String(localized: "Your topic server is pausing publishes after a rate limit. No test message was sent. Try again after its wait or state change."))
     }
 
     func testActionDoesNotTimerRetryStateOrRequestChanges() {

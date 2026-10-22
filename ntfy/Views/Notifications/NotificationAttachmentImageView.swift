@@ -43,7 +43,7 @@ struct NotificationAttachmentImageView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 12))
         }
         .buttonStyle(.plain)
-        .accessibilityLabel("Open image")
+        .accessibilityLabel(String(localized: "Open image"))
     }
 
     private var loadingPlaceholder: some View {
@@ -53,7 +53,7 @@ struct NotificationAttachmentImageView: View {
             .overlay {
                 VStack(spacing: 10) {
                     ProgressView()
-                    Text("Loading preview")
+                    Text(String(localized: "Loading preview"))
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -66,7 +66,7 @@ struct NotificationAttachmentImageView: View {
             .frame(height: 120)
             .overlay {
                 Image(systemName: "photo")
-                    .accessibilityLabel("Image preview unavailable")
+                    .accessibilityLabel(String(localized: "Image preview unavailable"))
                     .font(.title2)
                     .foregroundColor(.secondary)
             }
@@ -127,7 +127,7 @@ private struct ZoomableImageScrollView: UIViewRepresentable {
         let imageView = UIImageView(image: image)
         imageView.contentMode = .scaleAspectFit
         imageView.isAccessibilityElement = true
-        imageView.accessibilityLabel = "Image attachment"
+        imageView.accessibilityLabel = String(localized: "Image attachment")
         imageView.translatesAutoresizingMaskIntoConstraints = false
         scrollView.addSubview(imageView)
         context.coordinator.imageView = imageView

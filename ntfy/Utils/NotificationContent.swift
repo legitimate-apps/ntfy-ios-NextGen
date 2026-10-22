@@ -60,8 +60,8 @@ extension UNNotificationContent {
         var fallback = content
         if let encoding = content.userInfo["encoding"] as? String, !encoding.isEmpty,
            let safe = content.mutableCopy() as? UNMutableNotificationContent {
-            safe.body = Message.normalizedBody(content.userInfo["message"] as? String ?? content.body,
-                                               encoding: encoding) ?? ""
+            safe.body = Message.normalizedDisplayBody(content.userInfo["message"] as? String ?? content.body,
+                                                      encoding: encoding)
             fallback = safe
         }
         guard TopicEncryption.isEncrypted(fallback.body) || TopicEncryption.isEncrypted(fallback.title)
@@ -100,7 +100,7 @@ extension UNMutableNotificationContent {
         // has no text (title-only / attachment-only). Otherwise the incoming push
         // placeholder ("New message") leaks through on the success path for any
         // message without a `message` field (ntfy iOS #1080).
-        self.body = message.message ?? ""
+        self.body = Message.localizedBody(message.message, contentType: message.contentType)
         
         // Set notification title to the subscription's display name (which is its custom name, if the
         // user renamed it) and fall back to the short URL. The title is always set by the server, but
@@ -438,9 +438,9 @@ private func fallbackAttachmentSummary(attachment: MessageAttachment) -> String 
         parts.append(formatBytes(size))
     }
     if attachment.isExpired() {
-        parts.append("expired")
+        parts.append(String(localized: "expired"))
     }
-    return "Attachment: " + parts.joined(separator: ", ")
+    return String(localized: "Attachment: \(parts.joined(separator: ", "))")
 }
 
 /// Select using server + topic + sequence, never request identifiers alone: APNs identifiers do

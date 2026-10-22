@@ -47,11 +47,11 @@ struct UserEditorView: View {
             Form {
                 Section(
                     footer: isNewUser
-                    ? Text("Choose a password or access token. All topics for this server use the same login.")
-                    : Text("All topics for \(shortUrl(url: baseUrl)) use this login. Leave the secret blank to keep it unchanged. Enter a new secret when changing the sign-in method.")
+                    ? Text(String(localized: "Choose a password or access token. All topics for this server use the same login."))
+                    : Text(String(localized: "All topics for \(shortUrl(url: baseUrl)) use this login. Leave the secret blank to keep it unchanged. Enter a new secret when changing the sign-in method."))
                 ) {
                     if isNewUser {
-                        TextField("Service URL, e.g. https://ntfy.home.io", text: $baseUrl)
+                        TextField(String(localized: "Service URL, e.g. https://ntfy.home.io"), text: $baseUrl)
                             .disableAutocapitalization()
                             .disableAutocorrection(true)
                     }
@@ -89,7 +89,7 @@ struct UserEditorView: View {
                     login.username = credential.isAccessToken ? "" : credential.username
                 }
             }
-            .navigationTitle(isNewUser ? "Add user" : "Edit user")
+            .navigationTitle(isNewUser ? String(localized: "account.add.title", defaultValue: "Add user") : String(localized: "Edit user"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
@@ -97,7 +97,7 @@ struct UserEditorView: View {
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button(action: saveAction) {
-                        Text("Save")
+                        Text(String(localized: "Save"))
                     }
                     .disabled(!isValid())
                 }
@@ -140,22 +140,22 @@ struct UserEditorView: View {
 }
 
 
-/// New hardening copy stays together for the later localization pass.
+/// Shared copy for account editing and credential errors.
 enum HardeningCopy {
-    static let saveLoginFailed = "Couldn't save this login securely. Try again."
-    static let deleteLoginFailed = "Couldn't finish deleting this login. It is still listed. Try again."
-    static let deleteLogin = "Delete login"
-    static let deleteTitle = "Delete this login?"
-    static let deleteMessage = "Topics on this server may need you to sign in again."
-    static let cancel = "Cancel"
-    static let close = "Close"
-    static let httpPassword = "This server uses HTTP. Your password is sent without encryption."
+    static let saveLoginFailed = String(localized: "Couldn't save this login securely. Try again.")
+    static let deleteLoginFailed = String(localized: "Couldn't finish deleting this login. It is still listed. Try again.")
+    static let deleteLogin = String(localized: "Delete login")
+    static let deleteTitle = String(localized: "Delete this login?")
+    static let deleteMessage = String(localized: "Topics on this server may need you to sign in again.")
+    static let cancel = String(localized: "Cancel")
+    static let close = String(localized: "Close")
+    static let httpPassword = String(localized: "This server uses HTTP. Your password is sent without encryption.")
 }
 
 enum UrlSecurityNotice {
     static func message(for baseUrl: String, isAccessToken: Bool = false) -> String? {
         guard URL(string: baseUrl)?.scheme?.lowercased() == "http" else { return nil }
-        return isAccessToken ? "This server uses HTTP. Your access token is sent without encryption." : HardeningCopy.httpPassword
+        return isAccessToken ? String(localized: "This server uses HTTP. Your access token is sent without encryption.") : HardeningCopy.httpPassword
     }
 }
 
@@ -224,7 +224,7 @@ struct ServerLoginFields: View {
                 }
             } label: {
                 HStack {
-                    Text(method.rawValue).fixedSize(horizontal: false, vertical: true)
+                    Text(LocalizedStringKey(method.rawValue)).fixedSize(horizontal: false, vertical: true)
                     Spacer()
                     if input.method == method {
                         Image(systemName: "checkmark").accessibilityHidden(true)
@@ -235,23 +235,23 @@ struct ServerLoginFields: View {
             .accessibilityAddTraits(input.method == method ? [.isSelected] : [])
         }
         if input.method == .password {
-            TextField("Username", text: $input.username)
+            TextField(String(localized: "Username"), text: $input.username)
                 .textContentType(.username)
                 .disableAutocapitalization()
                 .disableAutocorrection(true)
-                .accessibilityLabel("Username")
+                .accessibilityLabel(String(localized: "Username"))
                 .accessibilityIdentifier("server-username")
-            SecureField("Password", text: $input.secret)
+            SecureField(String(localized: "Password"), text: $input.secret)
                 .textContentType(.password)
-                .accessibilityLabel("Password")
+                .accessibilityLabel(String(localized: "Password"))
                 .accessibilityIdentifier("server-password")
         } else {
-            SecureField("Access token, tk_…", text: $input.secret)
+            SecureField(String(localized: "Access token, tk_…"), text: $input.secret)
                 .disableAutocapitalization()
                 .disableAutocorrection(true)
-                .accessibilityLabel("Access token")
+                .accessibilityLabel(String(localized: "Access token"))
                 .accessibilityIdentifier("server-access-token")
-            Text("Paste an access token created in your server's account settings. It is stored securely in the Keychain.")
+            Text(String(localized: "Paste an access token created in your server's account settings. It is stored securely in the Keychain."))
                 .font(.footnote).foregroundColor(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
         }

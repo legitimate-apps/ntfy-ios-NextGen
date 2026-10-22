@@ -26,6 +26,7 @@ parser.add_argument("--result-bundle", type=Path, help="explicit xcresult path t
 parser.add_argument("--empty-fixture", action="store_true", help="seed no subscriptions for the empty-state capture")
 parser.add_argument("--seed", action="store_true", help="replace subscriptions with 61 isolated fixture topics")
 parser.add_argument("--seed-only", action="store_true", help="prepare fixture without running the UI suite")
+parser.add_argument("--german", action="store_true", help="run the German localization suite instead of English navigation")
 parser.add_argument("--sort", choices=["name", "recentActivity"], default="name")
 parser.add_argument("--only", action="append", default=[], help="test method name (repeatable)")
 args = parser.parse_args()
@@ -109,5 +110,12 @@ command = ["xcodebuild", "-project", str(root / "NavigationPilot.xcodeproj"), "-
            "NTFY_TEST_HARNESS=" + str(harness), "test"]
 if args.result_bundle:
     command += ["-resultBundlePath", str(args.result_bundle.resolve())]
-command += ["-only-testing:NavigationPilotUITests/NavigationPilotUITests/" + name for name in args.only]
+suite = "GermanLocalizationUITests" if args.german else "NavigationPilotUITests"
+command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in args.only]
+if not args.only:
+    if args.german:
+        names = ["testGermanEmptyList"] if args.empty_fixture else ["testGermanMainScreens", "testGermanLicenseScreens"]
+        command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in names]
+    else:
+        command += ["-only-testing:NavigationPilotUITests/" + suite]
 run(*command)

@@ -64,14 +64,13 @@ struct TopicQRCodeView: View {
                             // Always dark on light: scanners misread an inverted code in dark mode.
                             .background(Color.white)
                             .cornerRadius(12)
-                            .accessibilityLabel("QR code for \(shortUrl(url: payload))")
+                            .accessibilityLabel(String(localized: "QR code for \(shortUrl(url: payload))"))
                         Text(payload)
                             .font(.callout.monospaced())
                             .multilineTextAlignment(.center)
                             .textSelection(.enabled)
                         Label {
-                            Text("Anyone who scans this code can subscribe to this topic and read its messages, "
-                                 + "unless the server requires a login. Share it only with people you trust.")
+                            Text(String(localized: "Anyone who scans this code can subscribe to this topic and read its messages, unless the server requires a login. Share it only with people you trust."))
                                 .fixedSize(horizontal: false, vertical: true)
                         } icon: {
                             Image(systemName: "exclamationmark.shield")
@@ -79,7 +78,7 @@ struct TopicQRCodeView: View {
                         .font(.footnote)
                         .foregroundColor(.secondary)
                     } else {
-                        Label("A safe topic address could not be created. Check the server and topic settings.",
+                        Label(String(localized: "A safe topic address could not be created. Check the server and topic settings."),
                               systemImage: "exclamationmark.triangle")
                             .fixedSize(horizontal: false, vertical: true)
                     }
@@ -87,11 +86,11 @@ struct TopicQRCodeView: View {
                 .frame(maxWidth: .infinity)
                 .padding(24)
             }
-            .navigationTitle("QR code")
+            .navigationTitle(String(localized: "QR code"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
                 ToolbarItem(placement: .navigationBarLeading) {
-                    Button("Done") { isShowing = false }
+                    Button(String(localized: "Done")) { isShowing = false }
                 }
                 ToolbarItem(placement: .navigationBarTrailing) {
                     Button {
@@ -99,7 +98,7 @@ struct TopicQRCodeView: View {
                     } label: {
                         Image(systemName: "square.and.arrow.up")
                     }
-                    .accessibilityLabel("Share")
+                    .accessibilityLabel(String(localized: "Share"))
                     .disabled(shareItems.isEmpty)
                 }
             }
@@ -256,11 +255,11 @@ struct TopicQRScannerView: View {
     var body: some View {
         NavigationView {
             content
-                .navigationTitle("Scan QR code")
+                .navigationTitle(String(localized: "qr.scan.title", defaultValue: "Scan QR code"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
-                        Button("Cancel") { isShowing = false }
+                        Button(String(localized: "Cancel")) { isShowing = false }
                     }
                 }
         }
@@ -283,7 +282,7 @@ struct TopicQRScannerView: View {
             QRCaptureView(onCode: deliver)
                 .ignoresSafeArea(edges: .bottom)
                 .overlay(alignment: .bottom) {
-                    Text(rejected.map(Self.rejectionText) ?? "Point the camera at a topic's QR code.")
+                    Text(rejected.map(Self.rejectionText) ?? String(localized: "Point the camera at a topic's QR code."))
                         .font(.callout)
                         .multilineTextAlignment(.center)
                         .lineLimit(4)
@@ -293,17 +292,16 @@ struct TopicQRScannerView: View {
                 }
         case .needsPermission:
             ProgressView()
-                .accessibilityLabel("Requesting camera access")
+                .accessibilityLabel(String(localized: "Requesting camera access"))
         case .denied:
             message(
                 icon: "camera",
-                text: "NTFY me needs camera access to scan a QR code. You can allow it in Settings, "
-                    + "or type the topic and server in instead.",
-                action: ("Open Settings", {
+                text: String(localized: "NTFY me needs camera access to scan a QR code. You can allow it in Settings, or type the topic and server in instead."),
+                action: (String(localized: "Open Settings"), {
                     if let url = URL(string: UIApplication.openSettingsURLString) { UIApplication.shared.open(url) }
                 }))
         case .unavailable:
-            message(icon: "camera", text: "This device has no camera. Type the topic and server in instead.",
+            message(icon: "camera", text: String(localized: "This device has no camera. Type the topic and server in instead."),
                     action: nil)
         }
     }
@@ -336,7 +334,7 @@ struct TopicQRScannerView: View {
 
     /// Any code, including a web link, can carry secrets. Never echo rejected input.
     static func rejectionText(_ code: String) -> String {
-        "That code isn't an ntfy topic address."
+        String(localized: "That code isn't an ntfy topic address.")
     }
 
     private func deliver(_ code: String) {

@@ -62,7 +62,7 @@ struct SubscriptionAddView: View {
     }
     
     private var topicField: some View {
-        TextField("Topic name, e.g. alerts-k7m2-x9qp", text: $topic)
+        TextField(String(localized: "Topic name, e.g. alerts-k7m2-x9qp"), text: $topic)
             .disableAutocapitalization()
             .disableAutocorrection(true)
     }
@@ -73,12 +73,12 @@ struct SubscriptionAddView: View {
         Button {
             topic = TopicNameGenerator.random()
         } label: {
-            Label("Random", systemImage: "dice")
+            Label(String(localized: "Random"), systemImage: "dice")
                 .font(.subheadline)
         }
         .buttonStyle(.borderless)
-        .accessibilityLabel("Random topic name")
-        .accessibilityHint("Fills in a hard-to-guess topic name")
+        .accessibilityLabel(String(localized: "Random topic name"))
+        .accessibilityHint(String(localized: "Fills in a hard-to-guess topic name"))
     }
 
     private var addView: some View {
@@ -106,9 +106,9 @@ struct SubscriptionAddView: View {
                 }
                 Section(footer: ServerFooterText(text: serverFooterText)
                     .fixedSize(horizontal: false, vertical: true)) {
-                    Toggle("Use another server", isOn: $useAnother)
+                    Toggle(String(localized: "Use another server"), isOn: $useAnother)
                     if useAnother {
-                        TextField("Service URL, e.g. https://ntfy.home.io", text: $baseUrl)
+                        TextField(String(localized: "Service URL, e.g. https://ntfy.home.io"), text: $baseUrl)
                             .disableAutocapitalization()
                             .disableAutocorrection(true)
                     }
@@ -117,16 +117,16 @@ struct SubscriptionAddView: View {
                     Button {
                         showScanner = true
                     } label: {
-                        Label("Scan QR code", systemImage: "qrcode.viewfinder")
+                        Label(String(localized: "Scan QR code"), systemImage: "qrcode.viewfinder")
                     }
-                    .accessibilityHint("Fills in a topic and server from a QR code")
+                    .accessibilityHint(String(localized: "Fills in a topic and server from a QR code"))
                 }
             }
             if let error = addError {
                 ErrorView(error: error)
             }
         }
-        .navigationTitle("Add subscription")
+        .navigationTitle(String(localized: "subscription.add.title", defaultValue: "Add subscription"))
         .navigationBarTitleDisplayMode(.inline)
         .sheet(isPresented: $showScanner) {
             TopicQRScannerView(isShowing: $showScanner, onCode: handleScannedCode)
@@ -134,7 +134,7 @@ struct SubscriptionAddView: View {
         .toolbar {
             ToolbarItem(placement: .navigationBarLeading) {
                 Button(action: cancelAction) {
-                    Text("Cancel")
+                    Text(String(localized: "Cancel"))
                 }
             }
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -144,14 +144,14 @@ struct SubscriptionAddView: View {
                             ProgressView()
                                 .progressViewStyle(CircularProgressViewStyle())
                         } else {
-                            Text("Subscribe")
+                            Text(String(localized: "Subscribe"))
                         }
                     }
                     .fixedSize(horizontal: true, vertical: false)
 
                 }
-                .accessibilityLabel("Subscribe")
-                .accessibilityValue(loading ? "In progress" : "")
+                .accessibilityLabel(String(localized: "Subscribe"))
+                .accessibilityValue(loading ? String(localized: "In progress") : "")
                 .disabled(!isAddViewValid())
             }
         }
@@ -161,7 +161,7 @@ struct SubscriptionAddView: View {
         VStack(alignment: .leading, spacing: 0) {
             Form {
                 Section(
-                    footer: Text("Sign in with a password or access token to read this topic. The login is stored securely and used for other topics on this server.")
+                    footer: Text(String(localized: "Sign in with a password or access token to read this topic. The login is stored securely and used for other topics on this server."))
                 ) {
                     ServerLoginFields(input: $login)
                 }
@@ -173,7 +173,7 @@ struct SubscriptionAddView: View {
                 ErrorView(error: error)
             }
         }
-        .navigationTitle("Login required")
+        .navigationTitle(String(localized: "Login required"))
         .navigationBarTitleDisplayMode(.inline)
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
@@ -182,11 +182,11 @@ struct SubscriptionAddView: View {
                         ProgressView()
                             .progressViewStyle(CircularProgressViewStyle())
                     } else {
-                        Text("Subscribe")
+                        Text(String(localized: "Subscribe"))
                     }
                 }
-                .accessibilityLabel("Subscribe")
-                .accessibilityValue(loading ? "In progress" : "")
+                .accessibilityLabel(String(localized: "Subscribe"))
+                .accessibilityValue(loading ? String(localized: "In progress") : "")
                 .disabled(!isLoginViewValid())
             }
         }
@@ -200,20 +200,19 @@ struct SubscriptionAddView: View {
     /// typed something that can't be subscribed to. Stays quiet while the field is empty —
     /// scolding someone before they've typed anything is worse than saying nothing.
     private var topicFooterText: String {
-        let defaultText = "Anyone who knows a topic name can read and send its messages, so pick one "
-            + "that's hard to guess, or tap Random."
+        let defaultText = String(localized: "Anyone who knows a topic name can read and send its messages, so pick one that's hard to guess, or tap Random.")
         guard !sanitizedTopic.isEmpty else { return defaultText }
         if !isValidTopicName(sanitizedTopic) {
-            return "Topic names can only use letters, numbers, dashes and underscores, up to 64 characters."
+            return String(localized: "Topic names can only use letters, numbers, dashes and underscores, up to 64 characters.")
         }
         if useAnother, selectedBaseUrl.range(of: "^https?://.+", options: .regularExpression) == nil {
-            return "Enter the full server URL, including https://"
+            return String(localized: "Enter the full server URL, including https://")
         }
         if store.getSubscription(baseUrl: selectedBaseUrl, topic: sanitizedTopic) != nil {
-            return "You're already subscribed to \(topicShortUrl(baseUrl: selectedBaseUrl, topic: sanitizedTopic))."
+            return String(localized: "You're already subscribed to \(topicShortUrl(baseUrl: selectedBaseUrl, topic: sanitizedTopic)).")
         }
         // Show where messages go before they subscribe, so the URL isn't a surprise afterwards.
-        return defaultText + "\n\nSend messages to:\n"
+        return defaultText + String(localized: "\n\nSend messages to:\n")
             + PublishCommand.publishUrl(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
     }
     
@@ -281,7 +280,7 @@ struct SubscriptionAddView: View {
                     subscriptionManager.subscribe(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
                     finishSubscribing()
                 case .Unauthorized:
-                    loginError = "Invalid login or no read access to this topic. Check the password or access token and try again."
+                    loginError = String(localized: "Invalid login or no read access to this topic. Check the password or access token and try again.")
                     loading = false
                 case .Error(let err):
                     loginError = err
@@ -325,12 +324,11 @@ struct SubscriptionAddView: View {
                     .font(.system(size: 56))
                     .foregroundColor(.accentColor)
                     .accessibilityHidden(true)
-                Text("Get notified")
+                Text(String(localized: "Get notified"))
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
                 Text(Config.ntfyShDeliveryHint(baseUrl: selectedBaseUrl)
-                     ?? "Allow notifications so each message sent to \(shortUrl(url: url)) shows up on your "
-                        + "lock screen, even when the app is closed. iOS will ask you next.")
+                     ?? String(localized: "Allow notifications so each message sent to \(shortUrl(url: url)) shows up on your lock screen, even when the app is closed. iOS will ask you next."))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -346,29 +344,29 @@ struct SubscriptionAddView: View {
                         resetAndHide(openingTopicUrl: url)
                     }
                 } label: {
-                    Text("Continue")
+                    Text(String(localized: "Continue"))
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.large)
-                .accessibilityHint("Shows the system notification permission prompt")
-                Button("Not now") {
+                .accessibilityHint(String(localized: "Shows the system notification permission prompt"))
+                Button(String(localized: "Not now")) {
                     resetAndHide(openingTopicUrl: url)
                 }
-                .accessibilityHint("Skips notifications for now. Messages still appear in the app.")
+                .accessibilityHint(String(localized: "Skips notifications for now. Messages still appear in the app."))
             }
             .padding(.horizontal, 24)
             .padding(.vertical, 12)
             .background(.bar)
         }
-        .navigationTitle("Notifications")
+        .navigationTitle(String(localized: "Notifications"))
         .navigationBarTitleDisplayMode(.inline)
         .navigationBarBackButtonHidden(true)
     }
     
     private var serverFooterText: String {
         if let server = (scannedLink ?? topicLink)?.server, selectedBaseUrl == server {
-            return "This link uses \(shortUrl(url: server)). Review the topic above, then tap Subscribe to add it."
+            return String(localized: "This link uses \(shortUrl(url: server)). Review the topic above, then tap Subscribe to add it.")
         }
         return Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
     }

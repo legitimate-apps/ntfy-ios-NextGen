@@ -30,7 +30,7 @@ struct DefaultServerView: View {
             showDialog = true
         }) {
             let _ = newDefaultBaseUrl
-            ValueRow("Default server", value: shortUrl(url: defaultBaseUrl))
+            ValueRow(String(localized: "Default server"), value: shortUrl(url: defaultBaseUrl))
                 .contentShape(Rectangle())
         }
         .sheet(isPresented: $showDialog) {
@@ -44,29 +44,29 @@ struct DefaultServerView: View {
                             TextField(Config.appBaseUrl, text: $newDefaultBaseUrl)
                                 .disableAutocapitalization()
                                 .disableAutocorrection(true)
-                                .accessibilityLabel("Default server")
+                                .accessibilityLabel(String(localized: "Default server"))
                             if !newDefaultBaseUrl.isEmpty {
                                 Button {
                                     newDefaultBaseUrl = ""
                                 } label: {
                                     Image(systemName: "clear.fill")
                                 }
-                                .accessibilityLabel("Clear default server")
+                                .accessibilityLabel(String(localized: "Clear default server"))
                             }
                         }
                     }
                 }
-                .navigationTitle("Default server")
+                .navigationTitle(String(localized: "Default server"))
                 .navigationBarTitleDisplayMode(.inline)
                 .toolbar {
                     ToolbarItem(placement: .navigationBarLeading) {
                         Button(action: cancelAction) {
-                            Text("Cancel")
+                            Text(String(localized: "Cancel"))
                         }
                     }
                     ToolbarItem(placement: .navigationBarTrailing) {
                         Button(action: saveAction) {
-                            Text("Save")
+                            Text(String(localized: "Save"))
                         }
                         .disabled(!isValid())
                     }

@@ -672,6 +672,18 @@ class Store: ObservableObject {
     /// Starts both test-message bodies in `FirstTopicTest` and the topic menu; they prove nothing to the review gate.
     static let testMessagePrefix = "This is a test notification from NTFY me"
 
+    /// All shipped languages, including older English test messages after a language change.
+    static let testMessagePrefixes: [String] = {
+        Bundle.main.localizations.compactMap { language in
+            Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:))?
+                .localizedString(forKey: testMessagePrefix, value: testMessagePrefix, table: nil)
+        } + [testMessagePrefix]
+    }()
+
+    static func isOwnTestMessage(_ message: String) -> Bool {
+        testMessagePrefixes.contains { message.hasPrefix($0) }
+    }
+
     /// Messages a banner actually put on screen (`presented`; polled rows never are), excluding the
     /// app's own test messages, and on how many distinct local days. Evidence for the review prompt.
     func presentedDeliveries(calendar: Calendar = .current) -> (count: Int, days: Int) {
@@ -682,7 +694,10 @@ class Store: ObservableObject {
             let request = NSFetchRequest<NSDictionary>(entityName: "Notification")
             request.resultType = .dictionaryResultType
             request.propertiesToFetch = ["time"]
-            request.predicate = NSPredicate(format: "presented == YES AND NOT (message BEGINSWITH %@)", Store.testMessagePrefix)
+            request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates:
+                [NSPredicate(format: "presented == YES")] + Self.testMessagePrefixes.map {
+                    NSCompoundPredicate(notPredicateWithSubpredicate: NSPredicate(format: "message BEGINSWITH %@", $0))
+                })
             times = ((try? context.fetch(request)) ?? []).compactMap { ($0["time"] as? NSNumber)?.int64Value }
             liveCount = times.count
             if let (_, evidence) = try? archivedDeliveries(in: context) {

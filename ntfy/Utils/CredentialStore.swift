@@ -101,13 +101,13 @@ enum ServerCredentials {
         for (name, value) in headers {
             guard !name.isEmpty,
                   name.unicodeScalars.allSatisfy({ tokenCharacters.contains($0) }) else {
-                return "Header names may contain only valid HTTP token characters."
+                return String(localized: "Header names may contain only valid HTTP token characters.")
             }
             guard names.insert(name.lowercased()).inserted else {
-                return "Header names must be unique, ignoring capitalization."
+                return String(localized: "Header names must be unique, ignoring capitalization.")
             }
             guard !value.unicodeScalars.contains(where: { $0.value == 0x0D || $0.value == 0x0A }) else {
-                return "Header values cannot contain line breaks."
+                return String(localized: "Header values cannot contain line breaks.")
             }
         }
         return nil

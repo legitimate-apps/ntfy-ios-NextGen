@@ -7,6 +7,11 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        DE1190000000000000000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000011; };
+        DE1190000000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000011; };
+        DE1190000000000000000003 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000012; };
+        DE1190000000000000000004 /* LocalizationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000013; };
+        DE1190000000000000000005 /* Localization in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000014; };
 		B64119000000000000000001 /* base64-binary.json in Resources */ = {isa = PBXBuildFile; fileRef = B64119000000000000000002 /* base64-binary.json */; };
         F11900000000000000000005 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9474F1E6282F3FFD00CDE4DD; };
         F11900000000000000000001 /* TopicMute.swift in Sources */ = {isa = PBXBuildFile; fileRef = F11900000000000000000011; };
@@ -153,6 +158,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        DE1190000000000000000011 = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ntfy/Localization/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
+        DE1190000000000000000012 = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ntfy/Localization/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
+        DE1190000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
+        DE1190000000000000000014 = {isa = PBXFileReference; lastKnownFileType = folder; path = ntfy/Localization; sourceTree = SOURCE_ROOT; };
 		B64119000000000000000002 /* base64-binary.json */ = {isa = PBXFileReference; lastKnownFileType = text.json; path = Fixtures/base64-binary.json; sourceTree = "<group>"; };
         F11900000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicMute.swift; sourceTree = "<group>"; };
         F11900000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicMuteView.swift; sourceTree = "<group>"; };
@@ -329,6 +338,9 @@
 		9474F1B4282F2AA700CDE4DD = {
 			isa = PBXGroup;
 			children = (
+                DE1190000000000000000011,
+                DE1190000000000000000012,
+                DE1190000000000000000014,
 				2F0C0F1A2FF0000100A52946 /* Base.xcconfig */,
 				9474F1BF282F2AA700CDE4DD /* ntfy */,
 				9474F1E5282F3FFD00CDE4DD /* ntfyNSE */,
@@ -485,6 +497,7 @@
 		BCDAB7772E43C161501373ED /* ntfyTests */ = {
 			isa = PBXGroup;
 			children = (
+                DE1190000000000000000013,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				B64119000000000000000002 /* base64-binary.json */,
                 BA1180000000000000000011 /* ServerContractTests.swift */,
@@ -583,6 +596,7 @@
 			developmentRegion = en;
 			hasScannedForEncodings = 0;
 			knownRegions = (
+                de,
 				en,
 				Base,
 			);
@@ -606,6 +620,8 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                DE1190000000000000000001,
+                DE1190000000000000000003,
 				A3769C0118DB43D18B6C92DB /* PrivacyInfo.xcprivacy in Resources */,
 				9474F1C8282F2AA800CDE4DD /* Preview Assets.xcassets in Resources */,
 				9474F1C5282F2AA800CDE4DD /* Assets.xcassets in Resources */,
@@ -618,6 +634,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                DE1190000000000000000002,
 				6FFB0A9C3B2048C98F08C77F /* PrivacyInfo.xcprivacy in Resources */,
 				94CD1967283E662900973B93 /* emojis.json in Resources */,
 			);
@@ -627,6 +644,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+                DE1190000000000000000005,
 				B64119000000000000000001 /* base64-binary.json in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -743,7 +761,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
-				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
+				DE1190000000000000000004,
+                9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
                 BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
 				A18000010000000000000001 /* RetentionTests.swift in Sources */,
                 F11900000000000000000004 /* TopicMuteTests.swift in Sources */,

@@ -98,7 +98,7 @@ struct NotificationAttachmentSectionView: View {
             }
 
             if currentProgressState == .failed {
-                Text("The last download attempt failed.")
+                Text(String(localized: "The last download attempt failed."))
                     .font(.caption)
                     .foregroundColor(.red)
             }
@@ -121,24 +121,24 @@ struct NotificationAttachmentSectionView: View {
     @ViewBuilder
     private func attachmentMenuItems(localFileUrl: URL?) -> some View {
         if let localFileUrl {
-            Button("Open") {
+            Button(String(localized: "Open")) {
                 openLocalFile(localFileUrl)
             }
-            Button("Share") {
+            Button(String(localized: "Share")) {
                 onShare(localFileUrl)
             }
-            Button("Save") {
+            Button(String(localized: "Save")) {
                 onSave(localFileUrl)
             }
-            Button("Delete download", role: .destructive) {
+            Button(String(localized: "Delete download"), role: .destructive) {
                 controller.deleteDownloadedFile(notification: notification)
             }
         } else if notification.isAttachmentDownloading(overrideState: currentProgressState) {
-            Button("Cancel") {
+            Button(String(localized: "Cancel")) {
                 controller.cancelDownload(notification: notification)
             }
         } else if !attachmentExpired {
-            Button("Download") {
+            Button(String(localized: "Download")) {
                 controller.startDownload(
                     notification: notification,
                     attachment: attachment,
@@ -148,7 +148,7 @@ struct NotificationAttachmentSectionView: View {
         }
 
         if !attachmentExpired, let remoteUrl = notification.attachmentRemoteUrl() {
-            Button("Copy URL") {
+            Button(String(localized: "Copy URL")) {
                 UIPasteboard.general.setValue(remoteUrl.absoluteString, forPasteboardType: UTType.plainText.identifier)
                 UINotificationFeedbackGenerator().notificationOccurred(.success)
                 onCopy()
@@ -193,7 +193,7 @@ struct NotificationAttachmentSectionView: View {
                         }
 
                         if !shouldShowLoadingPlaceholder(resolvedLocalFileUrl: localFileUrl) {
-                            Text("Tap to load image")
+                            Text(String(localized: "Tap to load image"))
                                 .font(.caption.weight(.semibold))
                                 .foregroundColor(.accentColor)
                         }
@@ -266,7 +266,7 @@ struct NotificationAttachmentSectionView: View {
                 .background(.ultraThinMaterial, in: Circle())
         }
         .menuStyle(.borderlessButton)
-        .accessibilityLabel("Attachment actions")
+        .accessibilityLabel(String(localized: "Attachment actions"))
         .accessibilityValue(attachment.displayName())
         .fixedSize()
     }

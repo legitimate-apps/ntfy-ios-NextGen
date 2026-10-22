@@ -46,7 +46,7 @@ struct SubscriptionListView: View {
                             } label: {
                                 Image(systemName: "arrow.clockwise")
                             }
-                            .accessibilityLabel("Refresh")
+                            .accessibilityLabel(String(localized: "Refresh"))
                         }
                     }
             }
@@ -101,7 +101,7 @@ struct SubscriptionListView: View {
             .hidden()
         )
         .listStyle(PlainListStyle())
-        .navigationTitle("Subscribed topics")
+        .navigationTitle(String(localized: "Subscribed topics"))
         .toolbar {
             ToolbarItem(placement: .navigationBarTrailing) {
                 Button {
@@ -109,7 +109,7 @@ struct SubscriptionListView: View {
                 } label: {
                     Image(systemName: "plus")
                 }
-                .accessibilityLabel("Add subscription")
+                .accessibilityLabel(String(localized: "Add subscription"))
             }
         }
         .overlay(Group {
@@ -117,18 +117,18 @@ struct SubscriptionListView: View {
                 GeometryReader { geometry in
                     ScrollView {
                         VStack {
-                            Text("It looks like you don't have any subscriptions yet")
+                            Text(String(localized: "It looks like you don't have any subscriptions yet"))
                                 .font(.title2)
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.bottom)
 
-                            Text("Tap + to create a topic. Then send it a message from any computer or script, and it shows up here and as a notification.")
+                            Text(String(localized: "Tap + to create a topic. Then send it a message from any computer or script, and it shows up here and as a notification."))
                                 .foregroundColor(.secondary)
                                 .multilineTextAlignment(.center)
                                 .padding(.bottom)
                             if let help = URL(string: Config.helpUrl) {
-                                Link("Quick start at \(shortUrl(url: normalizeBaseUrl(Config.helpUrl)))", destination: help)
+                                Link(String(localized: "Quick start at \(shortUrl(url: normalizeBaseUrl(Config.helpUrl)))"), destination: help)
                             }
                         }
                         .padding(40)
@@ -162,7 +162,7 @@ struct SubscriptionListView: View {
             set: { if !$0 { dismissMovedTopicsNotice() } }
         )) {
             Alert(
-                title: Text(movedTopicsNotice.count == 1 ? "Your topic moved to ntfy-me.com" : "Your topics moved to ntfy-me.com"),
+                title: Text(movedTopicsNotice.count == 1 ? String(localized: "Your topic moved to ntfy-me.com") : String(localized: "Your topics moved to ntfy-me.com")),
                 message: Text(RetiredDefaultServerMigration.noticeMessage(topics: movedTopicsNotice)),
                 dismissButton: .default(Text("OK")) { dismissMovedTopicsNotice() }
             )
@@ -224,7 +224,7 @@ struct SubscriptionItemNavView: View {
                     Button(role: .destructive) {
                         self.unsubscribeAlert = true
                     } label: {
-                        Label("Unsubscribe", systemImage: "trash.circle")
+                        Label(String(localized: "Unsubscribe"), systemImage: "trash.circle")
                     }
                 }
                 // Long-press offers the same actions for anyone who never tries a swipe. A blind
@@ -244,7 +244,7 @@ struct SubscriptionItemNavView: View {
                     Button(role: .destructive) {
                         self.unsubscribeAlert = true
                     } label: {
-                        Label("Unsubscribe", systemImage: "trash")
+                        Label(String(localized: "Unsubscribe"), systemImage: "trash")
                     }
                 }
         } else {
@@ -272,12 +272,12 @@ struct SubscriptionItemNavView: View {
         // rendering and undo the point of the aggregate. `toggleRead()` still asks the object
         // directly: by then the user has acted and a fresh authoritative read is worth one fault.
         let unread = (summary?.unread ?? subscription.unreadCount()) > 0
-        return Label(unread ? "Read" : "Unread",
+        return Label(unread ? String(localized: "Read") : String(localized: "Unread"),
                      systemImage: unread ? "envelope.open.fill" : "envelope.badge.fill")
     }
 
     private var pinLabel: some View {
-        Label(subscription.pinned ? "Unpin" : "Pin",
+        Label(subscription.pinned ? String(localized: "Unpin") : String(localized: "Pin"),
               systemImage: subscription.pinned ? "pin.slash.fill" : "pin.fill")
     }
 
@@ -304,10 +304,10 @@ struct SubscriptionItemNavView: View {
         }
         .alert(isPresented: $unsubscribeAlert) {
             Alert(
-                title: Text("Unsubscribe"),
-                message: Text("Do you really want to unsubscribe from this topic and delete all of the notifications you received?"),
+                title: Text(String(localized: "Unsubscribe")),
+                message: Text(String(localized: "Do you really want to unsubscribe from this topic and delete all of the notifications you received?")),
                 primaryButton: .destructive(
-                    Text("Unsubscribe"),
+                    Text(String(localized: "Unsubscribe")),
                     action: {
                         self.subscriptionManager.unsubscribe(subscription)
                         self.unsubscribeAlert = false
@@ -378,7 +378,7 @@ struct SubscriptionItemRowView: View {
                     .foregroundColor(.secondary)
                     .lineLimit(1)
                     .truncationMode(.middle)
-                    .accessibilityLabel(Text("on \(subscription.serverHost())"))
+                    .accessibilityLabel(Text(String(localized: "on \(subscription.serverHost())")))
                 Spacer(minLength: 8)
                 if unread > 0 {
                     UnreadBadge(count: unread)
@@ -392,7 +392,7 @@ struct SubscriptionItemRowView: View {
             }
 
             HStack(spacing: 0) {
-                Text("\(totalNotificationCount) notification\(totalNotificationCount != 1 ? "s" : "")")
+                Text(String(localized: "\(totalNotificationCount) notifications"))
                     .font(.caption)
                     .foregroundColor(Color(UIColor.tertiaryLabel))
                 Spacer(minLength: 0)
@@ -424,7 +424,7 @@ struct UnreadBadge: View {
     private static let top = Color(red: 0.29, green: 0.62, blue: 0.53)
     private static let bottom = Color(red: 0.192, green: 0.498, blue: 0.435)
 
-    private var label: String { count > 99 ? "99+" : "\(count)" }
+    private var label: String { count > 99 ? String(localized: "99+") : count.formatted(.number) }
 
     var body: some View {
         Text(label)
@@ -442,7 +442,7 @@ struct UnreadBadge: View {
                     )
                 )
             )
-            .accessibilityLabel(Text("\(count) unread"))
+            .accessibilityLabel(Text(String(localized: "\(count) unread")))
     }
 }
 
@@ -467,7 +467,7 @@ struct PinBadge: View {
                             .rotationEffect(.degrees(45))
                     )
             )
-            .accessibilityLabel(Text("Pinned"))
+            .accessibilityLabel(Text(String(localized: "Pinned")))
     }
 }
 
