@@ -47,7 +47,7 @@ run("codesign", "-s", "-", str(harness))
 subprocess.run(["xcrun", "simctl", "terminate", args.udid, bundle_id], stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 run("xcrun", "simctl", "install", args.udid, str(app))
 if args.seed:
-    run("xcrun", "simctl", "launch", args.udid, bundle_id, "-ntfyDebugLastSeenVersion", "1.18.0",
+    run("xcrun", "simctl", "launch", args.udid, bundle_id, "-ntfyDebugLastSeenVersion", info["CFBundleShortVersionString"],
         "-notificationPermissionPrimerOffered", "YES")
     data = Path.home() / "Library/Developer/CoreSimulator/Devices" / args.udid / "data"
     groups = data / "Containers/Shared/AppGroup"
@@ -114,7 +114,7 @@ suite = "GermanLocalizationUITests" if args.german else "NavigationPilotUITests"
 command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in args.only]
 if not args.only:
     if args.german:
-        names = ["testGermanEmptyList"] if args.empty_fixture else ["testGermanMainScreens", "testGermanLicenseScreens"]
+        names = ["testGermanEmptyList"] if args.empty_fixture else ["testGermanMainScreens", "testGermanLicenseScreens", "testVersion119UpdateSheet"]
         command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in names]
     else:
         command += ["-only-testing:NavigationPilotUITests/" + suite]

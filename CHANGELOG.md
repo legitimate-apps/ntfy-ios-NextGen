@@ -4,6 +4,21 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.19.0
+
+- The app and its notifications now follow your phone's language when it is German.
+- Sign in to a server with an access token instead of a username and password. Choose the sign-in
+  method when adding a topic, signing in again, or editing an account in Settings.
+- Mute a topic for a while or until you turn it back on. Messages still arrive quietly in
+  Notification Center and stay in history, with no sound or banner. The topic shows when the mute
+  ends.
+- Show a topic's QR code to share its address. Scan a code from Add subscription to fill in a new
+  topic, ready for you to tap Subscribe, or to open a topic you already follow.
+- Base64-encoded text messages now show their decoded text. Binary data and unsupported or invalid
+  encodings show a short explanation instead of unreadable content.
+- VoiceOver gives controls, priorities and attachments clearer names, and can open downloaded
+  images.
+
 ## 1.18.0
 
 - Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new

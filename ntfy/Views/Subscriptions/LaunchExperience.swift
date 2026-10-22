@@ -11,6 +11,14 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// The App Store "What's New" text per release (CHANGELOG.md, drafts/whats-new-*.md). Add the new
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
+        ReleaseNotes(version: "1.19.0", bullets: [
+            String(localized: "The app and its notifications now follow your phone's language when it is German."),
+            String(localized: "Sign in to a server with an access token instead of a username and password."),
+            String(localized: "Mute a topic for a while or until you turn it back on. Messages stay in history and arrive quietly in Notification Center."),
+            String(localized: "Show a topic's QR code to share its address, or scan a code from Add subscription to subscribe."),
+            String(localized: "Base64-encoded text messages now show their decoded text. Binary messages show a short explanation."),
+            String(localized: "VoiceOver gives controls, priorities and attachments clearer names.")
+        ]),
         ReleaseNotes(version: "1.18.0", bullets: [
             String(localized: "Open ntfy-me.com topic links in the app. A topic you already follow opens its messages; a new topic has its server and name filled in, ready for you to tap Subscribe."),
             String(localized: "Marking a topic read can update your other devices with fewer requests on ntfy-me.com and self-hosted servers that support it."),

@@ -798,6 +798,23 @@
         }
       }
     },
+    "Base64-encoded text messages now show their decoded text. Binary messages show a short explanation.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base64-encoded text messages now show their decoded text. Binary messages show a short explanation."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Base64-kodierte Textnachrichten werden jetzt dekodiert angezeigt. Bei Binärdaten erscheint eine kurze Erklärung."
+          }
+        }
+      }
+    },
     "Can't reach the server": {
       "extractionState": "manual",
       "localizations": {
@@ -2973,6 +2990,23 @@
         }
       }
     },
+    "Mute a topic for a while or until you turn it back on. Messages stay in history and arrive quietly in Notification Center.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mute a topic for a while or until you turn it back on. Messages stay in history and arrive quietly in Notification Center."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schalte ein Thema vorübergehend oder bis zur Reaktivierung stumm. Nachrichten bleiben im Verlauf und erscheinen lautlos in der Mitteilungszentrale."
+          }
+        }
+      }
+    },
     "Mute settings": {
       "extractionState": "manual",
       "localizations": {
@@ -5014,6 +5048,23 @@
         }
       }
     },
+    "Show a topic's QR code to share its address, or scan a code from Add subscription to subscribe.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Show a topic's QR code to share its address, or scan a code from Add subscription to subscribe."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teile die Adresse eines Themas als QR-Code oder scanne beim Hinzufügen eines Abos einen Code, um das Thema zu abonnieren."
+          }
+        }
+      }
+    },
     "Shows the system notification permission prompt": {
       "extractionState": "manual",
       "localizations": {
@@ -5027,6 +5078,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Öffnet die iOS-Abfrage für Benachrichtigungen"
+          }
+        }
+      }
+    },
+    "Sign in to a server with an access token instead of a username and password.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sign in to a server with an access token instead of a username and password."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Melde dich mit einem Zugriffstoken statt mit Benutzername und Passwort bei einem Server an."
           }
         }
       }
@@ -5316,6 +5384,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Dieser Code enthält keine ntfy-Themenadresse."
+          }
+        }
+      }
+    },
+    "The app and its notifications now follow your phone's language when it is German.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app and its notifications now follow your phone's language when it is German."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die App und ihre Benachrichtigungen erscheinen jetzt auf Deutsch, wenn dein iPhone auf Deutsch eingestellt ist."
           }
         }
       }
@@ -6566,6 +6651,23 @@
           "stringUnit": {
             "state": "translated",
             "value": "Version"
+          }
+        }
+      }
+    },
+    "VoiceOver gives controls, priorities and attachments clearer names.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VoiceOver gives controls, priorities and attachments clearer names."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "VoiceOver benennt Bedienelemente, Prioritäten und Anhänge jetzt verständlicher."
           }
         }
       }
