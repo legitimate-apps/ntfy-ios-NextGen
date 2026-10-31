@@ -382,6 +382,34 @@ final class ntfyTests: XCTestCase {
         XCTAssertEqual(retained.value(forHTTPHeaderField: "CF-Access-Client-Secret"), "client-secret")
     }
 
+    func testUserAgentMarksOnlyNotificationServiceExtensionProcess() {
+        XCTAssertEqual(ApiService.makeUserAgent(processKind: .app),
+                       "ntfy/\(Config.version) (build \(Config.build); iOS \(Config.osVersion))")
+        XCTAssertEqual(ApiService.makeUserAgent(processKind: .notificationServiceExtension),
+                       "ntfy/\(Config.version) (build \(Config.build); iOS \(Config.osVersion); NSE)")
+        XCTAssertEqual(ApiService.userAgent, ApiService.makeUserAgent(processKind: .app),
+                       "the application test host must keep the existing default")
+    }
+
+    func testUserAgentProcessKindUsesMainBundleExtension() {
+        XCTAssertEqual(ApiService.ProcessKind(bundleURL: URL(fileURLWithPath: "/Apps/ntfy.app/PlugIns/ntfyNSE.appex")),
+                       .notificationServiceExtension)
+        XCTAssertEqual(ApiService.ProcessKind(bundleURL: URL(fileURLWithPath: "/Apps/ntfy.app")), .app)
+        XCTAssertEqual(ApiService.ProcessKind(bundleURL: URL(fileURLWithPath: "/Fixtures.appex/ntfy.app")), .app,
+                       "an appex parent directory does not make the main bundle an extension")
+    }
+
+    func testExplicitCustomUserAgentOverridesAttachmentDefault() {
+        XCTAssertTrue(credentialStore.setHTTPHeaders(["user-agent": "custom-agent"], baseUrl: headersBaseUrl))
+        let request = AttachmentFileStore.makeRequest(
+            remoteUrl: URL(string: headersBaseUrl + "/file/image.png")!,
+            baseUrl: headersBaseUrl,
+            authorizationHeader: nil,
+            credentialStore: credentialStore
+        )
+        XCTAssertEqual(request.value(forHTTPHeaderField: "User-Agent"), "custom-agent")
+    }
+
     func testExplicitCustomHeadersOverrideDefaultAuthorizationAndUserAgent() {
         XCTAssertTrue(credentialStore.setHTTPHeaders(
             ["authorization": "Bearer proxy-token", "user-agent": "custom-agent"],

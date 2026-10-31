@@ -3,7 +3,21 @@ import Foundation
 
 class ApiService {
     static let shared = ApiService()
-    static let userAgent = "ntfy/\(Config.version) (build \(Config.build); iOS \(Config.osVersion))"
+    static let userAgent = makeUserAgent(processKind: ProcessKind(bundleURL: Bundle.main.bundleURL))
+
+    enum ProcessKind {
+        case app
+        case notificationServiceExtension
+
+        init(bundleURL: URL) {
+            self = bundleURL.pathExtension == "appex" ? .notificationServiceExtension : .app
+        }
+    }
+
+    static func makeUserAgent(processKind: ProcessKind) -> String {
+        let marker = processKind == .notificationServiceExtension ? "; NSE" : ""
+        return "ntfy/\(Config.version) (build \(Config.build); iOS \(Config.osVersion)\(marker))"
+    }
     
     private let tag = "ApiService"
     private let credentialStore: CredentialStoring
