@@ -72,15 +72,23 @@ final class FcmSubscriptionReconciler {
     /// Set when a reconcile is asked for while a round is in flight, so the request is
     /// honoured after that round instead of being dropped.
     private var rerunRequested = false
-    /// Obsolete names this process already tried to tear down (`drainObsoleteTopicNames`).
-    private var drainAttempted: Set<String> = []
+    let teardownLedger: FcmTeardownLedger
+    private let now: () -> Date
+    private let teardownLiveness: (() -> Set<String>?)?
+    private var teardownsInFlight: [String: (request: UUID, started: Date)] = [:]
+    static let teardownTimeout: TimeInterval = 120
 
     init(store: Store,
          subscriber: FcmTopicSubscriber = FirebaseTopicSubscriber(),
-         defaults: UserDefaults = UserDefaults(suiteName: Store.appGroup) ?? .standard) {
+         defaults: UserDefaults = UserDefaults(suiteName: Store.appGroup) ?? .standard,
+         now: @escaping () -> Date = Date.init,
+         teardownLiveness: (() -> Set<String>?)? = nil) {
         self.store = store
         self.subscriber = subscriber
         self.defaults = defaults
+        self.now = now
+        self.teardownLiveness = teardownLiveness
+        self.teardownLedger = FcmTeardownLedger(defaults: defaults, now: now)
     }
 
     /// Record the FCM registration token and invalidate everything if it changed.
@@ -149,7 +157,7 @@ final class FcmSubscriptionReconciler {
         if let completion {
             lock.lock(); completions.append(completion); lock.unlock()
         }
-        drainObsoleteTopicNames()
+        drainPendingTeardowns()
 
         // Rename first: a round that bound names derived from a different app base URL would only
         // confirm topics no server publishes to. A rename drives its own round, so stop here if it ran.
@@ -256,66 +264,102 @@ final class FcmSubscriptionReconciler {
 
         Log.d(tag, "App base URL changed (\(recorded ?? "never recorded") -> \(current)); rebinding "
                  + "\(pairs.count) subscription(s), tearing down \(superseded.count) superseded name(s)")
+        // Write ahead of recording the new base URL, so a killed launch still drains old names.
+        for name in superseded.sorted() {
+            guard teardownLedger.record(name, obsolete: true) != nil else { return true }
+        }
         store.invalidateAllFcmSubscriptions {
             defaults.set(current, forKey: Self.defaultsKeyBindingsAppBaseUrl)
         }
-        superseded.sorted().forEach { teardown($0) }
         reconcile(reason: "app base URL changed")
         return true
     }
 
-    // MARK: Obsolete names (durable teardown queue)
+    // MARK: Durable teardowns
 
-    /// FCM names that some earlier state bound and nothing needs any more, waiting to be torn down.
-    /// Persisted, because the binding outlives the process: `RetiredDefaultServerMigration` queues a
-    /// moved row's old names before saving the move, so a launch killed in between still cleans up.
+    // Compatibility for retired-server migration callers. Both sources use the same intent journal.
     static let defaultsKeyPendingObsoleteTopicNames = "pendingObsoleteFcmTopicNames"
 
     static func pendingObsoleteTopicNames(defaults: UserDefaults) -> [String] {
-        defaults.stringArray(forKey: defaultsKeyPendingObsoleteTopicNames) ?? []
+        FcmTeardownLedger(defaults: defaults).entries.filter(\.obsolete).map(\.name).sorted()
     }
 
-    static func setPendingObsoleteTopicNames(_ names: [String], defaults: UserDefaults) {
-        if names.isEmpty {
-            defaults.removeObject(forKey: defaultsKeyPendingObsoleteTopicNames)
-        } else {
-            defaults.set(Array(Set(names)).sorted(), forKey: defaultsKeyPendingObsoleteTopicNames)
-        }
+    @discardableResult
+    static func enqueueObsoleteTopicNames(_ names: [String], defaults: UserDefaults) -> [FcmTeardownLedger.Change] {
+        let ledger = FcmTeardownLedger(defaults: defaults)
+        return Set(names).sorted().compactMap { ledger.recordChange($0, obsolete: true) }
     }
 
-    static func enqueueObsoleteTopicNames(_ names: [String], defaults: UserDefaults) {
-        setPendingObsoleteTopicNames(pendingObsoleteTopicNames(defaults: defaults) + names, defaults: defaults)
-    }
-
-    /// Tear down each queued name no current subscription needs. An entry leaves the queue only after
-    /// FCM confirms the teardown and a fresh read shows nothing needs it, or when a current
-    /// subscription binds it (then there is nothing to tear down); a failure keeps it for the next
-    /// launch. Each name is tried at most once per process, because a settled teardown drives a
-    /// reconcile, which would otherwise retry a failing one in a tight loop.
-    private func drainObsoleteTopicNames() {
-        let pending = Self.pendingObsoleteTopicNames(defaults: defaults)
-        guard !pending.isEmpty, let needed = namesNeededBySubscriptions() else { return }
+    /// Capture intent identities BEFORE reading liveness. A delete/new intent between that read and
+    /// retirement can then only retire the old intent, even though Core Data and defaults differ.
+    private func drainPendingTeardowns() {
         lock.lock()
-        // A name a current subscription binds has nothing to tear down, so it leaves the queue.
-        if pending.contains(where: needed.contains) {
-            Self.setPendingObsoleteTopicNames(pending.filter { !needed.contains($0) }, defaults: defaults)
-        }
-        let due = pending.filter { !needed.contains($0) && !drainAttempted.contains($0) }
-        drainAttempted.formUnion(due)
+        let timedOut = teardownsInFlight.filter { now().timeIntervalSince($0.value.started) >= Self.teardownTimeout }
+        for name in timedOut.keys { teardownsInFlight.removeValue(forKey: name) }
         lock.unlock()
-        guard !due.isEmpty else { return }
-        Log.d(tag, "Tearing down \(due.count) obsolete FCM name(s)")
-        for name in due {
-            teardown(name) { [weak self] error in
-                guard let self = self, error == nil,
-                      let needed = self.namesNeededBySubscriptions(), !needed.contains(name) else { return }
-                self.lock.lock()
-                Self.setPendingObsoleteTopicNames(
-                    Self.pendingObsoleteTopicNames(defaults: self.defaults).filter { $0 != name },
-                    defaults: self.defaults)
-                self.lock.unlock()
-            }
+        // Unknown outcomes can have removed a live binding. Repair before the subscribe round.
+        for name in timedOut.keys {
+            store.bumpFcmGeneration()
+            _ = store.markFcmSubscriptionStale(firebaseTopicName: name)
         }
+
+        let snapshot = teardownLedger.entries
+        guard !snapshot.isEmpty else { return }
+        guard let needed = teardownLiveness.map({ $0() }) ?? namesNeededBySubscriptions() else { return }
+
+        for entry in snapshot {
+            if needed.contains(entry.name) {
+                lock.lock()
+                let requestPending = teardownsInFlight[entry.name] != nil
+                lock.unlock()
+                // Keep a durable repair marker while a remote outcome is outstanding. Otherwise
+                // killing the app after a re-subscribe could lose the only evidence of a late
+                // teardown. On relaunch, conservatively rebind before retiring the old intent.
+                if !requestPending, store.markFcmSubscriptionStale(firebaseTopicName: entry.name) {
+                    teardownLedger.remove(entry)
+                }
+                continue
+            }
+            if teardownLedger.expire(entry) { continue }
+            guard entry.isDue(at: now()) else { continue }
+            dispatchTeardown(entry)
+        }
+    }
+
+    private func dispatchTeardown(_ entry: FcmTeardownLedger.Entry) {
+        guard subscriber.hasApnsToken else { return }
+        let request = UUID()
+        lock.lock()
+        let available = teardownsInFlight[entry.name] == nil
+        if available { teardownsInFlight[entry.name] = (request, now()) }
+        lock.unlock()
+        guard available else { return }
+        // Attempt metadata is persisted before dispatch, and only against the captured intent.
+        guard teardownLedger.attempt(entry) else {
+            releaseTeardown(entry.name, request: request)
+            return
+        }
+        subscriber.unsubscribe(fromTopic: entry.name) { [weak self] error in
+            guard let self else { return }
+            if error == nil {
+                // A live row needs a durable stale flag before retiring the repair marker. The
+                // liveness pass does that below; a failed Core Data save keeps the marker pending.
+                if let needed = self.namesNeededBySubscriptions(), !needed.contains(entry.name) {
+                    self.teardownLedger.remove(entry)
+                }
+            } else {
+                Log.w(self.tag, "FCM teardown intent \(entry.id) unconfirmed; retrying after backoff")
+            }
+            self.releaseTeardown(entry.name, request: request)
+            // Even an error or late callback can follow a remote teardown. Never use this
+            // callback's liveness to erase an intent; only repair subscribe confirmations.
+            self.invalidateConfirmationsSupersededBy(entry.name)
+        }
+    }
+
+    private func releaseTeardown(_ name: String, request: UUID) {
+        lock.lock(); defer { lock.unlock() }
+        if teardownsInFlight[name]?.request == request { teardownsInFlight.removeValue(forKey: name) }
     }
 
     /// The FCM names current subscriptions bind, or nil when the store cannot be read (then nothing
@@ -333,22 +377,15 @@ final class FcmSubscriptionReconciler {
         return names
     }
 
-    /// Drop a topic's FCM binding. Used when the user removes a subscription.
-    func unsubscribe(baseUrl: String, topic: String) {
-        teardown(firebaseTopic(baseUrl: baseUrl, topic: topic))
+    /// Write ahead of deleting the subscription row. If the save fails, retire only this intent.
+    func prepareUnsubscribe(baseUrl: String, topic: String) -> FcmTeardownLedger.Entry? {
+        teardownLedger.record(firebaseTopic(baseUrl: baseUrl, topic: topic))
     }
 
-    private func teardown(_ name: String, settled: ((Error?) -> Void)? = nil) {
-        subscriber.unsubscribe(fromTopic: name) { [weak self] error in
-            guard let self = self else { return }
-            if let error = error {
-                Log.e(self.tag, "Firebase unsubscribe failed for \(name)", error)
-            } else {
-                Log.d(self.tag, "Firebase unsubscribe succeeded for \(name)")
-            }
-            settled?(error)
-            self.invalidateConfirmationsSupersededBy(name)
-        }
+    /// Also used by direct callers after deleting their row.
+    func unsubscribe(baseUrl: String, topic: String) {
+        guard let entry = prepareUnsubscribe(baseUrl: baseUrl, topic: topic) else { return }
+        dispatchTeardown(entry)
     }
 
     /// A teardown for `name` has settled, so any subscribe confirmation still in flight is no
