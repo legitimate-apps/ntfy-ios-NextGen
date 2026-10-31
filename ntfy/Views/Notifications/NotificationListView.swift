@@ -34,6 +34,7 @@ struct NotificationListView: View {
     @State private var showEncryptionSheet = false
     @State private var showMuteOptions = false
     @State private var showQRCodeSheet = false
+    @State private var showComposeSheet = false
     @State private var sendingTest = false
     @State private var publishError = ""
     @State private var draftDisplayName = ""
@@ -122,7 +123,18 @@ struct NotificationListView: View {
         .listStyle(PlainListStyle())
         .navigationBarTitleDisplayMode(.inline)
         .environment(\.editMode, self.$editMode)
+        .sheet(isPresented: $showComposeSheet) {
+            ComposeSheetView(subscription: subscription).environmentObject(store)
+        }
         .toolbar {
+            ToolbarItem(placement: .navigationBarTrailing) {
+                Button { showComposeSheet = true } label: {
+                    Image(systemName: "square.and.pencil")
+                }
+                .accessibilityLabel(String(localized: "New message"))
+                .accessibilityIdentifier("compose-open")
+                .disabled(editMode == .active)
+            }
             ToolbarItem(placement: .principal) {
                 // Match the list row's primary line: tapping "basket-alerts" opening a screen
                 // titled "ntfy.<long-host>/basket-alerts" read as a different topic.

@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        C12100000000000000000003 /* ComposeSheetView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12100000000000000000004; };
+        C12100000000000000000001 /* ComposeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12100000000000000000002; };
         DE1190000000000000000001 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000011; };
         DE1190000000000000000002 /* Localizable.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000011; };
         DE1190000000000000000003 /* InfoPlist.xcstrings in Resources */ = {isa = PBXBuildFile; fileRef = DE1190000000000000000012; };
@@ -158,6 +160,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        C12100000000000000000004 /* ComposeSheetView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeSheetView.swift; sourceTree = "<group>"; };
+        C12100000000000000000002 /* ComposeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ComposeTests.swift; sourceTree = "<group>"; };
         DE1190000000000000000011 = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ntfy/Localization/Localizable.xcstrings; sourceTree = SOURCE_ROOT; };
         DE1190000000000000000012 = {isa = PBXFileReference; lastKnownFileType = text.json.xcstrings; path = ntfy/Localization/InfoPlist.xcstrings; sourceTree = SOURCE_ROOT; };
         DE1190000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LocalizationTests.swift; sourceTree = "<group>"; };
@@ -325,6 +329,7 @@
 		29E841A42FB417EA00F927E4 /* Notifications */ = {
 			isa = PBXGroup;
 			children = (
+                C12100000000000000000004 /* ComposeSheetView.swift */,
 				29E8419E2FB417EA00F927E4 /* NotificationAttachmentController.swift */,
 				29E841A02FB417EA00F927E4 /* NotificationAttachmentImageView.swift */,
 				29E841A12FB417EA00F927E4 /* NotificationAttachmentSectionView.swift */,
@@ -497,6 +502,7 @@
 		BCDAB7772E43C161501373ED /* ntfyTests */ = {
 			isa = PBXGroup;
 			children = (
+                C12100000000000000000002 /* ComposeTests.swift */,
                 DE1190000000000000000013,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				B64119000000000000000002 /* base64-binary.json */,
@@ -726,6 +732,7 @@
 				29AA10022FC0000100F927E4 /* CredentialStore.swift in Sources */,
 				29E841AA2FB417EA00F927E4 /* NotificationAttachmentSectionView.swift in Sources */,
 				29E841AB2FB417EA00F927E4 /* NotificationListView.swift in Sources */,
+                C12100000000000000000003 /* ComposeSheetView.swift in Sources */,
 				9407EDDA284ADE1F00C1C334 /* User.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -769,6 +776,7 @@
 				DE1190000000000000000004,
                 9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
                 BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
+                C12100000000000000000001 /* ComposeTests.swift in Sources */,
 				A18000010000000000000001 /* RetentionTests.swift in Sources */,
                 F11900000000000000000004 /* TopicMuteTests.swift in Sources */,
                 F11900000000000000000005 /* NotificationService.swift in Sources */,

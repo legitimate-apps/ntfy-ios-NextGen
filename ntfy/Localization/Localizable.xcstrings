@@ -2059,6 +2059,100 @@
         }
       }
     },
+    "Attachment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachment"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anhang"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Archivo adjunto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allegato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Załącznik"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijlage"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pièce jointe"
+          }
+        }
+      }
+    },
+    "Attachment URL (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachment URL (optional)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anhang-URL (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL del adjunto (opcional)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL dell'allegato (facoltativo)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL załącznika (opcjonalnie)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijlage-URL (optioneel)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL de la pièce jointe (facultative)"
+          }
+        }
+      }
+    },
     "Attachment URL is missing.": {
       "extractionState": "manual",
       "localizations": {
@@ -2341,6 +2435,100 @@
         }
       }
     },
+    "Attachments are unavailable for encrypted topics. Your message, title, tags and click URL stay encrypted.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachments are unavailable for encrypted topics. Your message, title, tags and click URL stay encrypted."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anhänge sind für verschlüsselte Themen nicht verfügbar. Nachricht, Titel, Tags und die URL beim Antippen bleiben verschlüsselt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los adjuntos no están disponibles para tópicos cifrados. El mensaje, título, etiquetas y URL al tocar permanecen cifrados."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli allegati non sono disponibili per gli argomenti cifrati. Messaggio, titolo, etichette e URL al tocco restano cifrati."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Załączniki są niedostępne w zaszyfrowanych tematach. Wiadomość, tytuł, tagi i URL po stuknięciu pozostają zaszyfrowane."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijlagen zijn niet beschikbaar voor versleutelde onderwerpen. Bericht, titel, tags en tik-URL blijven versleuteld."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pièces jointes sont indisponibles pour les sujets chiffrés. Message, titre, étiquettes et URL au toucher restent chiffrés."
+          }
+        }
+      }
+    },
+    "Attachments cannot be sent to encrypted topics. Remove the attachment and try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachments cannot be sent to encrypted topics. Remove the attachment and try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anhänge können nicht an verschlüsselte Themen gesendet werden. Entferne den Anhang und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pueden enviar adjuntos a tópicos cifrados. Quita el adjunto y vuelve a intentarlo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non puoi inviare allegati agli argomenti cifrati. Rimuovi l'allegato e riprova."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można wysyłać załączników do zaszyfrowanych tematów. Usuń załącznik i spróbuj ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je kunt geen bijlagen naar versleutelde onderwerpen sturen. Verwijder de bijlage en probeer opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vous ne pouvez pas envoyer de pièce jointe à un sujet chiffré. Retirez-la et réessayez."
+          }
+        }
+      }
+    },
     "Automatically download attachments up to the selected size. Attachments larger than this limit must be downloaded manually.": {
       "extractionState": "manual",
       "localizations": {
@@ -2384,6 +2572,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Téléchargez automatiquement les pièces jointes jusqu’à la taille choisie. Les pièces jointes plus volumineuses doivent être téléchargées manuellement."
+          }
+        }
+      }
+    },
+    "Available upload size: %@": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Available upload size: %@"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verfügbare Upload-Größe: %@"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tamaño de carga disponible: %@"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dimensione caricabile: %@"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostępny rozmiar wysyłania: %@"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beschikbare uploadgrootte: %@"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Taille d’envoi disponible : %@"
           }
         }
       }
@@ -2811,6 +3046,100 @@
         }
       }
     },
+    "Check the click and attachment URLs. Use http or https, and choose either a URL or a file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check the click and attachment URLs. Use http or https, and choose either a URL or a file."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe die URLs beim Antippen und für den Anhang. Verwende http oder https und wähle entweder eine URL oder eine Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Revisa las URL al tocar y del adjunto. Usa http o https y elige una URL o un archivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla gli URL al tocco e dell'allegato. Usa http o https e scegli un URL o un file."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź URL po stuknięciu i URL załącznika. Użyj http lub https i wybierz URL albo plik."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleer de tik-URL en bijlage-URL. Gebruik http of https en kies een URL of een bestand."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez les URL au toucher et de la pièce jointe. Utilisez http ou https et choisissez une URL ou un fichier."
+          }
+        }
+      }
+    },
+    "Check upload limits": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check upload limits"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload-Limits prüfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consultar límites de carga"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verifica limiti di caricamento"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź limity wysyłania"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploadlimieten controleren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifier les limites d’envoi"
+          }
+        }
+      }
+    },
     "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone.": {
       "extractionState": "manual",
       "localizations": {
@@ -2854,6 +3183,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Vérifiez si ntfy-me.com reçoit les demandes de réveil relayées pour ce sujet. Cela ne prouve pas leur réception sur votre téléphone."
+          }
+        }
+      }
+    },
+    "Check your connection and look for the message in the topic before sending again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Check your connection and look for the message in the topic before sending again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prüfe deine Verbindung und ob die Nachricht bereits im Thema steht, bevor du erneut sendest."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comprueba tu conexión y busca el mensaje en el tópico antes de enviarlo de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controlla la connessione e cerca il messaggio nell'argomento prima di inviarlo di nuovo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sprawdź połączenie i poszukaj wiadomości w temacie, zanim wyślesz ją ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Controleer je verbinding en kijk of het bericht al in het onderwerp staat voordat je opnieuw verstuurt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vérifiez votre connexion et cherchez le message dans le sujet avant de l’envoyer à nouveau."
           }
         }
       }
@@ -2948,6 +3324,100 @@
           "stringUnit": {
             "state": "translated",
             "value": "Choisissez un mot de passe ou un jeton d’accès. Tous les sujets de ce serveur utilisent les mêmes identifiants."
+          }
+        }
+      }
+    },
+    "Choose file": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose file"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Datei auswählen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir archivo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli file"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz plik"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bestand kiezen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir un fichier"
+          }
+        }
+      }
+    },
+    "Choose photo": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose photo"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto auswählen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elegir foto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli foto"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz zdjęcie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Foto kiezen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisir une photo"
           }
         }
       }
@@ -3136,6 +3606,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Des indications plus claires : les sujets sur ntfy.sh expliquent l’absence de bannières instantanées dans cette app. L’ajout d’un sujet rappelle où vos scripts doivent envoyer les messages. Les guides d’auto-hébergement et de migration sont directement accessibles."
+          }
+        }
+      }
+    },
+    "Click URL (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Click URL (optional)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL beim Antippen (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL al tocar (opcional)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL al tocco (facoltativo)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL po stuknięciu (opcjonalnie)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL bij tikken (optioneel)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL au toucher (facultative)"
           }
         }
       }
@@ -4174,6 +4691,53 @@
         }
       }
     },
+    "Default": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Default"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standard"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predeterminada"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Predefinita"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Domyślny"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Standaard"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Par défaut"
+          }
+        }
+      }
+    },
     "Default priority": {
       "extractionState": "manual",
       "localizations": {
@@ -4264,6 +4828,100 @@
           "stringUnit": {
             "state": "translated",
             "value": "Serveur par défaut"
+          }
+        }
+      }
+    },
+    "Delay, for example 30m or 3h": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delay, for example 30m or 3h"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzögerung, z. B. 30m oder 3h"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retraso, por ejemplo 30m o 3h"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ritardo, ad esempio 30m o 3h"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opóźnienie, np. 30m lub 3h"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertraging, bijvoorbeeld 30m of 3h"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Délai, par exemple 30m ou 3h"
+          }
+        }
+      }
+    },
+    "Delayed messages appear when the server delivers them.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delayed messages appear when the server delivers them."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verzögerte Nachrichten erscheinen, sobald der Server sie zustellt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes retrasados aparecen cuando el servidor los entrega."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi ritardati appaiono quando il server li consegna."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opóźnione wiadomości pojawią się po dostarczeniu przez serwer."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vertraagde berichten verschijnen wanneer de server ze bezorgt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages différés apparaissent lorsque le serveur les transmet."
           }
         }
       }
@@ -4848,6 +5506,100 @@
           "stringUnit": {
             "state": "translated",
             "value": "Supprimé, expire %@"
+          }
+        }
+      }
+    },
+    "Discard": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verwerfen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Descartar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzuć"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weggooien"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abandonner"
+          }
+        }
+      }
+    },
+    "Discard message?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Discard message?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht verwerfen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Descartar mensaje?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare il messaggio?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odrzucić wiadomość?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht weggooien?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abandonner le message ?"
           }
         }
       }
@@ -7317,6 +8069,53 @@
         }
       }
     },
+    "High": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "High"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoch"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alta"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysoki"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hoog"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Haute"
+          }
+        }
+      }
+    },
     "High priority": {
       "extractionState": "manual",
       "localizations": {
@@ -7740,6 +8539,53 @@
         }
       }
     },
+    "Keep editing": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keep editing"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Weiter bearbeiten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Seguir editando"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continua a modificare"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Edytuj dalej"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verder bewerken"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Continuer la rédaction"
+          }
+        }
+      }
+    },
     "Keep notifications": {
       "extractionState": "manual",
       "localizations": {
@@ -8070,6 +8916,53 @@
         }
       }
     },
+    "Low": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niedrig"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Baja"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bassa"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Niski"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laag"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Basse"
+          }
+        }
+      }
+    },
     "Low priority": {
       "extractionState": "manual",
       "localizations": {
@@ -8258,6 +9151,53 @@
         }
       }
     },
+    "Markdown": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Markdown"
+          }
+        }
+      }
+    },
     "Marking a topic read can update your other devices with fewer requests on ntfy-me.com and self-hosted servers that support it.": {
       "extractionState": "manual",
       "localizations": {
@@ -8305,6 +9245,53 @@
         }
       }
     },
+    "Maximum": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximum"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Máxima"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Massima"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maksymalny"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximaal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Maximale"
+          }
+        }
+      }
+    },
     "Maximum priority": {
       "extractionState": "manual",
       "localizations": {
@@ -8348,6 +9335,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Priorité maximale"
+          }
+        }
+      }
+    },
+    "Message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachricht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mensaje"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messaggio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomość"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message"
           }
         }
       }
@@ -8446,6 +9480,53 @@
         }
       }
     },
+    "Messages must be smaller than 4 KB of text. Shorten this message or attach the text as a file to avoid truncated text or an automatic attachment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages must be smaller than 4 KB of text. Shorten this message or attach the text as a file to avoid truncated text or an automatic attachment."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichten müssen kleiner als 4 KB Text sein. Kürze diese Nachricht oder hänge den Text als Datei an, damit er nicht gekürzt oder automatisch in einen Anhang umgewandelt wird."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes deben contener menos de 4 KB de texto. Acorta el mensaje o adjunta el texto como archivo para evitar que se recorte o se convierta automáticamente en adjunto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi devono contenere meno di 4 KB di testo. Accorcia il messaggio o allega il testo come file per evitare che venga troncato o convertito automaticamente in allegato."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości muszą zawierać mniej niż 4 KB tekstu. Skróć wiadomość lub dołącz tekst jako plik, aby uniknąć obcięcia tekstu albo automatycznego utworzenia załącznika."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichten moeten minder dan 4 KB tekst bevatten. Verkort het bericht of voeg de tekst als bestand bij om afkappen of een automatische bijlage te voorkomen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages doivent contenir moins de 4 Ko de texte. Raccourcissez ce message ou joignez le texte comme fichier pour éviter sa troncature ou sa conversion automatique en pièce jointe."
+          }
+        }
+      }
+    },
     "Messages will still arrive and stay in your history. Notifications will appear quietly in Notification Center, with no sound or banner. Unread counts and the app badge will still update.": {
       "extractionState": "manual",
       "localizations": {
@@ -8536,6 +9617,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Les messages déjà reçus restent lisibles. Les nouveaux messages chiffrés affichent « Message chiffré » tant que vous n’avez pas saisi à nouveau le mot de passe."
+          }
+        }
+      }
+    },
+    "Minimum": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimum"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimal"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mínima"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minima"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimalny"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimaal"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Minimale"
           }
         }
       }
@@ -8959,6 +10087,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Jamais"
+          }
+        }
+      }
+    },
+    "New message": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New message"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Nachricht"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo mensaje"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo messaggio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa wiadomość"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw bericht"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau message"
           }
         }
       }
@@ -10843,6 +12018,53 @@
         }
       }
     },
+    "Options": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Optionen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opciones"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opzioni"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opcje"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Opties"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Options"
+          }
+        }
+      }
+    },
     "Password": {
       "extractionState": "manual",
       "localizations": {
@@ -11450,6 +12672,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pointez l’appareil photo vers le code QR d’un sujet."
+          }
+        }
+      }
+    },
+    "Priority": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priority"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorität"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioridad"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorità"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorytet"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioriteit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorité"
           }
         }
       }
@@ -12488,6 +13757,53 @@
         }
       }
     },
+    "Remove attachment": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Remove attachment"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Anhang entfernen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quitar adjunto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rimuovi allegato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń załącznik"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijlage verwijderen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Retirer la pièce jointe"
+          }
+        }
+      }
+    },
     "Remove password": {
       "extractionState": "manual",
       "localizations": {
@@ -13194,6 +14510,53 @@
         }
       }
     },
+    "Send": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Senden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviar"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wyślij"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versturen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyer"
+          }
+        }
+      }
+    },
     "Send a message": {
       "extractionState": "manual",
       "localizations": {
@@ -13566,6 +14929,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "L’envoi nécessite un accès en écriture à ce sujet ; un accès en lecture ne suffit pas."
+          }
+        }
+      }
+    },
+    "Sending…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sending…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wird gesendet…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enviando…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invio…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłanie…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versturen…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoi…"
           }
         }
       }
@@ -14886,6 +16296,53 @@
         }
       }
     },
+    "Tags, separated by commas": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags, separated by commas"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags, durch Kommas getrennt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etiquetas, separadas por comas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Etichette separate da virgole"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tagi oddzielone przecinkami"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tags, gescheiden door komma's"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Étiquettes séparées par des virgules"
+          }
+        }
+      }
+    },
     "Tags: %@": {
       "extractionState": "manual",
       "localizations": {
@@ -15450,6 +16907,100 @@
         }
       }
     },
+    "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Verschlüsselungspasswort ist nicht verfügbar. Entsperre dein Telefon oder lege das Themenpasswort erneut fest. Es wurde nichts gesendet."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La contraseña de cifrado no está disponible. Desbloquea el teléfono o configura de nuevo la contraseña del tópico. No se envió nada."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La password di cifratura non è disponibile. Sblocca il telefono o imposta di nuovo la password dell'argomento. Non è stato inviato nulla."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hasło szyfrowania jest niedostępne. Odblokuj telefon lub ponownie ustaw hasło tematu. Nic nie wysłano."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het versleutelingswachtwoord is niet beschikbaar. Ontgrendel je telefoon of stel het onderwerpwachtwoord opnieuw in. Er is niets verstuurd."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le mot de passe de chiffrement est indisponible. Déverrouillez votre téléphone ou définissez à nouveau le mot de passe du sujet. Rien n’a été envoyé."
+          }
+        }
+      }
+    },
+    "The file could not be opened. Choose it again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The file could not be opened. Choose it again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Datei konnte nicht geöffnet werden. Wähle sie erneut aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo abrir el archivo. Elígelo de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aprire il file. Sceglilo di nuovo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można otworzyć pliku. Wybierz go ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het bestand kon niet worden geopend. Kies het opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le fichier n’a pas pu être ouvert. Sélectionnez-le à nouveau."
+          }
+        }
+      }
+    },
     "The headers could not be saved to the Keychain.": {
       "extractionState": "manual",
       "localizations": {
@@ -15967,6 +17518,100 @@
         }
       }
     },
+    "The server could not accept these fields. Check the URLs, title, tags and delay, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server could not accept these fields. Check the URLs, title, tags and delay, then try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server konnte diese Felder nicht annehmen. Prüfe URLs, Titel, Tags und Verzögerung und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor no pudo aceptar estos campos. Revisa las URL, título, etiquetas y retraso y vuelve a intentarlo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server non ha accettato questi campi. Controlla URL, titolo, etichette e ritardo, poi riprova."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer nie zaakceptował tych pól. Sprawdź adresy URL, tytuł, tagi i opóźnienie, a następnie spróbuj ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server kon deze velden niet accepteren. Controleer de URL's, titel, tags en vertraging en probeer opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur n’a pas accepté ces champs. Vérifiez les URL, le titre, les étiquettes et le délai, puis réessayez."
+          }
+        }
+      }
+    },
+    "The server is limiting publishes. Your draft is saved here.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server is limiting publishes. Your draft is saved here."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server begrenzt Veröffentlichungen. Dein Entwurf bleibt hier erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor está limitando los envíos. Tu borrador se conserva aquí."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server sta limitando gli invii. La bozza resta qui."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer ogranicza wysyłanie. Szkic pozostaje tutaj."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server beperkt het versturen. Je concept blijft hier bewaard."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur limite les envois. Votre brouillon est conservé ici."
+          }
+        }
+      }
+    },
     "The server is limiting requests": {
       "extractionState": "manual",
       "localizations": {
@@ -16175,6 +17820,53 @@
         }
       }
     },
+    "The server is pausing publishes. Try again in %lld seconds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server is pausing publishes. Try again in %lld seconds."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server pausiert Veröffentlichungen. Versuche es in %lld Sekunden erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor ha pausado los envíos. Vuelve a intentarlo en %lld segundos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server ha sospeso gli invii. Riprova tra %lld secondi."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer wstrzymał wysyłanie. Spróbuj ponownie za %lld sekund."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server heeft versturen gepauzeerd. Probeer het over %lld seconden opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur a suspendu les envois. Réessayez dans %lld secondes."
+          }
+        }
+      }
+    },
     "The server or action request must change before trying again.": {
       "extractionState": "manual",
       "localizations": {
@@ -16218,6 +17910,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le serveur ou la requête d’action doit changer avant de réessayer."
+          }
+        }
+      }
+    },
+    "The server refused access. Check this server's account and topic write permissions in Settings.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server refused access. Check this server's account and topic write permissions in Settings."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Server hat den Zugriff verweigert. Prüfe das Konto dieses Servers und die Schreibrechte für das Thema in den Einstellungen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor denegó el acceso. Revisa la cuenta del servidor y los permisos de escritura del tópico en Ajustes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server ha negato l'accesso. Verifica l'account del server e i permessi di scrittura dell'argomento in Impostazioni."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer odmówił dostępu. Sprawdź konto serwera i uprawnienia do zapisu w temacie w Ustawieniach."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server heeft toegang geweigerd. Controleer het serveraccount en de schrijfrechten van het onderwerp in Instellingen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur a refusé l’accès. Vérifiez le compte du serveur et les droits d’écriture du sujet dans Réglages."
           }
         }
       }
@@ -16269,6 +18008,53 @@
         }
       }
     },
+    "The server requires a change before another publish. Check your server quota, account or attachment, then try again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server requires a change before another publish. Check your server quota, account or attachment, then try again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vor dem nächsten Senden verlangt der Server eine Änderung. Prüfe dein Server-Kontingent, Konto oder den Anhang und versuche es erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor requiere un cambio antes de otro envío. Revisa la cuota del servidor, la cuenta o el adjunto y vuelve a intentarlo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server richiede una modifica prima di un altro invio. Verifica la quota del server, l'account o l'allegato e riprova."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer wymaga zmiany przed kolejnym wysłaniem. Sprawdź limit serwera, konto lub załącznik i spróbuj ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De server vereist een wijziging voor een volgend bericht. Controleer je serverlimiet, account of bijlage en probeer opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur exige un changement avant un nouvel envoi. Vérifiez votre quota, votre compte ou la pièce jointe, puis réessayez."
+          }
+        }
+      }
+    },
     "The server requires a different request before it can accept this check.": {
       "extractionState": "manual",
       "localizations": {
@@ -16312,6 +18098,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Le serveur exige une requête différente pour accepter cette vérification."
+          }
+        }
+      }
+    },
+    "The server says this message or attachment is too large. Shorten the message or choose a smaller file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The server says this message or attachment is too large. Shorten the message or choose a smaller file."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Laut Server ist diese Nachricht oder der Anhang zu groß. Kürze die Nachricht oder wähle eine kleinere Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El servidor indica que el mensaje o adjunto es demasiado grande. Acorta el mensaje o elige un archivo más pequeño."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il server segnala che il messaggio o l'allegato è troppo grande. Accorcia il messaggio o scegli un file più piccolo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Serwer zgłasza, że wiadomość lub załącznik jest zbyt duży. Skróć wiadomość lub wybierz mniejszy plik."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Volgens de server is dit bericht of deze bijlage te groot. Verkort het bericht of kies een kleiner bestand."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le serveur indique que ce message ou cette pièce jointe est trop volumineux. Raccourcissez le message ou choisissez un fichier plus petit."
           }
         }
       }
@@ -16594,6 +18427,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Pas de caméra. Saisissez le sujet et le serveur."
+          }
+        }
+      }
+    },
+    "This file exceeds the server's available upload size, or is empty. Choose a smaller file or check the upload limits again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This file exceeds the server's available upload size, or is empty. Choose a smaller file or check the upload limits again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diese Datei überschreitet die verfügbare Upload-Größe des Servers oder ist leer. Wähle eine kleinere Datei oder prüfe die Upload-Limits erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El archivo supera el tamaño de carga disponible del servidor o está vacío. Elige uno más pequeño o vuelve a consultar los límites."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il file supera la dimensione caricabile sul server oppure è vuoto. Scegli un file più piccolo o verifica di nuovo i limiti."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plik przekracza dostępny rozmiar wysyłania serwera lub jest pusty. Wybierz mniejszy plik albo sprawdź limity ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit bestand is groter dan de beschikbare uploadgrootte van de server of is leeg. Kies een kleiner bestand of controleer de limieten opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce fichier dépasse la taille d’envoi disponible sur le serveur ou est vide. Choisissez un fichier plus petit ou vérifiez à nouveau les limites."
           }
         }
       }
@@ -17351,6 +19231,53 @@
         }
       }
     },
+    "Title (optional)": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Title (optional)"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel (optional)"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Título (opcional)"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titolo (facoltativo)"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tytuł (opcjonalnie)"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titel (optioneel)"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Titre (facultatif)"
+          }
+        }
+      }
+    },
     "Topic actions": {
       "extractionState": "manual",
       "localizations": {
@@ -17629,6 +19556,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "Sujets en attente de push"
+          }
+        }
+      }
+    },
+    "Try again in %lld seconds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try again in %lld seconds."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versuche es in %lld Sekunden erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vuelve a intentarlo en %lld segundos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova tra %lld secondi."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie za %lld sekund."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer het over %lld seconden opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayez dans %lld secondes."
           }
         }
       }
@@ -18479,6 +20453,53 @@
         }
       },
       "comment": "Mute until tomorrow at the displayed local time. The argument is already formatted with the user's clock settings."
+    },
+    "Upload limits are unavailable. You can still attach a URL.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload limits are unavailable. You can still attach a URL."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload-Limits sind nicht verfügbar. Du kannst weiterhin eine URL anhängen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pueden consultar los límites de carga. Aún puedes adjuntar una URL."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I limiti di caricamento non sono disponibili. Puoi comunque allegare un URL."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limity wysyłania są niedostępne. Nadal możesz dołączyć URL."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploadlimieten zijn niet beschikbaar. Je kunt wel een URL bijvoegen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les limites d’envoi sont indisponibles. Vous pouvez joindre une URL."
+          }
+        }
+      }
     },
     "Urgent alerts": {
       "extractionState": "manual",

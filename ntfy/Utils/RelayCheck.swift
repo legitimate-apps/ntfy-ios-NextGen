@@ -150,7 +150,9 @@ final class RelayCheck: ObservableObject {
     }
 
     private func publish(id: UUID, using publish: @escaping (@escaping (String?) -> Void) -> Void) {
-        let attempt = cooldown?.claimAttempt(server: topicBaseUrl, manual: true, kind: .publish)
+        // ApiService consumes the permit when it starts the actual request. Checking here
+        // must not spend the one-minute recovery probe before that request can claim it.
+        let attempt = cooldown?.claimAttempt(server: topicBaseUrl, manual: true, kind: .publish, consumingProbe: false)
         guard cooldown == nil || attempt != nil else {
             state = .failed(String(localized: "Your topic server is pausing publishes after a rate limit. No test message was sent. Try again after its wait or state change."))
             return
