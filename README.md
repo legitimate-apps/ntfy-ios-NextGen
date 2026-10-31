@@ -48,7 +48,7 @@ Give a topic a password (topic menu → **End-to-end encryption**) and messages 
 
 ## Reporting a bug
 
-[Open an issue](../../issues/new/choose) with your iOS version, device, and app version, plus steps to reproduce. Questions and general discussion: [Discord](https://discord.gg/WszujZEBbZ).
+[Open an issue](../../issues/new/choose) with your iOS version, device, and app version, plus steps to reproduce. Questions and general support: [ntfy-me.com/docs/support](https://ntfy-me.com/docs/support).
 
 Bugs in the underlying ntfy server or protocol belong upstream: [binwiederhier/ntfy/issues](https://github.com/binwiederhier/ntfy/issues).
 

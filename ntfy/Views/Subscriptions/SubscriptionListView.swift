@@ -331,7 +331,7 @@ struct SubscriptionItemRowView: View {
 
     var body: some View {
         // Three lines, most-identifying first: a long hostname used to consume the whole headline
-        // and truncate away the topic, so "claude-log" and "claude-operator" were indistinguishable.
+        // and truncate away the topic, so "server-log" and "server-alerts" were indistinguishable.
         // Name -> address -> count, each a step down in emphasis.
         // From one aggregate for the whole list. The fallbacks keep previews and any caller
         // without a summary working; they are the old per-row faulting path and should stay unused

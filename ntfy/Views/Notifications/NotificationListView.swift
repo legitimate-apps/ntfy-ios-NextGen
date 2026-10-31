@@ -172,8 +172,8 @@ struct NotificationListView: View {
                 .disabled(editMode == .active)
             }
             ToolbarItem(placement: .principal) {
-                // Match the list row's primary line: tapping "basket-alerts" opening a screen
-                // titled "ntfy.<long-host>/basket-alerts" read as a different topic.
+                // Match the list row's primary line: tapping "garage-alerts" opening a screen
+                // titled "ntfy.<long-host>/garage-alerts" read as a different topic.
                 Text(subscription.shortDisplayName())
                     .font(.headline)
                     .lineLimit(1)
