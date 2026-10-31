@@ -47,6 +47,9 @@ enum DeliveryHealthCopy {
     static func fetchFailure(topic: String) -> String {
         String(localized: "New message on \(topic). Open the app to load it.")
     }
+    static func authFetchFailure(topic: String) -> String {
+        String(localized: "New message on \(topic), but the server refused the sign-in. Open the app to check your user for this server.")
+    }
 }
 
 enum NotificationHealth {
@@ -65,12 +68,13 @@ enum NotificationHealth {
 
     /// Overwrite every server-controlled presentation field, preserving routing metadata only.
     /// This is also the best attempt installed BEFORE fetching, so expiry cannot show ciphertext.
-    static func fetchFailureContent(_ content: UNNotificationContent, topic: String, baseUrl: String? = nil, event: String = "message") -> UNMutableNotificationContent {
+    static func fetchFailureContent(_ content: UNNotificationContent, topic: String, baseUrl: String? = nil, event: String = "message", failure: PollFailure? = nil) -> UNMutableNotificationContent {
         let safe = (content.mutableCopy() as? UNMutableNotificationContent) ?? UNMutableNotificationContent()
         safe.title = topic
         safe.subtitle = ""
         safe.body = event == "message_clear" || event == "message_delete"
-            ? DeliveryHealthCopy.controlFailure(topic: topic) : DeliveryHealthCopy.fetchFailure(topic: topic)
+            ? DeliveryHealthCopy.controlFailure(topic: topic)
+            : failure == .unauthorized ? DeliveryHealthCopy.authFetchFailure(topic: topic) : DeliveryHealthCopy.fetchFailure(topic: topic)
         if event == "message_clear" || event == "message_delete" {
             safe.sound = nil
             safe.interruptionLevel = .passive

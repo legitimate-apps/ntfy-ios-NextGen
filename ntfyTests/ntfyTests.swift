@@ -1,4 +1,5 @@
 import SQLite3
+import Network
 import XCTest
 import UserNotifications
 import CoreData
@@ -9032,5 +9033,177 @@ extension AlertedTests {
         wait(for: [done], timeout: 2)
         XCTAssertEqual(schedules, 1)
         XCTAssertFalse(try row(sub).alerted, "without execution time no shared-container write may follow scheduling")
+    }
+}
+final class NSEAuthFallbackTests: XCTestCase {
+    private var server: NSEAuthLoopbackServer!
+    private var base: String { "http://127.0.0.1:\(server.port)" }
+
+    override func setUpWithError() throws {
+        server = try NSEAuthLoopbackServer()
+        let ready = expectation(description: "loopback HTTP listener ready")
+        server.start { ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+        XCTAssertGreaterThan(server.port, 0)
+    }
+
+    override func tearDown() {
+        server.stop()
+        super.tearDown()
+    }
+
+    private func incoming(topic: String) throws -> UNMutableNotificationContent {
+        let content = UNMutableNotificationContent()
+        content.title = "untrusted title"
+        content.subtitle = "untrusted subtitle"
+        content.body = "ciphertext or unfetched text"
+        content.categoryIdentifier = "untrusted actions"
+        content.userInfo = ["id": "authpush1234", "time": "1700000000", "event": "poll_request",
+                            "topic": topic, "poll_id": "authpoll1234", "base_url": base,
+                            "actions": "unfetched", "click": "https://untrusted.invalid"]
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString + ".png")
+        defer { try? FileManager.default.removeItem(at: url) }
+        try Data(base64Encoded: "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+jA7sAAAAASUVORK5CYII=")!.write(to: url)
+        content.attachments = [try UNNotificationAttachment(identifier: "untrusted", url: url)]
+        return content
+    }
+
+    private func checkPoll(topic: String, unauthorized: Bool, expire: Bool = false, alreadyAlerted: Bool = false) throws {
+        let store = Store.shared
+        let sub = store.saveSubscription(baseUrl: base, topic: topic)
+        defer { _ = store.delete(subscription: sub) }
+        if alreadyAlerted {
+            let message = Message(id: "authpoll1234", time: Int64(Date().timeIntervalSince1970), event: "message", topic: topic, message: "Already delivered")
+            store.save(notificationsFromMessages: [message], withSubscription: sub)
+            store.recordPresentation(message: message, baseUrl: base)
+        }
+        let content = try incoming(topic: topic)
+        XCTAssertEqual(content.attachments.count, 1)
+        let delivered = expectation(description: "actual NSE content handler")
+        let service = NotificationService()
+        service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) { result in
+            XCTAssertEqual(result.title, topic)
+            XCTAssertEqual(result.subtitle, "")
+            let expected = unauthorized
+                ? String(localized: "New message on \(topic), but the server refused the sign-in. Open the app to check your user for this server.")
+                : DeliveryHealthCopy.fetchFailure(topic: topic)
+            XCTAssertEqual(result.body, expected)
+            XCTAssertTrue(result.attachments.isEmpty)
+            XCTAssertEqual(result.categoryIdentifier, "")
+            XCTAssertNil(result.userInfo["actions"])
+            XCTAssertNil(result.userInfo["click"])
+            XCTAssertEqual(result.userInfo["topic"] as? String, topic)
+            XCTAssertEqual(result.userInfo["base_url"] as? String, self.base)
+            if alreadyAlerted {
+                XCTAssertNil(result.sound)
+                XCTAssertEqual(result.interruptionLevel, .passive, "sign-in copy must not re-alert an already delivered event")
+            }
+            print("NSE_AUTH_CONTENT topic=\(topic) alreadyAlerted=\(alreadyAlerted) body=\(result.body)")
+            delivered.fulfill()
+        }
+        if expire { service.serviceExtensionTimeWillExpire() }
+        wait(for: [delivered], timeout: 5)
+        withExtendedLifetime(service) {}
+    }
+
+    func testUnauthorizedHTTPPollUsesSignInFailureAndScrubsContent() throws {
+        for status in [401, 403] { try checkPoll(topic: "status\(status)", unauthorized: true) }
+    }
+
+    func testAlreadyAlertedUnauthorizedPollKeepsSignInBodyWithoutRealerting() throws {
+        for status in [401, 403] { try checkPoll(topic: "status\(status)", unauthorized: true, alreadyAlerted: true) }
+    }
+
+    func testOtherHTTPPollsKeepGenericFallback() throws {
+        for topic in ["status500", "status429"] { try checkPoll(topic: topic, unauthorized: false) }
+    }
+
+    func testFailureContentVariantsPreserveRoutingAndScrubPresentation() throws {
+        let source = try incoming(topic: "wake-hash")
+        for error: Error in [PollHTTPError(status: 401, retryAfter: nil), PollHTTPError(status: 403, retryAfter: nil),
+                             PollHTTPError(status: 500, retryAfter: nil), PollHTTPError(status: 429, retryAfter: nil), URLError(.timedOut)] {
+            let failure = PollFailure.classify(error)
+            let result = NotificationHealth.fetchFailureContent(source, topic: "garden", baseUrl: base, failure: failure)
+            XCTAssertEqual(result.body, failure == .unauthorized
+                ? String(localized: "New message on \("garden"), but the server refused the sign-in. Open the app to check your user for this server.")
+                : DeliveryHealthCopy.fetchFailure(topic: "garden"))
+            XCTAssertEqual(result.title, "garden")
+            XCTAssertEqual(result.subtitle, "")
+            XCTAssertEqual(result.userInfo["topic"] as? String, "garden")
+            XCTAssertEqual(result.userInfo["base_url"] as? String, base)
+            XCTAssertTrue(result.attachments.isEmpty)
+            XCTAssertEqual(result.categoryIdentifier, "")
+            XCTAssertNil(result.userInfo["actions"])
+            XCTAssertNil(result.userInfo["click"])
+        }
+        for event in ["message_clear", "message_delete"] {
+            let result = NotificationHealth.fetchFailureContent(source, topic: "garden", event: event, failure: .unauthorized)
+            XCTAssertEqual(result.body, DeliveryHealthCopy.controlFailure(topic: "garden"))
+            XCTAssertEqual(result.interruptionLevel, .passive)
+            XCTAssertNil(result.sound)
+        }
+    }
+
+    func testAuthFailureTranslationsAreCompiledIntoAppAndNSE() throws {
+        let key = "New message on %@, but the server refused the sign-in. Open the app to check your user for this server."
+        let plugIns = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let nseURL = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: plugIns, includingPropertiesForKeys: nil).first { $0.lastPathComponent == "ntfyNSE.appex" })
+        let nse = try XCTUnwrap(Bundle(url: nseURL))
+        for language in ["en", "de", "es", "it", "pl", "nl", "fr"] {
+            let appLanguage = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            let nseLanguage = try XCTUnwrap(nse.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            let value = appLanguage.localizedString(forKey: key, value: nil, table: nil)
+            XCTAssertEqual(value.components(separatedBy: "%@").count, 2, language)
+            if language != "en" { XCTAssertNotEqual(value, key, language) }
+            XCTAssertEqual(nseLanguage.localizedString(forKey: key, value: nil, table: nil), value, language)
+            print("NSE_AUTH_LOCALIZED \(language): \(String(format: value, "garden"))")
+        }
+    }
+
+    func testExpiryBeforePollFinishesKeepsGenericFallback() throws {
+        try checkPoll(topic: "pending", unauthorized: false, expire: true)
+    }
+}
+
+/// Real HTTP responses exercise ApiService's own URLSession and HTTP status handling.
+private final class NSEAuthLoopbackServer {
+    private let listener: NWListener
+    private let queue = DispatchQueue(label: "ntfy.tests.auth-http")
+    private var connections: [NWConnection] = []
+    var port: UInt16 { listener.port?.rawValue ?? 0 }
+
+    init() throws {
+        let parameters = NWParameters.tcp
+        parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
+        listener = try NWListener(using: parameters)
+    }
+
+    func start(ready: @escaping () -> Void) {
+        listener.stateUpdateHandler = { state in
+            if case .ready = state { ready() }
+        }
+        listener.newConnectionHandler = { [weak self] connection in
+            guard let self else { connection.cancel(); return }
+            self.connections.append(connection)
+            connection.start(queue: self.queue)
+            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, _, _ in
+                let request = String(decoding: data ?? Data(), as: UTF8.self)
+                guard let line = request.components(separatedBy: "\r\n").first else { return }
+                XCTAssertTrue(line.contains("poll=1&id=authpoll1234"), line)
+                if line.contains("/pending/") { return }
+                let status = line.contains("status401") ? 401 : line.contains("status403") ? 403 : line.contains("status429") ? 429 : 500
+                print("NSE_AUTH_HTTP \(line) response=\(status)")
+                let response = Data("HTTP/1.1 \(status) Refused\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
+                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+            }
+        }
+        listener.start(queue: queue)
+    }
+
+    func stop() {
+        queue.sync {
+            listener.cancel()
+            connections.forEach { $0.cancel() }
+        }
     }
 }

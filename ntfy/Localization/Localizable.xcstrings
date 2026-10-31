@@ -10138,6 +10138,53 @@
         }
       }
     },
+    "New message on %@, but the server refused the sign-in. Open the app to check your user for this server.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New message on %@, but the server refused the sign-in. Open the app to check your user for this server."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Nachricht auf %@, aber der Server hat die Anmeldung abgelehnt. Öffne die App und überprüfe deinen Benutzer für diesen Server."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuevo mensaje en %@, pero el servidor rechazó el inicio de sesión. Abre la app para revisar tu usuario de este servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nuovo messaggio su %@, ma il server ha rifiutato l'accesso. Apri l'app per verificare il tuo utente per questo server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowa wiadomość w %@, ale serwer odrzucił logowanie. Otwórz aplikację, aby sprawdzić konto użytkownika na tym serwerze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuw bericht op %@, maar de server heeft het inloggen geweigerd. Open de app om je gebruiker voor deze server te controleren."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nouveau message sur %@, mais le serveur a refusé la connexion. Ouvrez l’app pour vérifier votre utilisateur pour ce serveur."
+          }
+        }
+      }
+    },
     "New message on %@. Open the app to load it.": {
       "extractionState": "manual",
       "localizations": {

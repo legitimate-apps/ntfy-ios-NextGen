@@ -247,7 +247,7 @@ class NotificationService: UNNotificationServiceExtension {
         ) { message, error in
             guard let message = message else {
                 Log.w(self.tag, "Error fetching poll request message topic=\(pollRequest.topic), pollId=\(pollId), subscription=\(topicUrl(baseUrl: subscription.baseUrl, topic: subscription.topic))", error)
-                self.deliver(placeholder)
+                self.deliver(NotificationHealth.fetchFailureContent(placeholder, topic: subscription.topic, failure: PollFailure.classify(error)))
                 return
             }
             self.handleMessage(request, content, subscription.baseUrl, message)
