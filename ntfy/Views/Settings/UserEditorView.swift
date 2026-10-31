@@ -30,6 +30,7 @@ struct UserEditorView: View {
     
     init(
         selectedUser: User?,
+        defaultBaseUrl: String = "",
         onSave: @escaping (String, String, ServerCredential?) -> Bool,
         onDelete: @escaping (User) -> Bool,
         onCancel: @escaping () -> Void
@@ -38,7 +39,7 @@ struct UserEditorView: View {
         self.onSave = onSave
         self.onDelete = onDelete
         self.onCancel = onCancel
-        _baseUrl = State(initialValue: selectedUser?.baseUrl ?? "")
+        _baseUrl = State(initialValue: selectedUser?.baseUrl ?? defaultBaseUrl)
         _login = State(initialValue: ServerLoginInput(username: selectedUser?.username ?? ""))
     }
     

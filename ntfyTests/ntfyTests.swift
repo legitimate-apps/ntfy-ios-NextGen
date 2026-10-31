@@ -6,6 +6,8 @@ import CoreData
 import UIKit
 import CoreText
 import Security
+import SwiftUI
+import Vision
 @testable import ntfy
 
 final class InMemoryCredentialStore: CredentialStoring {
@@ -9204,6 +9206,61 @@ private final class NSEAuthLoopbackServer {
         queue.sync {
             listener.cancel()
             connections.forEach { $0.cancel() }
+        }
+    }
+}
+
+
+final class TopicSignInNoticeTests: XCTestCase {
+    @MainActor
+    func testLatestUnauthorizedRefreshShowsNoticeAndSuccessClearsIt() throws {
+        let store = Store.shared
+        let topic = store.saveSubscription(baseUrl: "https://topic-auth.example.org", topic: UUID().uuidString)
+        let key = topic.objectID.uriRepresentation().absoluteString
+        let monitor = DeliveryHealthMonitor.shared
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: { $0.isKeyWindow })
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        let root = NavigationView {
+            NotificationListView(subscription: topic).environmentObject(store)
+        }.navigationViewStyle(StackNavigationViewStyle()).environment(\.scenePhase, .inactive)
+            .environment(\.sizeCategory, .large).environment(\.colorScheme, .light)
+        window.rootViewController = UIHostingController(rootView: root)
+        window.makeKeyAndVisible()
+        defer {
+            window.isHidden = true
+            previous?.makeKey()
+            monitor.record(key: key, failure: nil)
+            store.context.delete(topic)
+            try? store.context.save()
+        }
+        func renderedText() throws -> String {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+            window.layoutIfNeeded()
+            let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+                window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+            }
+            let request = VNRecognizeTextRequest()
+            request.recognitionLanguages = ["en-US"]
+            request.recognitionLevel = .accurate
+            try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage)).perform([request])
+            return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ").lowercased()
+        }
+        XCTAssertFalse(try renderedText().contains("server refused"))
+        for status in [401, 403] {
+            monitor.record(key: key, failure: PollFailure.classify(PollHTTPError(status: status, retryAfter: nil)))
+            let visible = try renderedText()
+            XCTAssertTrue(visible.contains("server refused"), "First HTTP\(status) must explain refused sign-in: \(visible)")
+            XCTAssertFalse(visible.contains("no messages yet"), "Do not contradict the failed refresh with empty-topic help")
+            monitor.record(key: key, failure: nil)
+            XCTAssertFalse(try renderedText().contains("server refused"), "Successful refresh clears the notice in the same mounted view")
+        }
+        for failure in [PollFailure.unreachable, .rateLimited, .other] {
+            monitor.record(key: key, failure: failure)
+            let visible = try renderedText()
+            XCTAssertFalse(visible.contains("server refused"))
+            XCTAssertTrue(visible.contains("no messages yet"), "Other failures retain the existing empty state")
         }
     }
 }

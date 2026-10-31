@@ -14,6 +14,7 @@ struct NotificationListView: View {
     @EnvironmentObject private var store: Store
     @Environment(\.scenePhase) private var scenePhase
     
+    @ObservedObject private var deliveryHealth = DeliveryHealthMonitor.shared
     @ObservedObject var subscription: Subscription
     // @StateObject, not @ObservedObject: this view constructs the observable in its own
     // initializer, and @ObservedObject does not own what it is handed. Every rebuild of the view
@@ -35,6 +36,7 @@ struct NotificationListView: View {
     @State private var showMuteOptions = false
     @State private var showQRCodeSheet = false
     @State private var showComposeSheet = false
+    @State private var showUserEditor = false
     @State private var sendingTest = false
     @State private var publishError = ""
     @State private var draftDisplayName = ""
@@ -102,6 +104,10 @@ struct NotificationListView: View {
         }
     }
     
+    private var signInFailed: Bool {
+        deliveryHealth.topics[subscription.objectID.uriRepresentation().absoluteString]?.failure == .unauthorized
+    }
+
     private var notificationList: some View {
         Group {
             if editMode == .active {
@@ -115,9 +121,39 @@ struct NotificationListView: View {
             }
         }
         .safeAreaInset(edge: .top, spacing: 0) {
-            TopicMuteStatus(subscription: subscription)
-                .padding(.horizontal)
-                .background(Color(UIColor.systemBackground))
+            VStack(alignment: .leading, spacing: 8) {
+                if signInFailed {
+                    Text(String(localized: "The server refused the sign-in."))
+                        .fixedSize(horizontal: false, vertical: true)
+                        .accessibilityIdentifier("topic-sign-in-notice")
+                    Button { showUserEditor = true } label: {
+                        Text(String(localized: "Check server user"))
+                            .multilineTextAlignment(.leading)
+                            .fixedSize(horizontal: false, vertical: true)
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                    }
+                    .accessibilityIdentifier("topic-sign-in-settings")
+                }
+                TopicMuteStatus(subscription: subscription)
+            }
+            .padding(.horizontal)
+            .padding(.vertical, signInFailed ? 8 : 0)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .background(Color(UIColor.systemBackground))
+        }
+        .sheet(isPresented: $showUserEditor) {
+            UserEditorView(selectedUser: store.getUser(baseUrl: subscription.baseUrl ?? ""),
+                defaultBaseUrl: subscription.baseUrl ?? "",
+                onSave: { baseUrl, _, credential in
+                    guard let credential, store.saveUser(baseUrl: baseUrl, credential: credential) else { return false }
+                    showUserEditor = false
+                    Task { _ = await pollOnce() }
+                    return true
+                }, onDelete: { user in
+                    let deleted = store.delete(user: user)
+                    if deleted { showUserEditor = false }
+                    return deleted
+                }, onCancel: { showUserEditor = false })
         }
         .sheet(isPresented: $showMuteOptions) { TopicMuteView(subscription: subscription) }
         .listStyle(PlainListStyle())
@@ -293,7 +329,7 @@ struct NotificationListView: View {
         // a small phone its text ran off the screen with no way to scroll to the copy buttons.
         if notificationsModel.notifications.isEmpty && !searchText.isEmpty {
             Text(NotificationHistoryStrings.noMatches).foregroundColor(.secondary)
-        } else if notificationsModel.notifications.isEmpty && editMode == .inactive, let baseUrl = subscription.baseUrl {
+        } else if notificationsModel.notifications.isEmpty && editMode == .inactive && !signInFailed, let baseUrl = subscription.baseUrl {
             TopicPublishHelpView(
                 baseUrl: baseUrl,
                 topic: subscription.topicName(),
