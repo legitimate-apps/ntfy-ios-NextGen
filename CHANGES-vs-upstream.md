@@ -79,3 +79,8 @@ repository; this public repository starts from a fresh history.
 | 2026-10-30 | Preserve the stored message image by attaching a temporary copy to notifications, since iOS moves notification attachment files (adapted from @toddp's ntfy-ios#56) | fix | [ntfy#2101](https://github.com/binwiederhier/ntfy/issues/2101), [ntfy-ios#56](https://github.com/binwiederhier/ntfy-ios/pull/56) | #55 | 0c04cc4 | 1.20.0 |
 | 2026-10-31 | End notification extension request User-Agent values with `; NSE` so server operators can distinguish push fetches from app polls | infra/test | - | #57 | 2d787e3 | 1.20.0 |
 | 2026-10-31 | Translate the app and its notifications into Spanish, Italian, Polish, Dutch and French | feat | - | #58 | 00818c5 | 1.20.0 |
+| 2026-10-31 | Send messages from a topic screen with an optional title, priority, tags and one attachment | feat | fork #3 | #60 | d1d3580 | 1.21.0 |
+| 2026-10-31 | Share links, text, photos and files from other apps to a subscribed topic through the Share Extension | feat | fork #3 | #62 | 1b92390 | 1.21.0 |
+| 2026-10-31 | Persist alert state across the app and notification extension so a previously alerted message does not alert again; migrate stored messages with Core Data Model 9 | fix | — | #61 | 56c6c66 | 1.21.0 |
+| 2026-10-31 | Explain a refused sign-in when a notification extension fetch returns HTTP 401 or 403 | fix | [ntfy#2061](https://github.com/binwiederhier/ntfy/issues/2061) | #63 | 287b704 | 1.21.0 |
+| 2026-10-31 | Show a refused sign-in notice on the topic screen and open the server user editor from Check server user | fix | [ntfy#2061](https://github.com/binwiederhier/ntfy/issues/2061) | #64 | e24f6bf | 1.21.0 |

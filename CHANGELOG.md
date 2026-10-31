@@ -4,6 +4,13 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.21.0
+
+- Send messages from a topic screen, with an optional title, priority, tags and one attachment.
+- Share links, text, photos and files to subscribed topics from other apps.
+- Stop repeat alerts for messages already shown by the app or notification extension.
+- Explain refused sign-ins in failed push notifications and on the topic screen, with a Check server user button.
+
 ## 1.20.0
 
 - Message images no longer disappear from the app after appearing in a notification.
