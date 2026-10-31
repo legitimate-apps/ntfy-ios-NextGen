@@ -11,6 +11,10 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// The App Store "What's New" text per release (CHANGELOG.md, drafts/whats-new-*.md). Add the new
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
+        ReleaseNotes(version: "1.20.0", bullets: [
+            String(localized: "Message images no longer disappear from the app after appearing in a notification."),
+            String(localized: "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language.")
+        ]),
         ReleaseNotes(version: "1.19.0", bullets: [
             String(localized: "The app and its notifications now follow your phone's language when it is German."),
             String(localized: "Sign in to a server with an access token instead of a username and password."),

@@ -173,6 +173,27 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testVersion120ReleaseNotesResolveInEveryBundledLanguage() throws {
+        let release = try XCTUnwrap(ReleaseNotes.shipped.first { $0.version == "1.20.0" })
+        XCTAssertEqual(release.bullets.count, 2)
+        let expected: [String: [String]] = [
+            "en": ["Message images no longer disappear from the app after appearing in a notification.", "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language."],
+            "de": ["Bilder in Nachrichten verschwinden nicht mehr aus der App, nachdem sie in einer Benachrichtigung angezeigt wurden.", "Die App und ihre Benachrichtigungen sind jetzt auch auf Spanisch, Italienisch, Polnisch, Niederländisch und Französisch verfügbar und folgen der Sprache deines iPhones."],
+            "es": ["Las imágenes de los mensajes ya no desaparecen de la app después de mostrarse en una notificación.", "La app y sus notificaciones ahora están disponibles en español, italiano, polaco, neerlandés y francés, según el idioma de tu teléfono."],
+            "it": ["Le immagini dei messaggi non scompaiono più dall'app dopo essere state mostrate in una notifica.", "L'app e le sue notifiche sono ora disponibili in spagnolo, italiano, polacco, olandese e francese, in base alla lingua del tuo telefono."],
+            "pl": ["Obrazy w wiadomościach nie znikają już z aplikacji po wyświetleniu w powiadomieniu.", "Aplikacja i jej powiadomienia są teraz dostępne po hiszpańsku, włosku, polsku, niderlandzku i francusku, zgodnie z językiem telefonu."],
+            "nl": ["Afbeeldingen in berichten verdwijnen niet meer uit de app nadat ze in een melding zijn getoond.", "De app en de meldingen die de app zelf maakt, zijn nu beschikbaar in het Spaans, Italiaans, Pools, Nederlands en Frans en volgen de taal van je telefoon."],
+            "fr": ["Les images des messages ne disparaissent plus de l’app après leur affichage dans une notification.", "L’app et ses notifications sont maintenant disponibles en espagnol, italien, polonais, néerlandais et français, selon la langue de votre téléphone."]
+        ]
+        XCTAssertEqual(Set(Bundle.main.localizations.filter { $0 != "Base" }), Set(expected.keys))
+        for (language, bullets) in expected {
+            let bundle = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            for (index, key) in expected["en"]!.enumerated() {
+                XCTAssertEqual(bundle.localizedString(forKey: key, value: nil, table: nil), bullets[index], language)
+            }
+        }
+    }
+
     private func stringUnits(_ node: Any) -> [[String: Any]] {
         guard let object = node as? [String: Any] else { return [] }
         if let unit = object["stringUnit"] as? [String: Any] { return [unit] }

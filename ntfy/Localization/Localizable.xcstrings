@@ -8399,6 +8399,53 @@
         }
       }
     },
+    "Message images no longer disappear from the app after appearing in a notification.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Message images no longer disappear from the app after appearing in a notification."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bilder in Nachrichten verschwinden nicht mehr aus der App, nachdem sie in einer Benachrichtigung angezeigt wurden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las imágenes de los mensajes ya no desaparecen de la app después de mostrarse en una notificación."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le immagini dei messaggi non scompaiono più dall'app dopo essere state mostrate in una notifica."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Obrazy w wiadomościach nie znikają już z aplikacji po wyświetleniu w powiadomieniu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Afbeeldingen in berichten verdwijnen niet meer uit de app nadat ze in een melding zijn getoond."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les images des messages ne disparaissent plus de l’app après leur affichage dans une notification."
+          }
+        }
+      }
+    },
     "Messages will still arrive and stay in your history. Notifications will appear quietly in Notification Center, with no sound or banner. Unread counts and the app badge will still update.": {
       "extractionState": "manual",
       "localizations": {
@@ -15211,6 +15258,53 @@
           "stringUnit": {
             "state": "translated",
             "value": "L’app et ses notifications s’affichent maintenant en allemand si c’est la langue de votre téléphone."
+          }
+        }
+      }
+    },
+    "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die App und ihre Benachrichtigungen sind jetzt auch auf Spanisch, Italienisch, Polnisch, Niederländisch und Französisch verfügbar und folgen der Sprache deines iPhones."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La app y sus notificaciones ahora están disponibles en español, italiano, polaco, neerlandés y francés, según el idioma de tu teléfono."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'app e le sue notifiche sono ora disponibili in spagnolo, italiano, polacco, olandese e francese, in base alla lingua del tuo telefono."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikacja i jej powiadomienia są teraz dostępne po hiszpańsku, włosku, polsku, niderlandzku i francusku, zgodnie z językiem telefonu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De app en de meldingen die de app zelf maakt, zijn nu beschikbaar in het Spaans, Italiaans, Pools, Nederlands en Frans en volgen de taal van je telefoon."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’app et ses notifications sont maintenant disponibles en espagnol, italien, polonais, néerlandais et français, selon la langue de votre téléphone."
           }
         }
       }

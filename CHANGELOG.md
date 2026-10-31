@@ -4,6 +4,12 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.20.0
+
+- Message images no longer disappear from the app after appearing in a notification.
+- The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following
+  your phone's language.
+
 ## 1.19.0
 
 - The app and its notifications now follow your phone's language when it is German.
