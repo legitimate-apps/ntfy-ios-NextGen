@@ -9167,45 +9167,153 @@ final class NSEAuthFallbackTests: XCTestCase {
     }
 }
 
+/// Socket lifecycle regressions for the fixture, independent of the NSE's expiry timing.
+final class NSEAuthLoopbackServerTests: XCTestCase {
+    private var server: NSEAuthLoopbackServer!
+    private let clientQueue = DispatchQueue(label: "ntfy.tests.auth-http-client")
+    private let lock = NSLock()
+    private var checks: [(line: String, valid: Bool)] = []
+
+    override func tearDown() {
+        server?.stop()
+        super.tearDown()
+    }
+
+    private func connect() throws -> (NWConnection, XCTestExpectation) {
+        let ready = expectation(description: "listener ready")
+        let accepted = expectation(description: "server has registered receive")
+        let received = expectation(description: "server receive completion ran")
+        server = try NSEAuthLoopbackServer(checkRequestLine: { line, valid in
+            self.lock.lock()
+            self.checks.append((line, valid))
+            self.lock.unlock()
+        }, connectionAccepted: { accepted.fulfill() }, receiveCompleted: { received.fulfill() })
+        server.start { ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+        let client = NWConnection(host: "127.0.0.1", port: NWEndpoint.Port(rawValue: server.port)!, using: .tcp)
+        let connected = expectation(description: "client connected")
+        client.stateUpdateHandler = { state in
+            if case .ready = state { connected.fulfill() }
+        }
+        client.start(queue: clientQueue)
+        wait(for: [connected, accepted], timeout: 5)
+        return (client, received)
+    }
+
+    private func recordedChecks() -> [(line: String, valid: Bool)] {
+        lock.lock()
+        defer { lock.unlock() }
+        return checks
+    }
+
+    func testConnectionClosedWithoutRequestDoesNotValidateEmptyLine() throws {
+        let (client, received) = try connect()
+        defer { client.cancel() }
+        // Half-close the write side without ever sending request bytes: a deterministic EOF.
+        client.send(content: nil, contentContext: .finalMessage, isComplete: true, completion: .contentProcessed { _ in })
+        wait(for: [received], timeout: 5)
+        XCTAssertTrue(recordedChecks().isEmpty, "EOF without a request must not reach the request assertion")
+    }
+
+    func testConnectionClosedWithIncompleteRequestDoesNotValidatePartialLine() throws {
+        let (client, received) = try connect()
+        defer { client.cancel() }
+        client.send(content: Data("GET /sta".utf8), contentContext: .finalMessage, isComplete: true,
+                    completion: .contentProcessed { _ in })
+        wait(for: [received], timeout: 5)
+        XCTAssertTrue(recordedChecks().isEmpty, "an incomplete request line at EOF is not a request to validate")
+    }
+
+    func testStoppedServerDoesNotValidateCancelledReceive() throws {
+        let (client, received) = try connect()
+        defer { client.cancel() }
+        // The accepted receive is still waiting for its first byte when stop cancels it.
+        server.stop()
+        wait(for: [received], timeout: 5)
+        XCTAssertTrue(recordedChecks().isEmpty, "a stopped fixture must not assert into the next test")
+    }
+
+    func testWrongRequestLineIsStillRejected() throws {
+        let (client, received) = try connect()
+        defer { client.cancel() }
+        let line = "GET /wrong-path HTTP/1.1"
+        client.send(content: Data("\(line)\r\nHost: localhost\r\n\r\n".utf8), completion: .contentProcessed { _ in })
+        wait(for: [received], timeout: 5)
+        let checks = recordedChecks()
+        XCTAssertEqual(checks.map(\.line), [line])
+        XCTAssertEqual(checks.map(\.valid), [false], "the default reporter must still fail a wrong request")
+    }
+}
+
 /// Real HTTP responses exercise ApiService's own URLSession and HTTP status handling.
 private final class NSEAuthLoopbackServer {
     private let listener: NWListener
     private let queue = DispatchQueue(label: "ntfy.tests.auth-http")
     private var connections: [NWConnection] = []
+    // Listener callbacks, receive callbacks and stop all serialize on queue.
+    private var stopped = false
+    private let checkRequestLine: (String, Bool) -> Void
+    private let connectionAccepted: () -> Void
+    private let receiveCompleted: () -> Void
     var port: UInt16 { listener.port?.rawValue ?? 0 }
 
-    init() throws {
+    init(checkRequestLine: @escaping (String, Bool) -> Void = { line, valid in XCTAssertTrue(valid, line) },
+         connectionAccepted: @escaping () -> Void = {}, receiveCompleted: @escaping () -> Void = {}) throws {
+        self.checkRequestLine = checkRequestLine
+        self.connectionAccepted = connectionAccepted
+        self.receiveCompleted = receiveCompleted
         let parameters = NWParameters.tcp
         parameters.requiredLocalEndpoint = .hostPort(host: "127.0.0.1", port: .any)
         listener = try NWListener(using: parameters)
     }
 
     func start(ready: @escaping () -> Void) {
-        listener.stateUpdateHandler = { state in
+        listener.stateUpdateHandler = { [weak self] state in
+            guard let self, !self.stopped else { return }
             if case .ready = state { ready() }
         }
         listener.newConnectionHandler = { [weak self] connection in
-            guard let self else { connection.cancel(); return }
+            guard let self, !self.stopped else { connection.cancel(); return }
             self.connections.append(connection)
             connection.start(queue: self.queue)
-            connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, _, _ in
-                let request = String(decoding: data ?? Data(), as: UTF8.self)
-                guard let line = request.components(separatedBy: "\r\n").first else { return }
-                XCTAssertTrue(line.contains("poll=1&id=authpoll1234"), line)
-                if line.contains("/pending/") { return }
-                let status = line.contains("status401") ? 401 : line.contains("status403") ? 403 : line.contains("status429") ? 429 : 500
-                print("NSE_AUTH_HTTP \(line) response=\(status)")
-                let response = Data("HTTP/1.1 \(status) Refused\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
-                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
-            }
+            self.receiveRequest(on: connection)
+            self.connectionAccepted()
         }
         listener.start(queue: queue)
     }
 
+    private func receiveRequest(on connection: NWConnection, buffered: Data = Data()) {
+        connection.receive(minimumIncompleteLength: 1, maximumLength: 65536) { data, _, complete, error in
+            guard !self.stopped else { self.receiveCompleted(); return }
+            var request = buffered
+            request.append(data ?? Data())
+            guard let delimiter = request.range(of: Data("\r\n".utf8)) else {
+                if !complete, error == nil, let data, !data.isEmpty, request.count < 65536 {
+                    self.receiveRequest(on: connection, buffered: request)
+                } else {
+                    // EOF/cancellation before a request line is not a malformed HTTP request.
+                    connection.cancel()
+                    self.receiveCompleted()
+                }
+                return
+            }
+            defer { self.receiveCompleted() }
+            let line = String(decoding: request[..<delimiter.lowerBound], as: UTF8.self)
+            self.checkRequestLine(line, line.contains("poll=1&id=authpoll1234"))
+            if line.contains("/pending/") { return }
+            let status = line.contains("status401") ? 401 : line.contains("status403") ? 403 : line.contains("status429") ? 429 : 500
+            print("NSE_AUTH_HTTP \(line) response=\(status)")
+            let response = Data("HTTP/1.1 \(status) Refused\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
+            connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+        }
+    }
+
     func stop() {
         queue.sync {
+            stopped = true
             listener.cancel()
             connections.forEach { $0.cancel() }
+            connections.removeAll()
         }
     }
 }
