@@ -16,6 +16,36 @@
             "state": "translated",
             "value": "NTFY me nutzt die Kamera nur, um QR-Codes für Themen zu scannen, die du abonnieren möchtest."
           }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NTFY me usa la cámara solo para escanear códigos QR de los tópicos a los que quieras suscribirte."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NTFY me usa la fotocamera solo per scansionare i codici QR degli argomenti a cui vuoi iscriverti."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NTFY me używa aparatu tylko do skanowania kodów QR tematów, które chcesz subskrybować."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NTFY me gebruikt de camera alleen om QR-codes te scannen voor onderwerpen waarop je je wilt abonneren."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "NTFY me utilise l’appareil photo uniquement pour scanner les codes QR des sujets auxquels vous souhaitez vous abonner."
+          }
         }
       }
     }

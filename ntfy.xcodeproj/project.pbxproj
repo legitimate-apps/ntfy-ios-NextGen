@@ -599,6 +599,11 @@
                 de,
 				en,
 				Base,
+				es,
+				it,
+				pl,
+				nl,
+				fr,
 			);
 			mainGroup = 9474F1B4282F2AA700CDE4DD;
 			packageReferences = (

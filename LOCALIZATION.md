@@ -4,7 +4,7 @@ The app and its notification extension compile the same `ntfy/Localization/Local
 Camera permission copy is in `ntfy/Localization/InfoPlist.xcstrings`, compiled into the app.
 License terms and copyright notices remain verbatim in the generated `OpenSourceLicenses.swift`
 source in every language. Only the surrounding UI, descriptions and short license labels are translated.
-English is the source language. German is the first translation.
+English is the source language. German, Spanish, Italian, Polish, Dutch and French are supported. Spanish uses one neutral translation for Spain and Latin America.
 
 Add a language to both catalogs in Xcode and translate every entry. Add its language identifier to
 `knownRegions` if Xcode has not done so. No Swift changes are needed. `LocalizationTests` discovers
@@ -17,7 +17,7 @@ Cancel/Save controls still leave room at accessibility sizes. Keep these caption
 
 Use complete messages and localized interpolation for display strings, including errors, notification
 fallbacks and accessibility labels. Keep numeric counts as numbers and use catalog plural variants.
-German uses `one` and `other`; Polish also needs `few` and `many`. Let Xcode add the categories for
+German and Dutch use `one` and `other`. Spanish, Italian and French also include `many` for large integer counts. Polish requires `one`, `few`, `many` and `other`; probe 1, 2, 5, 12 and 22 with an explicit Polish locale. Let Xcode add the categories for
 the new language rather than assuming English plural rules. Preserve format specifiers and numeric
 arguments when translating. Format dates, times, numbers and byte counts using Foundation formatters.
 The tomorrow mute choice formats its actual deadline's time, including the user's clock preference.
@@ -36,7 +36,7 @@ banners resolve the diagnostic through the current language bundle. Keep diagnos
 when revising their displayed translations so existing history still resolves. A missing attachment
 name remains empty in storage and is resolved at display time. No Core Data model migration is needed.
 
-Run the English and German unit suites and the existing 21 navigation tests. Run the German traversal separately:
+Run the English and German unit suites and the existing 22 navigation tests. Run the German traversal separately:
 
 ```sh
 python3 ntfyNavigationUITests/run.py "$UDID" "$APP" "$UI_DERIVED_DATA" "$OUTPUT" \

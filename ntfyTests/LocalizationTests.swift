@@ -25,6 +25,20 @@ final class LocalizationTests: XCTestCase {
                 let localizations = entry["localizations"] as? [String: Any] ?? [:]
                 for language in languages {
                     let value = try XCTUnwrap(localizations[language], "\(url.lastPathComponent): \(language) missing for \(key)")
+                    if let source = localizations["en"] as? [String: Any],
+                       let sourceVariations = source["variations"] as? [String: Any],
+                       sourceVariations["plural"] != nil {
+                        let object = try XCTUnwrap(value as? [String: Any])
+                        let variations = try XCTUnwrap(object["variations"] as? [String: Any], "\(language): missing plural variants for \(key)")
+                        let plural = try XCTUnwrap(variations["plural"] as? [String: Any])
+                        let required: Set<String>
+                        switch language {
+                        case "pl": required = ["one", "few", "many", "other"]
+                        case "es", "it", "fr": required = ["one", "many", "other"]
+                        default: required = ["one", "other"]
+                        }
+                        XCTAssertTrue(required.isSubset(of: Set(plural.keys)), "\(language): missing plural categories for \(key)")
+                    }
                     let units = stringUnits(value)
                     XCTAssertFalse(units.isEmpty, "\(language): no values for \(key)")
                     for unit in units {
@@ -118,6 +132,45 @@ final class LocalizationTests: XCTestCase {
         row.attachmentName = "Anhang"
         let english = try XCTUnwrap(Bundle.main.path(forResource: "en", ofType: "lproj").flatMap(Bundle.init(path:)))
         XCTAssertEqual(row.messageAttachment()?.displayName(bundle: english), "Anhang", "Preserve a sender's actual name")
+    }
+
+    func testAddedLanguagesCompileIntoAppAndExtensionWithLocalePlurals() throws {
+        let expected: [String: [String]] = [
+            "es": ["Tópicos", "1 hora", "2 horas", "5 horas", "12 horas", "22 horas"],
+            "it": ["Iscrizioni", "1 ora", "2 ore", "5 ore", "12 ore", "22 ore"],
+            "pl": ["Tematy", "1 godzina", "2 godziny", "5 godzin", "12 godzin", "22 godziny"],
+            "nl": ["Topics", "1 uur", "2 uur", "5 uur", "12 uur", "22 uur"],
+            "fr": ["Sujets", "1 heure", "2 heures", "5 heures", "12 heures", "22 heures"]
+        ]
+        let regions = ["es": "ES", "it": "IT", "pl": "PL", "nl": "NL", "fr": "FR"]
+        let plugIns = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let extensionURL = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: plugIns, includingPropertiesForKeys: nil).first { $0.pathExtension == "appex" })
+        let extensionBundle = try XCTUnwrap(Bundle(url: extensionURL))
+        for language in Bundle.main.localizations where expected[language] != nil {
+            let bundle = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            let values = try XCTUnwrap(expected[language])
+            let locale = Locale(identifier: language + "_" + regions[language]!)
+            XCTAssertEqual(bundle.localizedString(forKey: "Subscribed topics", value: nil, table: nil), values[0])
+            for (index, count) in [1, 2, 5, 12, 22].enumerated() {
+                let format = bundle.localizedString(forKey: "%lld hours", value: nil, table: nil)
+                XCTAssertEqual(String(format: format, locale: locale, count), values[index + 1], language)
+            }
+            if language == "pl" {
+                let retry = bundle.localizedString(forKey: "The server is limiting this action. Try again in %lld seconds.", value: nil, table: nil)
+                for (count, noun) in [(1, "sekundę"), (2, "sekundy"), (5, "sekund"), (12, "sekund"), (22, "sekundy")] {
+                    XCTAssertTrue(String(format: retry, locale: locale, count).hasSuffix("\(count) \(noun)."))
+                }
+            }
+            let nse = try XCTUnwrap(extensionBundle.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            for key in ["Notification state synchronized", "Encrypted message", "New message on %@. Open the app to load it."] {
+                let value = bundle.localizedString(forKey: key, value: nil, table: nil)
+                XCTAssertNotEqual(value, key, language)
+                XCTAssertEqual(nse.localizedString(forKey: key, value: nil, table: nil), value, language)
+            }
+            let permission = bundle.localizedString(forKey: "NSCameraUsageDescription", value: nil, table: "InfoPlist")
+            XCTAssertNotEqual(permission, "NSCameraUsageDescription")
+            XCTAssertTrue(permission.contains("NTFY me"))
+        }
     }
 
     private func stringUnits(_ node: Any) -> [[String: Any]] {
