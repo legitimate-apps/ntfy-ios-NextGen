@@ -197,6 +197,7 @@ struct PollTiming {
 final class ServerCooldown {
     static let shared = ServerCooldown(defaults: UserDefaults(suiteName: Store.appGroup) ?? .standard)
     private let lock = NSLock()
+    private let generationKey = "deliveryBudgetGenerations121"
     private let defaults: UserDefaults?
     private let now: () -> Date
     private let uptime: () -> TimeInterval
@@ -241,9 +242,45 @@ final class ServerCooldown {
         for (name, deadline) in until where !name.hasSuffix("|118|poll") && changes[name] == nil {
             monotonic[name] = uptime() + deadline - date
         }
+        let saved = defaults?.dictionary(forKey: generationKey) as? [String: String] ?? [:]
         generations = until.mapValues { _ in UUID() }
+        for (name, value) in saved { if let id = UUID(uuidString: value) { generations[name] = id } }
         // Initialization also runs in the NSE. Read and bound old snapshots without writing
         // them over a newer app refusal; migration is committed by the next actual mutation.
+    }
+
+    /// Refresh warm-process snapshots without a shared file lock that could survive suspension.
+    /// Concurrent writes may lose a refusal; a subsequent 429 records it again.
+    private func refreshShared() {
+        guard let defaults else { return }
+        defaults.synchronize()
+        let raw = defaults.dictionary(forKey: key) as? [String: Double]
+        let date = now().timeIntervalSince1970
+        let entries = (raw ?? until).filter { $0.value.isFinite }
+            .mapValues { min($0, date + 86400) }
+            .map { name, deadline in (name, name.hasSuffix("|118|poll") ? min(deadline, date + 3600) : deadline) }
+        let bounded = Dictionary(uniqueKeysWithValues: entries)
+        if raw != bounded { defaults.set(bounded, forKey: key); defaults.synchronize() }
+        let latest = bounded
+        for name in Set(until.keys).union(latest.keys) where latest[name] != until[name] {
+            monotonic.removeValue(forKey: name)
+            if let deadline = latest[name], deadline > now().timeIntervalSince1970,
+               !name.hasSuffix("|118|poll") {
+                monotonic[name] = uptime() + min(86400, deadline - now().timeIntervalSince1970)
+            }
+        }
+        until = latest
+        let rawChanges = defaults.dictionary(forKey: changeKey) as? [String: String] ?? [:]
+        let rawProbes = defaults.dictionary(forKey: probeKey) as? [String: Double] ?? [:]
+        changes = rawChanges.filter { ["state-change", "request-change"].contains($0.value) && until[$0.key] != nil }
+        probes = rawProbes.filter { $0.value.isFinite && $0.value > date - 60 }.mapValues { min($0, date) }
+        if changes != rawChanges || probes != rawProbes {
+            defaults.set(changes, forKey: changeKey); defaults.set(probes, forKey: probeKey)
+            defaults.synchronize()
+        }
+        let saved = defaults.dictionary(forKey: generationKey) as? [String: String] ?? [:]
+        generations = saved.compactMapValues(UUID.init(uuidString:))
+        for name in changes.keys { monotonic.removeValue(forKey: name) }
     }
 
     private func active(_ name: String) -> Bool {
@@ -251,21 +288,23 @@ final class ServerCooldown {
         return (until[name] ?? 0) > now().timeIntervalSince1970
     }
     private func persist() {
+        defaults?.set(generations.mapValues { $0.uuidString }, forKey: generationKey)
         defaults?.set(until, forKey: key); defaults?.set(changes, forKey: changeKey); defaults?.set(probes, forKey: probeKey)
         defaults?.removeObject(forKey: "serverExtensionCooldowns118")
         defaults?.removeObject(forKey: "serverExtensionChanges118")
         defaults?.removeObject(forKey: "deliveryHealthServerCooldowns")
+        defaults?.synchronize()
     }
 
     /// Discovery must never spend a manual-refresh probe while any budget is paused.
     func isLimited(server: String) -> Bool {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let prefix = normalizeBaseUrl(server) + "|118|"
         return until.keys.contains { $0.hasPrefix(prefix) && active($0) }
     }
 
     func deadline(for server: String, kind: Kind = .poll) -> Date {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, kind)
         if let deadline = monotonic[name] { return now().addingTimeInterval(max(0, deadline - uptime())) }
         return Date(timeIntervalSince1970: until[name] ?? 0)
@@ -275,7 +314,7 @@ final class ServerCooldown {
         claimAttempt(server: server, manual: manual, kind: kind, consumingProbe: consumingProbe) != nil
     }
     func claimAttempt(server: String, manual: Bool, kind: Kind = .poll, consumingProbe: Bool = true) -> Attempt? {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, kind)
         if active(name) {
             // Timed publish resets are honored in full. Polls always keep 1.17's manual probe.
@@ -287,7 +326,7 @@ final class ServerCooldown {
     }
 
     func limit(server: String, retryAfter: String?, condition: String? = nil, kind: Kind = .poll) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, kind), date = now()
         generations[name] = UUID() // A newer refusal invalidates an older concurrent success.
         let directive = RetryDirective.parse(condition: condition, retryAfter: retryAfter, now: date)
@@ -318,12 +357,12 @@ final class ServerCooldown {
     }
 
     func hasNonTimeRefusal(server: String, kind: Kind) -> Bool {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, kind)
         return active(name) && changes[name] != nil
     }
     func requestChanged(server: String, kind: Kind) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, kind)
         if changes[name] == "request-change" {
             changes.removeValue(forKey: name); until.removeValue(forKey: name); monotonic.removeValue(forKey: name)
@@ -331,7 +370,7 @@ final class ServerCooldown {
         }
     }
     func succeeded(server: String, attempt: Attempt) {
-        lock.lock(); defer { lock.unlock() }
+        lock.lock(); refreshShared(); defer { lock.unlock() }
         let name = scope(server, attempt.kind)
         guard generations[name] == attempt.generation else { return }
         until.removeValue(forKey: name); monotonic.removeValue(forKey: name); changes.removeValue(forKey: name)

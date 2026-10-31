@@ -23130,6 +23130,429 @@
           }
         }
       }
+    },
+    "Share a link, text, one photo or one file.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share a link, text, one photo or one file."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teile einen Link, Text, ein Foto oder eine Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte un enlace, texto, una foto o un archivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi un link, del testo, una foto o un file."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij link, tekst, jedno zdjęcie lub jeden plik."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel een link, tekst, één foto of één bestand."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez un lien, du texte, une photo ou un fichier."
+          }
+        }
+      }
+    },
+    "Share only one photo or file at a time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share only one photo or file at a time."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Teile jeweils nur ein Foto oder eine Datei."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte solo una foto o un archivo a la vez."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi una sola foto o un solo file alla volta."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniaj tylko jedno zdjęcie lub jeden plik naraz."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel één foto of bestand tegelijk."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez une seule photo ou un seul fichier à la fois."
+          }
+        }
+      }
+    },
+    "The shared item could not be opened. Share it again from the original app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The shared item could not be opened. Share it again from the original app."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das geteilte Objekt konnte nicht geöffnet werden. Teile es erneut aus der ursprünglichen App."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo abrir el elemento compartido. Vuelve a compartirlo desde la app original."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aprire l’elemento condiviso. Condividilo di nuovo dall’app originale."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się otworzyć udostępnionego elementu. Udostępnij go ponownie z aplikacji źródłowej."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het gedeelde onderdeel kon niet worden geopend. Deel het opnieuw vanuit de oorspronkelijke app."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’ouvrir l’élément partagé. Partagez-le à nouveau depuis l’app d’origine."
+          }
+        }
+      }
+    },
+    "Open NTFY me and subscribe to a topic first. Then share this item again.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open NTFY me and subscribe to a topic first. Then share this item again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Öffne NTFY me und abonniere zuerst ein Thema. Teile dieses Objekt danach erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abre NTFY me y suscríbete a un tópico primero. Luego vuelve a compartir este elemento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Apri NTFY me e iscriviti prima a un argomento. Poi condividi di nuovo questo elemento."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Otwórz NTFY me i najpierw zasubskrybuj temat. Następnie udostępnij ten element ponownie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Open NTFY me en abonneer je eerst op een onderwerp. Deel dit onderdeel daarna opnieuw."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ouvrez NTFY me et abonnez-vous d’abord à un sujet. Partagez ensuite cet élément à nouveau."
+          }
+        }
+      }
+    },
+    "Attachments are unavailable for encrypted topics. Remove the attachment to send text or a link.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attachments are unavailable for encrypted topics. Remove the attachment to send text or a link."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für verschlüsselte Themen sind keine Anhänge verfügbar. Entferne den Anhang, um Text oder einen Link zu senden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los adjuntos no están disponibles en tópicos cifrados. Quita el adjunto para enviar texto o un enlace."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli allegati non sono disponibili per gli argomenti crittografati. Rimuovi l’allegato per inviare testo o un link."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Załączniki są niedostępne w szyfrowanych tematach. Usuń załącznik, aby wysłać tekst lub link."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bijlagen zijn niet beschikbaar voor versleutelde onderwerpen. Verwijder de bijlage om tekst of een link te verzenden."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les pièces jointes ne sont pas disponibles pour les sujets chiffrés. Supprimez la pièce jointe pour envoyer du texte ou un lien."
+          }
+        }
+      }
+    },
+    "Upload limits are unavailable. Try checking again before sending the attachment.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Upload limits are unavailable. Try checking again before sending the attachment."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Upload-Limits sind nicht verfügbar. Prüfe sie erneut, bevor du den Anhang sendest."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los límites de carga no están disponibles. Vuelve a comprobarlos antes de enviar el adjunto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I limiti di caricamento non sono disponibili. Controlla di nuovo prima di inviare l’allegato."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Limity przesyłania są niedostępne. Sprawdź ponownie przed wysłaniem załącznika."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uploadlimieten zijn niet beschikbaar. Controleer ze opnieuw voordat je de bijlage verzendt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les limites d’envoi sont indisponibles. Vérifiez à nouveau avant d’envoyer la pièce jointe."
+          }
+        }
+      }
+    },
+    "Loading shared item…": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Loading shared item…"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geteiltes Objekt wird geladen…"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Cargando elemento compartido…"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Caricamento dell’elemento condiviso…"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wczytywanie udostępnionego elementu…"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gedeeld onderdeel laden…"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chargement de l’élément partagé…"
+          }
+        }
+      }
+    },
+    "Share to NTFY me": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share to NTFY me"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mit NTFY me teilen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir con NTFY me"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi con NTFY me"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij w NTFY me"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delen met NTFY me"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partager avec NTFY me"
+          }
+        }
+      }
+    },
+    "Topic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topic"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Thema"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tópico"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argomento"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temat"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderwerp"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sujet"
+          }
+        }
+      }
     }
   },
   "version": "1.0"

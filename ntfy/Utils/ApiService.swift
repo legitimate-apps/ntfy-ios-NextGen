@@ -8,14 +8,16 @@ class ApiService {
     enum ProcessKind {
         case app
         case notificationServiceExtension
+        case shareExtension
 
         init(bundleURL: URL) {
-            self = bundleURL.pathExtension == "appex" ? .notificationServiceExtension : .app
+            if bundleURL.lastPathComponent == "ntfyShare.appex" { self = .shareExtension }
+            else { self = bundleURL.pathExtension == "appex" ? .notificationServiceExtension : .app }
         }
     }
 
     static func makeUserAgent(processKind: ProcessKind) -> String {
-        let marker = processKind == .notificationServiceExtension ? "; NSE" : ""
+        let marker = processKind == .notificationServiceExtension ? "; NSE" : (processKind == .shareExtension ? "; Share" : "")
         return "ntfy/\(Config.version) (build \(Config.build); iOS \(Config.osVersion)\(marker))"
     }
     
@@ -152,7 +154,8 @@ class ApiService {
             priority: priority,
             tags: tags,
             options: options,
-            encryptionKey: encryptionKey
+            encryptionKey: encryptionKey,
+            streamFile: true
         ) {
         case .success(let built): request = built
         case .failure(let error):
@@ -166,7 +169,7 @@ class ApiService {
             return
         }
         Log.d(tag, "Publishing to \(request.url?.absoluteString ?? "?")\(encryptionKey == nil ? "" : " (end-to-end encrypted)")")
-        runOneShot(request, timeout: options.fileURL == nil ? 10 : 120, baseUrl: baseUrl, session: session) { (data, response, error) in
+        runPublish(request, file: options.fileURL, baseUrl: baseUrl, session: session) { (data, response, error) in
             guard error == nil else {
                 Log.e(self.tag, "Error publishing message", error!)
                 failureHandler?(.network(error!.localizedDescription))
@@ -214,7 +217,8 @@ class ApiService {
         priority: Int = 3,
         tags: [String] = [],
         options: PublishOptions = PublishOptions(),
-        encryptionKey: Data? = nil
+        encryptionKey: Data? = nil,
+        streamFile: Bool = false
     ) -> Result<URLRequest, PublishError> {
         guard let url = URL(string: subscription.urlString()) else { return .failure(.invalidTopicUrl) }
         var request = newRequest(url: url, baseUrl: subscription.baseUrl ?? "?", user: user)
@@ -259,11 +263,14 @@ class ApiService {
                   let values = try? file.resourceValues(forKeys: [.fileSizeKey, .isRegularFileKey]),
                   values.isRegularFile == true, let bytes = values.fileSize, bytes > 0,
                   Int64(bytes) <= limit else { return .failure(.attachmentTooLarge) }
-            guard let contents = try? Data(contentsOf: file, options: .mappedIfSafe), Int64(contents.count) <= limit else { return .failure(.attachmentUnreadable) }
+            if !streamFile {
+                guard let contents = try? Data(contentsOf: file, options: .mappedIfSafe), Int64(contents.count) <= limit else { return .failure(.attachmentUnreadable) }
+                request.httpBody = contents
+            }
+            request.setValue(String(bytes), forHTTPHeaderField: "Content-Length")
             request.setValue(PublishOptions.header(options.filename.isEmpty ? file.lastPathComponent : options.filename), forHTTPHeaderField: "Filename")
             request.setValue(PublishOptions.header(message.replacingOccurrences(of: "\n", with: "\\n")), forHTTPHeaderField: "Message")
             request.setValue("application/octet-stream", forHTTPHeaderField: "Content-Type")
-            request.httpBody = contents
         } else {
             request.httpBody = message.data(using: .utf8)
         }
@@ -425,6 +432,19 @@ class ApiService {
             session.finishTasksAndInvalidate()
         }
         return session
+    }
+
+    /// URLSession streams the raw file from disk, including when the extension has little memory.
+    private func runPublish(_ request: URLRequest, file: URL?, baseUrl: String, session: URLSession?,
+                            completionHandler: @escaping (Data?, URLResponse?, Error?) -> Void) {
+        guard let file else {
+            runOneShot(request, timeout: 10, baseUrl: baseUrl, session: session, completionHandler: completionHandler)
+            return
+        }
+        let owned = session == nil
+        let session = session ?? newSession(timeout: 120, baseUrl: baseUrl)
+        session.uploadTask(with: request, fromFile: file, completionHandler: completionHandler).resume()
+        if owned { session.finishTasksAndInvalidate() }
     }
 
     private func newSession(timeout: TimeInterval, baseUrl: String) -> URLSession {
