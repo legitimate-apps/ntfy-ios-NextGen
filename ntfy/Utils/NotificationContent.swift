@@ -302,12 +302,34 @@ extension UNMutableNotificationContent {
         }
     }
 
-    private func attachLocalImage(from localFileUrl: URL) -> Bool {
+    func attachLocalImage(from localFileUrl: URL) -> Bool {
+        // Validation moves the supplied file into the system's attachment store. Keep the
+        // message's persisted image and give each delivery its own disposable copy instead.
+        let files = FileManager.default
+        let directory = files.temporaryDirectory.appendingPathComponent("notification-attachments", isDirectory: true)
+        let temporaryUrl = directory.appendingPathComponent(UUID().uuidString)
+            .appendingPathExtension(localFileUrl.pathExtension)
         do {
-            let notificationAttachment = try UNNotificationAttachment(identifier: "attachment", url: localFileUrl)
+            try files.createDirectory(at: directory, withIntermediateDirectories: true)
+            // Failed/canceled deliveries may leave a copy behind. Our notifications deliver
+            // immediately, so a day preserves in-flight validation while bounding old leftovers.
+            let cutoff = Date().addingTimeInterval(-86_400)
+            for url in (try? files.contentsOfDirectory(at: directory,
+                includingPropertiesForKeys: [.contentModificationDateKey, .isRegularFileKey])) ?? [] {
+                if let values = try? url.resourceValues(forKeys: [.contentModificationDateKey, .isRegularFileKey]),
+                   values.isRegularFile == true, let modified = values.contentModificationDate, modified < cutoff {
+                    try? files.removeItem(at: url)
+                }
+            }
+            try files.copyItem(at: localFileUrl, to: temporaryUrl)
+            // copyItem preserves an old image's timestamp; age leftovers from this delivery.
+            try files.setAttributes([.modificationDate: Date()], ofItemAtPath: temporaryUrl.path)
+            let notificationAttachment = try UNNotificationAttachment(identifier: "attachment", url: temporaryUrl)
             attachments = attachments + [notificationAttachment]
+            // Leave the copy until system validation, which may happen after the NSE returns.
             return true
         } catch {
+            try? files.removeItem(at: temporaryUrl)
             Log.w("NotificationContent", "Failed to attach local image", error)
             return false
         }

@@ -2198,6 +2198,90 @@ final class ntfyTests: XCTestCase {
         XCTAssertEqual(c.body, "👍 body")
     }
 
+    // MARK: Notification attachment ownership (ntfy-ios#56, ntfy#2101)
+
+    private func storedImageFixture() throws -> (Store, ntfy.Notification, URL, Data) {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: directory) }
+        let file = directory.appendingPathComponent("stored.png")
+        let data = try XCTUnwrap(UIGraphicsImageRenderer(size: CGSize(width: 16, height: 16)).image { ctx in
+            UIColor.orange.setFill()
+            ctx.fill(CGRect(x: 0, y: 0, width: 16, height: 16))
+        }.pngData())
+        try data.write(to: file)
+        let store = Store(inMemory: true)
+        let row = Notification(context: store.context)
+        row.id = UUID().uuidString
+        row.message = "Retained image"
+        try store.context.save()
+        store.completeAttachmentDownload(notificationID: row.id!, localPath: file.path,
+                                         resolvedType: "image/png", resolvedSize: Int64(data.count))
+        return (store, row, file, data)
+    }
+
+    /// Drives the real initializer. Even if XCTest does not schedule/validate the notification
+    /// (and hence does not move files), handing over the recorded path must still fail this test.
+    func testNotificationAttachmentPreservesRecordedImageFile() throws {
+        let (store, row, file, bytes) = try storedImageFixture()
+        let content = UNMutableNotificationContent()
+        XCTAssertTrue(content.attachLocalImage(from: file))
+        let attached = try XCTUnwrap(content.attachments.first)
+        defer { if attached.url != file { try? FileManager.default.removeItem(at: attached.url) } }
+        store.context.refresh(row, mergeChanges: true)
+        XCTAssertEqual(row.attachmentLocalPath, file.path)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: row.attachmentLocalPath!))
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+        XCTAssertNotEqual(attached.url.standardizedFileURL, file.standardizedFileURL,
+                          "The system must own a disposable copy, never the message's stored image")
+        XCTAssertEqual(try Data(contentsOf: attached.url), bytes)
+        print("Attachment ownership: storedExists=\(FileManager.default.fileExists(atPath: file.path)), attachmentUsesStoredPath=\(attached.url == file)")
+    }
+
+    func testNotificationAttachmentFailureRemovesOnlyItsTemporaryCopy() throws {
+        let (_, _, file, _) = try storedImageFixture()
+        let invalid = file.deletingLastPathComponent().appendingPathComponent("unsupported.invalid")
+        try Data("not a supported attachment".utf8).write(to: invalid)
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("notification-attachments")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: directory.path))
+        XCTAssertFalse(UNMutableNotificationContent().attachLocalImage(from: invalid))
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: directory.path)), before)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: invalid.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: file.path))
+    }
+
+    func testNotificationAttachmentPrunesOldLeftoversAndKeepsRecentCopies() throws {
+        let (_, _, file, bytes) = try storedImageFixture()
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent("notification-attachments")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        let stale = directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("png")
+        let recent = directory.appendingPathComponent(UUID().uuidString).appendingPathExtension("png")
+        try bytes.write(to: stale)
+        try bytes.write(to: recent)
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-2 * 86_400)], ofItemAtPath: stale.path)
+        defer {
+            try? FileManager.default.removeItem(at: stale)
+            try? FileManager.default.removeItem(at: recent)
+        }
+        try FileManager.default.setAttributes([.modificationDate: Date().addingTimeInterval(-2 * 86_400)], ofItemAtPath: file.path)
+        let content = UNMutableNotificationContent()
+        XCTAssertTrue(content.attachLocalImage(from: file))
+        defer {
+            for attachment in content.attachments where attachment.url != file {
+                try? FileManager.default.removeItem(at: attachment.url)
+            }
+        }
+        XCTAssertFalse(FileManager.default.fileExists(atPath: stale.path))
+        XCTAssertTrue(FileManager.default.fileExists(atPath: recent.path))
+        let first = try XCTUnwrap(content.attachments.first)
+        XCTAssertTrue(content.attachLocalImage(from: file))
+        XCTAssertEqual(content.attachments.count, 2)
+        XCTAssertTrue(FileManager.default.fileExists(atPath: first.url.path), "An old saved image must produce a fresh copy that survives the next cleanup")
+        XCTAssertNotEqual(content.attachments.last?.url, first.url, "Each delivery needs its own copy")
+        XCTAssertEqual(try Data(contentsOf: file), bytes)
+    }
+
     // MARK: attachImageIfNeeded — Settings → "Download attachments" must gate the push/NSE path too
     //
     // Settings offers Never / Always / a size cap, and the in-app attachment path honors it in three
