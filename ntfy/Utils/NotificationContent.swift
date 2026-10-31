@@ -24,6 +24,8 @@ final class NotificationDeliveryGate {
     private let lock = NSLock()
     private var hasDelivered = false
 
+    var isPending: Bool { lock.lock(); defer { lock.unlock() }; return !hasDelivered }
+
     init(handler: @escaping (UNNotificationContent) -> Void) {
         self.handler = handler
     }

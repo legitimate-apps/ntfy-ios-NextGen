@@ -203,6 +203,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        A121A1E90000000000000001 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 9.xcdatamodel"; sourceTree = "<group>"; };
 		02024E5F283D7CBB0064224A /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		117A00022FD0000100F927E4 /* LaunchExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchExperience.swift; sourceTree = "<group>"; };
 		118B00010000000000000001 /* TopicLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicLink.swift; sourceTree = "<group>"; };
@@ -1371,8 +1372,9 @@
 				C1EA00062830830700CDE4DD /* Model 6.xcdatamodel */,
                 A18000130000000000000001 /* Model 7.xcdatamodel */,
                 F11900000000000000000014 /* Model 8.xcdatamodel */,
+                A121A1E90000000000000001 /* Model 9.xcdatamodel */,
 			);
-			currentVersion = F11900000000000000000014 /* Model 8.xcdatamodel */;
+			currentVersion = A121A1E90000000000000001 /* Model 9.xcdatamodel */;
 			path = ntfy.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;

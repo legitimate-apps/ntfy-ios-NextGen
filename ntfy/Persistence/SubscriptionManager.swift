@@ -152,7 +152,7 @@ struct SubscriptionManager {
             if let newMessages {
                 Log.d(tag, "Polling success, \(messages.count) message(s), \(newMessages.count) new", newMessages)
             }
-            polling.finish(request, outcome: PollOutcome(succeeded: newMessages != nil, newMessages: newMessages ?? [],
+            polling.finish(request, outcome: PollOutcome(succeeded: newMessages != nil, newMessages: newMessages ?? [], alertMessages: newMessages == nil ? [] : store.alertCandidates(from: messages, baseUrl: request.baseUrl),
                            failure: newMessages == nil ? .other : nil), retryAfter: nil)
         }
     }
@@ -213,6 +213,7 @@ struct SubscriptionManager {
 struct PollOutcome {
     let succeeded: Bool
     let newMessages: [Message]
+    var alertMessages: [Message]? = nil
     var failure: PollFailure? = nil
     var attempted = true
 }

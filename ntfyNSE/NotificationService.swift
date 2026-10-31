@@ -5,14 +5,15 @@ import UserNotifications
 import CoreData
 import CryptoKit
 
-/// This app extension is responsible for persisting the incoming notification to the data store (Core Data). It will eventually be the entity that
-/// fetches notification content from selfhosted servers (when a "poll request" is received). This is not implemented yet.
+/// Persists incoming messages in Core Data and fetches notification content from the original
+/// server when a "poll_request" wakeup is received.
 ///
 /// Note that the app extension does not run as part of the main app, so log messages are not printed in the main Xcode window. To debug,
 /// select Debug -> Attach to Process by PID or Name, and select the extension. Don't forget to set a breakpoint, or you're not gonna have a good time.
 class NotificationService: UNNotificationServiceExtension {
     private let tag = "NotificationService"
     private var store: Store?
+    var makeStore: () -> Store = { Store.shared } // Test host can exercise an NSE-first disk migration.
     
     private let attempt = NotificationBestAttempt(UNMutableNotificationContent())
     var bestAttemptContent: UNMutableNotificationContent? {
@@ -27,13 +28,29 @@ class NotificationService: UNNotificationServiceExtension {
         set { presentationLock.lock(); defer { presentationLock.unlock() }; processedMessage = newValue }
     }
     
+    private var alertIdentity: (message: Message, baseUrl: String)? {
+        get { presentationLock.lock(); defer { presentationLock.unlock() }; return processedIdentity }
+        set {
+            // Capture evidence before asynchronous I/O. Expiry uses only this snapshot, never a
+            // queue, shared file lock, or database fetch. Uncertainty deliberately allows delivery.
+            let alerted = newValue.map { store?.wasAlerted(message: $0.message, baseUrl: $0.baseUrl) ?? false } ?? false
+            let muted = newValue.map { store?.isTopicMuted(baseUrl: $0.baseUrl, topic: $0.message.topic) ?? false } ?? false
+            presentationLock.lock(); defer { presentationLock.unlock() }
+            processedIdentity = newValue
+            expiryIsQuiet = alerted || muted
+        }
+    }
+    private var expiryIsQuiet = false
+    private var processedIdentity: (message: Message, baseUrl: String)?
+
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         // On a Mac this process can outlive the banner and receive its taps; pass them to the app.
         NotificationResponseRelay.installInExtensionIfNeeded()
         NotificationExtensionLifetime.shared.requestStarted()
-        self.store = Store.shared
+        if self.store == nil { self.store = makeStore() }
         self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
         presentationMessage = nil
+        alertIdentity = nil
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)
 
         if let bestAttemptContent = bestAttemptContent {
@@ -69,7 +86,7 @@ class NotificationService: UNNotificationServiceExtension {
 
         Log.w(tag, "\(#function): delivering best attempt content")
         if let bestAttemptContent = bestAttemptContent {
-            deliver(bestAttemptContent)
+            deliver(bestAttemptContent, expiring: true)
         }
     }
 
@@ -80,18 +97,47 @@ class NotificationService: UNNotificationServiceExtension {
         UNNotificationContent.encryptionSafeFallback(request.content)
     }
 
-    private func deliver(_ content: UNNotificationContent) {
+    private func deliver(_ content: UNNotificationContent, expiring: Bool = false) {
         let final = content.mutableCopy() as! UNMutableNotificationContent
         if let presentationMessage { final.configureInterruption(message: presentationMessage) }
-        final.applyTopicMute()
-        guard deliveryGate?.deliver(final) == true else {
-            Log.w(tag, "Ignoring late notification delivery after the content handler already fired")
+        if !expiring { final.applyTopicMute() }
+        let handoff = { (output: UNNotificationContent) -> Bool in
+            guard self.deliveryGate?.deliver(output) == true else {
+                Log.w(self.tag, "Ignoring late notification delivery after the content handler already fired")
+                return false
+            }
+            NotificationExtensionLifetime.shared.requestFinished()
+            return true
+        }
+        if expiring {
+            presentationLock.lock()
+            let quiet = expiryIsQuiet
+            presentationLock.unlock()
+            if quiet { final.sound = nil; final.interruptionLevel = .passive; final.relevanceScore = 0 }
+            _ = handoff(final)
             return
         }
-        NotificationExtensionLifetime.shared.requestFinished()
+        guard let identity = alertIdentity, let store else {
+            _ = handoff(final)
+            return
+        }
+        // Passive content prevents a duplicate banner/sound. Fully removing the Notification Center
+        // entry would require Apple's notification-filtering entitlement; empty content is unsafe.
+        let gate = deliveryGate
+        store.deliverAlert(message: identity.message, baseUrl: identity.baseUrl, recordBeforeDelivery: true,
+                           stillNeeded: { gate?.isPending == true }, delivery: { finished in
+            finished(handoff(final))
+        }, suppressed: {
+            let quiet = final.mutableCopy() as! UNMutableNotificationContent
+            quiet.sound = nil
+            quiet.interruptionLevel = .passive
+            quiet.relevanceScore = 0
+            _ = handoff(quiet)
+        })
     }
     
     private func handleMessage(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ received: Message) {
+        if received.event == "message" { alertIdentity = (received, baseUrl) }
         // Save notification first so attachment downloads can update persistent state. What comes back
         // is the message as stored: decrypted for an end-to-end encrypted topic (or its "Encrypted
         // message" placeholder), so the banner never shows ciphertext and matches the in-app row.
@@ -150,7 +196,6 @@ class NotificationService: UNNotificationServiceExtension {
     }
 
     private func handlePresentation(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ message: Message, reconciled: Bool = false) {
-        Store.shared.recordPresentation(message: message, baseUrl: baseUrl)
         bestAttemptContent = content
         let user = store?.getBasicUser(baseUrl: baseUrl)
         let displayName = store?.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
@@ -185,6 +230,8 @@ class NotificationService: UNNotificationServiceExtension {
             return
         }
         
+        // Even a failed fetch/expiry must not re-alert a known id. Unknown ids fail open.
+        alertIdentity = (Message(id: pollId, time: pollRequest.time, event: "message", topic: subscription.topic), subscription.baseUrl)
         // Install the safe topic-named fallback before starting the fetch, including expiry.
         let placeholder = NotificationHealth.fetchFailureContent(request.content, topic: subscription.topic, baseUrl: subscription.baseUrl)
         bestAttemptContent = placeholder

@@ -374,21 +374,52 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         showNotification(baseUrl: baseUrl, message, completionHandler: completionHandler)
     }
 
-    private func showNotification(baseUrl: String, _ message: Message, completionHandler: (() -> Void)? = nil) {
+    var notificationScheduler: (UNNotificationRequest, @escaping (Error?) -> Void) -> Void = {
+        UNUserNotificationCenter.current().add($0, withCompletionHandler: $1)
+    }
+
+    var beginNotificationBackgroundTask: (@escaping () -> Void) -> UIBackgroundTaskIdentifier = {
+        UIApplication.shared.beginBackgroundTask(withName: "Schedule notification", expirationHandler: $0)
+    }
+    var endNotificationBackgroundTask: (UIBackgroundTaskIdentifier) -> Void = {
+        UIApplication.shared.endBackgroundTask($0)
+    }
+
+    func showNotification(baseUrl: String, _ message: Message, completionHandler: (() -> Void)? = nil) {
         let user = Store.shared.getBasicUser(baseUrl: baseUrl)
         let displayName = Store.shared.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
-        Store.shared.recordPresentation(message: message, baseUrl: baseUrl)
         let content = UNMutableNotificationContent()
         content.modify(message: message, baseUrl: baseUrl, displayName: displayName)
         content.attachImageIfNeeded(message: message, baseUrl: baseUrl, user: user) {
             content.configureInterruption(message: message)
             content.applyTopicMute(baseUrl: baseUrl, topic: message.topic)
             let request = UNNotificationRequest(identifier: message.id, content: content, trigger: nil /* now */)
-            UNUserNotificationCenter.current().add(request) { error in
-                if let error = error {
-                    Log.e(self.tag, "Unable to create notification", error)
+            // Acquire background execution on main before the shared-container lock or scheduler.
+            // Expiration cancels the pending delivery and relinquishes its lock before ending the task.
+            DispatchQueue.main.async {
+                var cancel: () -> Void = {}
+                var task: UIBackgroundTaskIdentifier = .invalid
+                task = self.beginNotificationBackgroundTask { cancel() }
+                guard task != .invalid else {
+                    // Without execution time, avoid a shared-container lock or a post-schedule write.
+                    // Delivery is recoverable; suppressing an uncertain first alert is not.
+                    self.notificationScheduler(request) { error in
+                        if let error { Log.e(self.tag, "Unable to create notification", error) }
+                        completionHandler?()
+                    }
+                    return
                 }
-                completionHandler?()
+                cancel = Store.shared.deliverAlert(message: message, baseUrl: baseUrl, delivery: { finished in
+                    self.notificationScheduler(request) { error in
+                        if let error { Log.e(self.tag, "Unable to create notification", error) }
+                        finished(error == nil)
+                    }
+                }, completion: {
+                    DispatchQueue.main.async {
+                        if task != .invalid { self.endNotificationBackgroundTask(task) }
+                        completionHandler?()
+                    }
+                })
             }
         }
     }

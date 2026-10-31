@@ -1,6 +1,7 @@
 import Foundation
 import CoreData
 import Combine
+import Darwin
 
 /// Handles all persistence in the app by storing/loading subscriptions and notifications using Core Data.
 /// There are sadly a lot of hacks in here, because I don't quite understand this fully.
@@ -669,6 +670,115 @@ class Store: ObservableObject {
         }
     }
 
+    /// Failed reads are uncertainty, not evidence that a first alert may be discarded.
+    func wasAlerted(message: Message, baseUrl: String) -> Bool {
+        var alerted = false
+        context.performAndWait {
+            do {
+                guard let subscription = try fetchSubscription(baseUrl: baseUrl, topic: message.topic) else { return }
+                let request = Notification.fetchRequest()
+                request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, message.id)
+                if let row = try context.fetch(request).first {
+                    refreshFromStore(row)
+                    alerted = row.id == message.id && row.alerted
+                }
+            } catch { Log.w(Store.tag, "Cannot check prior alert; allowing delivery", error) }
+        }
+        return alerted
+    }
+
+    /// A presenting poll may race a history-only poll, or retry after scheduling failed. Include
+    /// current, never-alerted rows from its response; tombstones and obsolete sequence events stay out.
+    func alertCandidates(from messages: [Message], baseUrl: String) -> [Message] {
+        var candidates: [Message] = []
+        context.performAndWait {
+            for message in messages where !message.isControl {
+                guard let subscription = try? fetchSubscription(baseUrl: baseUrl, topic: message.topic) else { continue }
+                let request = Notification.fetchRequest()
+                request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, message.id)
+                guard let row = try? context.fetch(request).first else { continue }
+                refreshFromStore(row)
+                guard row.id == message.id, !row.alerted, !row.read else { continue }
+                var candidate = ingest([message], for: subscription).first?.message ?? message
+                candidate.isUpdate = row.presented
+                candidates.append(candidate)
+            }
+        }
+        return candidates
+    }
+
+    private static let alertQueue = DispatchQueue(label: "ntfy.alert-delivery")
+    private static let memoryAlertLock = DispatchSemaphore(value: 1)
+
+    /// The app records only a successful scheduler callback. The NSE commits and releases before
+    /// its synchronous handoff, since the system may suspend it as soon as that handler fires.
+    /// Contention retries on one serial queue rather than parking a thread per delivery. Cancellation
+    /// releases a pending scheduler's lock; a late callback cannot write after background time expires.
+    @discardableResult
+    func deliverAlert(message: Message, baseUrl: String, recordBeforeDelivery: Bool = false,
+                      stillNeeded: @escaping () -> Bool = { true },
+                      delivery: @escaping (@escaping (Bool) -> Void) -> Void,
+                      suppressed: @escaping () -> Void = {},
+                      completion: @escaping () -> Void = {}) -> () -> Void {
+        // All state, including cancellation and asynchronous scheduler results, belongs to alertQueue.
+        let url = container.persistentStoreDescriptions.first?.url
+        let memory = url?.path == "/dev/null"
+        var descriptor: Int32 = -1
+        var memoryHeld = false
+        var finished = false
+        var activity: NSObjectProtocol?
+        func finish() {
+            guard !finished else { return }
+            finished = true
+            if descriptor >= 0 { flock(descriptor, LOCK_UN); close(descriptor); descriptor = -1 }
+            if memoryHeld { Self.memoryAlertLock.signal(); memoryHeld = false }
+            if let activity { ProcessInfo.processInfo.endActivity(activity) }
+            completion()
+        }
+        func attempt() {
+            guard !finished else { return }
+            guard stillNeeded() else { finish(); return }
+            if activity == nil {
+                activity = ProcessInfo.processInfo.beginActivity(options: .userInitiated,
+                                                                 reason: "Commit notification delivery state")
+            }
+            let contended: Bool
+            if memory {
+                memoryHeld = Self.memoryAlertLock.wait(timeout: .now()) == .success
+                contended = !memoryHeld
+            } else if let url {
+                if descriptor < 0 {
+                    descriptor = open(url.appendingPathExtension("alerts.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+                }
+                let result = descriptor >= 0 ? flock(descriptor, LOCK_EX | LOCK_NB) : -1
+                contended = result != 0 && descriptor >= 0 && (errno == EWOULDBLOCK || errno == EAGAIN)
+                if result != 0 && !contended { Log.w(Store.tag, "Cannot lock alert delivery; allowing delivery") }
+            } else { contended = false }
+            if contended {
+                Self.alertQueue.asyncAfter(deadline: .now() + 0.01, execute: attempt)
+                return
+            }
+            guard !self.wasAlerted(message: message, baseUrl: baseUrl) else {
+                finish(); suppressed(); return
+            }
+            if recordBeforeDelivery {
+                self.recordPresentation(message: message, baseUrl: baseUrl)
+                finish()
+                delivery { _ in } // Synchronous NSE handoff; no shared-container work follows it.
+            } else {
+                delivery { success in
+                    Self.alertQueue.async {
+                        guard !finished else { return }
+                        if success { self.recordPresentation(message: message, baseUrl: baseUrl) }
+                        finish()
+                    }
+                }
+            }
+        }
+        Self.alertQueue.async(execute: attempt)
+        return { Self.alertQueue.async { finish() } }
+    }
+
     /// Starts both test-message bodies in `FirstTopicTest` and the topic menu; they prove nothing to the review gate.
     static let testMessagePrefix = "This is a test notification from NTFY me"
 
@@ -710,12 +820,17 @@ class Store: ObservableObject {
     }
 
     private func markPresented(id: String, on subscription: Subscription) {
-        let request = Notification.fetchRequest()
+        // A sequence can replace this row in another process between a fetch and context.save().
+        // Match the event id in the UPDATE itself so an old handoff cannot mark its replacement.
+        let request = NSBatchUpdateRequest(entityName: "Notification")
         request.predicate = NSPredicate(format: "subscription == %@ AND id == %@", subscription, id)
-        if let row = try? context.fetch(request).first {
-            row.presented = true
-            try? context.save()
-        }
+        request.propertiesToUpdate = ["presented": true, "alerted": true]
+        request.resultType = .updatedObjectIDsResultType
+        do {
+            let result = try context.execute(request) as? NSBatchUpdateResult
+            let ids = result?.result as? [NSManagedObjectID] ?? []
+            NSManagedObjectContext.mergeChanges(fromRemoteContextSave: [NSUpdatedObjectsKey: ids], into: [context])
+        } catch { Log.w(Store.tag, "Cannot record successful alert; a later delivery may retry", error) }
     }
 
     private func clearRequest(for notification: Notification) -> ClearRequest? {
@@ -829,22 +944,8 @@ class Store: ObservableObject {
         save(notificationsFromMessages: [message], withSubscription: subscription)
     }
 
-    /// Persists a single pushed message. Returns whether the extension should go on to build and
-    /// deliver rich content for it.
-    ///
-    /// Deliberately does NOT report "this id was already stored" as a reason to suppress delivery,
-    /// even though `saveNotifications` knows it. Two things make "a row exists" a bad proxy for
-    /// "the user was already alerted":
-    ///   1. `SubscriptionManager.subscribe` polls with `since=all` through the completion-discarding
-    ///      `poll(_:)` overload, so the server's whole cached history lands in the store with no
-    ///      banner ever shown. A genuinely new message published during that window can be stored
-    ///      by the poll first — suppressing its push would erase the user's only notification of it.
-    ///   2. The `Notification` uniqueness constraint is `id` alone, unscoped by subscription, so two
-    ///      independent servers that mint the same id collide — and the second server's genuinely
-    ///      different message would be suppressed as a "duplicate".
-    /// Doing this properly needs a durable per-notification "was alerted" flag and a subscription-
-    /// scoped uniqueness constraint, i.e. a new model version. Until then, an occasional re-alert on
-    /// an FCM redelivery is strictly better than a dropped first banner.
+    /// Whether the subscription was found. Delivery eligibility is checked at the final handoff,
+    /// not here: a stored history row does not prove a banner was ever scheduled.
     func save(notificationFromMessage message: Message, baseUrl: String, topic: String) -> Bool {
         return ingest(pushedMessage: message, baseUrl: baseUrl, topic: topic) != nil
     }
@@ -871,7 +972,6 @@ class Store: ObservableObject {
                 }
                 let changed = try saveNotifications(ingested, withSubscription: subscription, isPush: true)
                 if let updated = changed.first {
-                    markPresented(id: updated.id, on: subscription)
                     stored = .stored(updated)
                 } else if deferredPushID == message.id, let request = pollRequest(for: subscription) {
                     stored = .reconcile(request)
@@ -885,7 +985,6 @@ class Store: ObservableObject {
                     if let row = try context.fetch(request).first {
                         var presentation = item.message
                         presentation.isUpdate = row.read || row.presented
-                        markPresented(id: row.id ?? "", on: subscription)
                         stored = .stored(presentation)
                     } else {
                         stored = .handled
@@ -1873,6 +1972,7 @@ class Store: ObservableObject {
                     removals.append(SequenceRemoval(baseUrl: subscription.baseUrl ?? "", topic: message.topic,
                                                     sequence: sequence, throughTime: message.time, keepingID: message.id))
                 }
+                notification.alerted = false // This event has not been handed to the notification system yet.
                 notification.sequenceKey = sequenceKey
                 populate(notification, from: item)
                 notification.subscription = subscription

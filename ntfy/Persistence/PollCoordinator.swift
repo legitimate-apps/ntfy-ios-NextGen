@@ -128,6 +128,7 @@ final class PollCoordinator {
             var result = outcome
             if waiter.presenting {
                 if presentationClaimed { result = PollOutcome(succeeded: outcome.succeeded, newMessages: [], failure: outcome.failure) }
+                else { result = PollOutcome(succeeded: outcome.succeeded, newMessages: outcome.alertMessages ?? outcome.newMessages, failure: outcome.failure) }
                 presentationClaimed = true
             }
             waiter.completion(result)

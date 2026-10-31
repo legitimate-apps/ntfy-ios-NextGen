@@ -1,3 +1,4 @@
+import SQLite3
 import XCTest
 import UserNotifications
 import CoreData
@@ -1259,7 +1260,8 @@ final class ntfyTests: XCTestCase {
         try Store.shared.context.save()
         guard case .stored(let delivered) = Store.shared.ingest(pushedMessage: first, baseUrl: sub.baseUrl!, topic: sub.topic!) else { return XCTFail("first push must present") }
         XCTAssertFalse(delivered.isUpdate)
-        XCTAssertTrue(try XCTUnwrap(sequenceRows(sub).first).presented)
+        XCTAssertFalse(try XCTUnwrap(sequenceRows(sub).first).presented, "ingestion is not a successful presentation")
+        Store.shared.recordPresentation(message: delivered, baseUrl: sub.baseUrl!)
         guard case .stored(let repeated) = Store.shared.ingest(pushedMessage: first, baseUrl: sub.baseUrl!, topic: sub.topic!) else { return XCTFail("repeat may replace silently") }
         XCTAssertTrue(repeated.isUpdate)
     }
@@ -4461,34 +4463,6 @@ final class ntfyTests: XCTestCase {
         }
     }
 
-    func testPushPathStillDeliversForAnAlreadyStoredMessage() {
-        // A guard against an attractive-looking "optimisation": suppressing NSE delivery whenever
-        // the message id is already in the store. It is wrong, twice over, and the failure mode is
-        // a notification the user never sees:
-        //   1. SubscriptionManager.subscribe polls `since=all` through the completion-discarding
-        //      poll(_:) overload, so the server's whole cached history is persisted with no banner
-        //      ever shown. A genuinely new message published during that window gets stored by the
-        //      poll first — suppressing its push would erase its only notification.
-        //   2. The Notification uniqueness constraint is `id` alone, unscoped by subscription, so
-        //      two independent servers minting the same id collide and the second server's real
-        //      message would be dropped as a "duplicate".
-        // Until a durable per-notification "was alerted" flag exists, an occasional re-alert beats
-        // a dropped first banner. Delivering twice is recoverable; not delivering is not.
-        let subscription = Store.shared.saveSubscription(baseUrl: "https://ntfy.sh", topic: "dupe-topic")
-        deleteAfterTest(subscription)
-
-        let message = Message(id: "dupe-1", time: 1, event: "message", topic: "dupe-topic",
-                              message: "hi", title: nil, priority: nil, tags: nil)
-
-        XCTAssertTrue(Store.shared.save(notificationFromMessage: message, baseUrl: "https://ntfy.sh", topic: "dupe-topic"),
-                      "first delivery must be persisted and delivered")
-        XCTAssertTrue(Store.shared.save(notificationFromMessage: message, baseUrl: "https://ntfy.sh", topic: "dupe-topic"),
-                      "a redelivery of an already-stored id must STILL deliver — a stored row does "
-                          + "not prove the user was ever alerted")
-        XCTAssertFalse(Store.shared.save(notificationFromMessage: message, baseUrl: "https://ntfy.sh", topic: "no-such-topic"),
-                       "an unknown topic is the one case that falls back to the raw push content")
-    }
-
     func testSubscriptionMatchesIgnoresBaseUrlTrailingSlash() {
         // RED before the fix: the delivered notification's raw `base_url` was compared against the
         // normalized stored one, so a self-hosted server whose base-url carries a trailing slash
@@ -4922,13 +4896,10 @@ final class ntfyTests: XCTestCase {
     }
 
     func testEveryPreviousModelVersionIsStillShipped() throws {
-        let versions = try compiledModelVersionURLs()
-        XCTAssertGreaterThanOrEqual(
-            versions.count, 2,
-            "the .xcdatamodeld must keep the shipped model version alongside the new one — "
-                + "editing Model.xcdatamodel in place strands every existing install with an "
-                + "unopenable store (found: \(versions.map { $0.lastPathComponent }))"
-        )
+        let names = Set(try compiledModelVersionURLs().map { $0.deletingPathExtension().lastPathComponent })
+        for version in ["Model"] + (2...9).map({ "Model \($0)" }) {
+            XCTAssertTrue(names.contains(version), "Missing shipped model \(version)")
+        }
     }
 
     func testStoreCreatedWithThePreviousModelVersionOpensUnderTheCurrentModel() throws {
@@ -8350,5 +8321,716 @@ extension CredentialReviewTests {
         store.delete(user: user)
         XCTAssertNotNil(store.getUser(baseUrl: base))
         XCTAssertEqual(store.getBasicUser(baseUrl: base), .accessToken("tk_restore-review"))
+    }
+}
+
+import XCTest
+import CoreData
+import UserNotifications
+@testable import ntfy
+
+
+final class AlertedTests: XCTestCase {
+    private var store: Store { Store.shared }
+
+    private func subscription(_ base: String = "https://alerted.example", topic: String = UUID().uuidString) -> Subscription {
+        let sub = store.saveSubscription(baseUrl: base, topic: topic)
+        addTeardownBlock { self.store.context.delete(sub); try? self.store.context.save() }
+        return sub
+    }
+
+    private func message(_ sub: Subscription, id: String = UUID().uuidString) -> Message {
+        Message(id: id, time: Int64(Date().timeIntervalSince1970), event: "message", topic: sub.topic!, message: "One alert", priority: 4)
+    }
+
+    private func row(_ sub: Subscription) throws -> ntfy.Notification {
+        let request = ntfy.Notification.fetchRequest()
+        request.predicate = NSPredicate(format: "subscription == %@", sub)
+        return try XCTUnwrap(store.context.fetch(request).first)
+    }
+
+    private func receive(_ msg: Message, base: String) -> UNNotificationContent? {
+        let service = NotificationService()
+        let content = UNMutableNotificationContent()
+        content.title = "Incoming"; content.body = "Incoming fallback"; content.sound = .default
+        content.userInfo = msg.toUserInfo(); content.userInfo["base_url"] = base
+        let done = expectation(description: "NSE content handler")
+        done.assertForOverFulfill = true
+        var result: UNNotificationContent?
+        service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) {
+            result = $0; DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { done.fulfill() }
+        }
+        wait(for: [done], timeout: 12)
+        return result
+    }
+
+    func testAlreadyAlertedMessageDoesNotAlertAgain() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        store.recordPresentation(message: msg, baseUrl: sub.baseUrl!)
+        // Review-prompt evidence is separate from alert delivery. In particular, legacy rows
+        // migrate with presented=false but alerted=true and must remain quiet.
+        let delivered = try row(sub)
+        delivered.presented = false
+        try store.context.save()
+        let output = try XCTUnwrap(receive(msg, base: sub.baseUrl!))
+        XCTAssertNil(output.sound, "a redelivered push must not play a second sound")
+        XCTAssertEqual(output.interruptionLevel, .passive, "a redelivered push must not show a second banner")
+        XCTAssertFalse(try row(sub).presented, "suppressing a duplicate is not a new presentation")
+    }
+
+    func testStoredButNeverAlertedMessageStillDelivers() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let stored = try row(sub)
+        XCTAssertFalse(stored.read, "initial history remains unread")
+        XCTAssertFalse(stored.presented)
+        // Use model introspection so this regression compiles against main, which has no flag.
+        XCTAssertNotNil(stored.entity.attributesByName["alerted"], "storage and successful alert delivery need distinct durable state")
+        if stored.entity.attributesByName["alerted"] != nil { XCTAssertEqual(stored.value(forKey: "alerted") as? Bool, false) }
+        let output = try XCTUnwrap(receive(msg, base: sub.baseUrl!))
+        XCTAssertNotNil(output.sound, "an initial history poll must not swallow the first push")
+        XCTAssertNotEqual(output.interruptionLevel, .passive)
+        if stored.entity.attributesByName["alerted"] != nil { XCTAssertEqual(stored.value(forKey: "alerted") as? Bool, true) }
+    }
+
+    func testSameIDFromAnotherSubscriptionStillDeliversAndPersists() throws {
+        let first = subscription(topic: "collision"), second = subscription("https://other-alerted.example", topic: "collision")
+        let a = message(first, id: "independent-server-id"), b = message(second, id: a.id)
+        store.save(notificationsFromMessages: [a], withSubscription: first)
+        store.recordPresentation(message: a, baseUrl: first.baseUrl!)
+        let output = try XCTUnwrap(receive(b, base: second.baseUrl!))
+        XCTAssertNotNil(output.sound)
+        XCTAssertNotEqual(output.interruptionLevel, .passive)
+        XCTAssertEqual(second.notificationCount(), 1, "global id uniqueness must not discard another server's message")
+        XCTAssertEqual(try row(first).id, a.id)
+        XCTAssertEqual(try row(second).id, b.id)
+    }
+}
+
+extension AlertedTests {
+    func testModel8RowsMigrateThroughAppAndActualNSEEntryPoint() throws {
+        let momd = try XCTUnwrap(Bundle.main.url(forResource: "ntfy", withExtension: "momd"))
+        let plugins = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        var shareModel: NSManagedObjectModel?
+        for name in ["ntfyNSE", "ntfyShare"] {
+            let bundle = plugins.appendingPathComponent(name + ".appex")
+            let modelURL = bundle.appendingPathComponent("ntfy.momd")
+            let model = try XCTUnwrap(NSManagedObjectModel(contentsOf: modelURL), name)
+            XCTAssertEqual(model.entityVersionHashesByName, store.container.managedObjectModel.entityVersionHashesByName,
+                           "all three targets must ship the same current model: \(name)")
+            let info = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: modelURL.appendingPathComponent("VersionInfo.plist")), format: nil) as? [String: Any])
+            XCTAssertEqual(info["NSManagedObjectModel_CurrentVersionName"] as? String, "Model 9", name)
+            for entity in model.entityVersionHashesByName.keys.sorted() {
+                let hash = model.entityVersionHashesByName[entity]!.map { String(format: "%02x", $0) }.joined()
+                print("ALERTED_BUNDLE_MODEL_HASH target=\(name) current=Model9 entity=\(entity) hash=\(hash)")
+            }
+            if name == "ntfyShare" { shareModel = model }
+        }
+        for opener in ["app", "nse", "share"] {
+            let nseFirst = opener == "nse"
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let url = directory.appendingPathComponent("model8.sqlite")
+            let model8 = try XCTUnwrap(NSManagedObjectModel(contentsOf: momd.appendingPathComponent("Model 8.mom")))
+            model8.entities.forEach { $0.managedObjectClassName = "NSManagedObject" }
+            let old = NSPersistentStoreCoordinator(managedObjectModel: model8)
+            let disk = try old.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url,
+                options: [NSPersistentHistoryTrackingKey: true])
+            let writer = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+            writer.persistentStoreCoordinator = old
+            let sub = NSEntityDescription.insertNewObject(forEntityName: "Subscription", into: writer)
+            sub.setValue("https://upgrade-alerted.example", forKey: "baseUrl"); sub.setValue("upgrade", forKey: "topic")
+            sub.setValue("Shared subscription", forKey: "customDisplayName"); sub.setValue(true, forKey: "pinned")
+            sub.setValue(Date.distantFuture, forKey: "mutedUntil")
+            for read in [false, true] {
+                let row = NSEntityDescription.insertNewObject(forEntityName: "Notification", into: writer)
+                row.setValue("old-\(read)", forKey: "id"); row.setValue("Preserved history", forKey: "message")
+                row.setValue(read, forKey: "read"); row.setValue(sub, forKey: "subscription")
+                row.setValue(Int64(Date().timeIntervalSince1970), forKey: "time")
+            }
+            try writer.save(); writer.reset(); try old.remove(disk)
+            let first: Store
+            let service = NotificationService()
+            if nseFirst {
+                var opened: Store?
+                service.makeStore = {
+                    let result = Store(inMemory: true, storeURL: url)
+                    opened = result
+                    return result
+                }
+                let content = UNMutableNotificationContent(); content.sound = .default
+                content.userInfo = Message(id: "old-false", time: Int64(Date().timeIntervalSince1970), event: "message", topic: "upgrade", message: "Preserved history", priority: 4).toUserInfo()
+                content.userInfo["base_url"] = "https://upgrade-alerted.example"
+                let openedByNSE = expectation(description: "actual didReceive opens Model8 disk store")
+                service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) {
+                    XCTAssertNil($0.sound); XCTAssertEqual($0.interruptionLevel, .passive); openedByNSE.fulfill()
+                }
+                wait(for: [openedByNSE], timeout: 10)
+                first = try XCTUnwrap(opened)
+            } else {
+                if opener == "share" {
+                    // Use the actual share bundle's destination model and the same automatic
+                    // migration options as Store. Generic classes avoid registering extra entity
+                    // descriptions for the app's generated subclasses in this single-process host.
+                    let model = try XCTUnwrap(shareModel?.copy() as? NSManagedObjectModel)
+                    model.entities.forEach { $0.managedObjectClassName = "NSManagedObject" }
+                    XCTAssertEqual(model.entityVersionHashesByName, store.container.managedObjectModel.entityVersionHashesByName)
+                    let share = NSPersistentStoreCoordinator(managedObjectModel: model)
+                    let disk = try share.addPersistentStore(ofType: NSSQLiteStoreType, configurationName: nil, at: url,
+                        options: [NSMigratePersistentStoresAutomaticallyOption: true,
+                                  NSInferMappingModelAutomaticallyOption: true,
+                                  NSPersistentHistoryTrackingKey: true,
+                                  NSPersistentStoreRemoteChangeNotificationPostOptionKey: true])
+                    let reader = NSManagedObjectContext(concurrencyType: .mainQueueConcurrencyType)
+                    reader.persistentStoreCoordinator = share
+                    let rows = try reader.fetch(NSFetchRequest<NSManagedObject>(entityName: "Notification"))
+                    XCTAssertEqual(rows.count, 2)
+                    XCTAssertTrue(rows.allSatisfy { $0.value(forKey: "alerted") as? Bool == true })
+                    reader.reset(); try share.remove(disk)
+                }
+                first = Store(inMemory: true, storeURL: url)
+            }
+            defer {
+                first.context.reset()
+                for disk in first.container.persistentStoreCoordinator.persistentStores { try? first.container.persistentStoreCoordinator.remove(disk) }
+            }
+            let migratedSub = try XCTUnwrap(first.getSubscriptions()?.first)
+            XCTAssertEqual(migratedSub.customDisplayName, "Shared subscription"); XCTAssertTrue(migratedSub.pinned)
+            XCTAssertEqual(migratedSub.mutedUntil, Date.distantFuture)
+            XCTAssertEqual(migratedSub.unreadCount(), 1); XCTAssertEqual(migratedSub.notificationCount(), 2)
+            try first.setTopicMute(until: nil, subscription: migratedSub)
+            let rows = try first.context.fetch(ntfy.Notification.fetchRequest())
+            XCTAssertTrue(rows.allSatisfy(\.alerted), "both read and unread legacy rows adopt already-alerted")
+            XCTAssertTrue(rows.allSatisfy { !$0.presented }, "review evidence is not fabricated on migration")
+            service.makeStore = { first }
+            let content = UNMutableNotificationContent(); content.sound = .default
+            content.userInfo = Message(id: "old-false", time: rows.first!.time, event: "message", topic: "upgrade", message: "Preserved history", priority: 4).toUserInfo()
+            content.userInfo["base_url"] = migratedSub.baseUrl!
+            let done = expectation(description: nseFirst ? "NSE-first migration" : "app-first migration")
+            if nseFirst {
+                service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) {
+                    XCTAssertNil($0.sound); XCTAssertEqual($0.interruptionLevel, .passive); done.fulfill()
+                }
+            } else {
+                first.deliverAlert(message: Message.from(userInfo: content.userInfo)!, baseUrl: migratedSub.baseUrl!, delivery: { _ in
+                    XCTFail("a legacy row must not produce a new app alert")
+                }, completion: { done.fulfill() })
+            }
+            wait(for: [done], timeout: 10)
+            let second = Store(inMemory: true, storeURL: url)
+            let secondSub = try XCTUnwrap(second.getSubscriptions()?.first)
+            XCTAssertEqual(secondSub.customDisplayName, "Shared subscription")
+            XCTAssertEqual(secondSub.notificationCount(), 2); XCTAssertEqual(secondSub.unreadCount(), 1)
+            XCTAssertTrue(try second.context.fetch(ntfy.Notification.fetchRequest()).allSatisfy(\.alerted))
+            second.context.reset()
+            for disk in second.container.persistentStoreCoordinator.persistentStores { try second.container.persistentStoreCoordinator.remove(disk) }
+            print("ALERTED_MODEL8_MIGRATION_PASS opener=\(opener)")
+        }
+    }
+
+    func testSchedulerFailureLeavesMessageEligibleAndSuccessSuppressesNextPush() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let delegate = AppDelegate()
+        var schedules = 0
+        delegate.notificationScheduler = { _, completed in
+            schedules += 1; completed(NSError(domain: "intentional-scheduler-failure", code: 1))
+        }
+        let failed = expectation(description: "scheduling failed")
+        delegate.showNotification(baseUrl: sub.baseUrl!, msg) { failed.fulfill() }
+        wait(for: [failed], timeout: 10)
+        XCTAssertFalse(try row(sub).alerted); XCTAssertFalse(try row(sub).presented)
+        XCTAssertEqual(store.alertCandidates(from: [msg], baseUrl: sub.baseUrl!).map(\.id), [msg.id])
+        delegate.notificationScheduler = { _, completed in schedules += 1; completed(nil) }
+        let success = expectation(description: "scheduling succeeded")
+        delegate.showNotification(baseUrl: sub.baseUrl!, msg) { success.fulfill() }
+        wait(for: [success], timeout: 10)
+        XCTAssertTrue(try row(sub).alerted)
+        XCTAssertTrue(store.alertCandidates(from: [msg], baseUrl: sub.baseUrl!).isEmpty)
+        let duplicate = try XCTUnwrap(receive(msg, base: sub.baseUrl!))
+        XCTAssertNil(duplicate.sound); XCTAssertEqual(duplicate.interruptionLevel, .passive)
+        XCTAssertEqual(schedules, 2)
+    }
+
+    func testConcurrentAppAndNSEHandoffsProduceOnlyOneAlert() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let delegate = AppDelegate()
+        let scheduled = expectation(description: "scheduler entered")
+        var finish: ((Error?) -> Void)?
+        delegate.notificationScheduler = { _, completed in finish = completed; scheduled.fulfill() }
+        let app = expectation(description: "app finished")
+        delegate.showNotification(baseUrl: sub.baseUrl!, msg) { app.fulfill() }
+        wait(for: [scheduled], timeout: 10)
+        let service = NotificationService()
+        let content = UNMutableNotificationContent(); content.userInfo = msg.toUserInfo(); content.userInfo["base_url"] = sub.baseUrl!
+        let nse = expectation(description: "NSE finished")
+        service.didReceive(UNNotificationRequest(identifier: "concurrent", content: content, trigger: nil)) {
+            XCTAssertNil($0.sound); XCTAssertEqual($0.interruptionLevel, .passive); nse.fulfill()
+        }
+        XCTAssertFalse(try row(sub).alerted, "a pending scheduler must not be treated as success")
+        finish?(nil)
+        wait(for: [app, nse], timeout: 10)
+        XCTAssertTrue(try row(sub).alerted)
+    }
+
+    func testUnknownSubscriptionStillGetsFallbackAlert() throws {
+        let msg = Message(id: "unknown", time: 1, event: "message", topic: "unknown", message: "Uncertain first delivery", priority: 4)
+        let output = try XCTUnwrap(receive(msg, base: "https://unknown-alerted.example"))
+        XCTAssertNotNil(output.sound)
+        XCTAssertEqual(output.body, "Incoming fallback")
+    }
+}
+
+extension AlertedTests {
+    func testNativeStockPollThenDirectAndPollByIDPushProducesOneAlert() throws {
+        guard let base = ProcessInfo.processInfo.environment["REALERT_STOCK_URL"] else { throw XCTSkip("opt-in loopback stock ntfy flow") }
+        let sub = subscription(base, topic: "realert-\(UUID().uuidString)")
+        let published = expectation(description: "stock published")
+        ApiService.shared.publish(subscription: sub, user: nil, message: "Exactly one stock alert", title: "Re-alert proof", priority: 4,
+            completionHandler: { published.fulfill() }, failureHandler: { XCTFail("stock publish failed: \($0)"); published.fulfill() })
+        wait(for: [published], timeout: 10)
+        var manager = SubscriptionManager(store: store)
+        manager.polling = PollCoordinator(cooldown: ServerCooldown(defaults: nil))
+        let polled = expectation(description: "real app poll stores server row")
+        var candidates: [Message] = []
+        manager.poll(sub) { candidates = $0; polled.fulfill() }
+        wait(for: [polled], timeout: 10)
+        let msg = try XCTUnwrap(candidates.first)
+        XCTAssertEqual(msg.message, "Exactly one stock alert")
+        XCTAssertFalse(try row(sub).alerted)
+        let center = UNUserNotificationCenter.current()
+        let authorization = expectation(description: "notification authorization")
+        center.requestAuthorization(options: [.alert, .sound, .badge]) { allowed, error in
+            XCTAssertNil(error); XCTAssertTrue(allowed); authorization.fulfill()
+        }
+        wait(for: [authorization], timeout: 90)
+        let originalDelegate = center.delegate
+        let recorder = AlertPresentationRecorder()
+        center.delegate = recorder
+        defer { center.delegate = originalDelegate }
+        let delegate = AppDelegate()
+        var appAlerts = 0
+        delegate.notificationScheduler = { request, completed in appAlerts += 1; center.add(request, withCompletionHandler: completed) }
+        let scheduled = expectation(description: "real local banner scheduled")
+        delegate.showNotification(baseUrl: base, msg) { scheduled.fulfill() }
+        wait(for: [scheduled], timeout: 10)
+        XCTAssertTrue(try row(sub).alerted)
+        let firstBanner = expectation(description: "first real OS presentation")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            XCTAssertEqual(recorder.bannerCount, 1)
+            print("REALERT_FIRST_BANNER_READY")
+            firstBanner.fulfill()
+        }
+        wait(for: [firstBanner], timeout: 10)
+        let captureWindow = expectation(description: "first banner capture window")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { captureWindow.fulfill() }
+        wait(for: [captureWindow], timeout: 10)
+        let direct = try XCTUnwrap(receive(msg, base: base))
+        XCTAssertNil(direct.sound); XCTAssertEqual(direct.interruptionLevel, .passive)
+        let resubmitted = expectation(description: "system receives passive direct-NSE result")
+        center.add(UNNotificationRequest(identifier: msg.id, content: direct, trigger: nil)) { XCTAssertNil($0); resubmitted.fulfill() }
+        wait(for: [resubmitted], timeout: 10)
+        let service = NotificationService()
+        let content = UNMutableNotificationContent(); content.sound = .default
+        content.userInfo = ["id": "wake-\(UUID().uuidString)", "time": String(msg.time), "event": "poll_request", "topic": sub.urlHash(), "poll_id": msg.id, "base_url": base]
+        let fetched = expectation(description: "real poll-by-id NSE handoff")
+        service.didReceive(UNNotificationRequest(identifier: "poll-by-id", content: content, trigger: nil)) {
+            XCTAssertNil($0.sound); XCTAssertEqual($0.interruptionLevel, .passive)
+            XCTAssertEqual($0.body, "Exactly one stock alert")
+            center.add(UNNotificationRequest(identifier: msg.id, content: $0, trigger: nil)) {
+                XCTAssertNil($0); fetched.fulfill()
+            }
+        }
+        wait(for: [fetched], timeout: 12)
+        let checked = expectation(description: "system delivered notification")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 1) {
+            center.getDeliveredNotifications { notifications in
+                let matches = notifications.filter { $0.request.identifier == msg.id }
+                XCTAssertEqual(matches.count, 1)
+                print("REALERT_STOCK_RECEIPT id=\(msg.id) appSchedules=\(appAlerts) delivered=\(matches.count) bannerPresentations=\(recorder.bannerCount) soundPresentations=\(recorder.soundCount) rawCallbacks=\(recorder.rawCallbacks) directNSE=passive pollByIDNSE=passive")
+                checked.fulfill()
+            }
+        }
+        wait(for: [checked], timeout: 10)
+        XCTAssertEqual(appAlerts, 1)
+        XCTAssertEqual(recorder.bannerCount, 1)
+        XCTAssertEqual(recorder.soundCount, 1)
+        XCTAssertEqual(recorder.presentations, 3, "one app alert plus two passive NSE outputs reached the real OS delegate")
+        print("REALERT_PASSIVE_REDELIVERY_READY")
+        let passiveCapture = expectation(description: "passive capture window")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) { passiveCapture.fulfill() }
+        wait(for: [passiveCapture], timeout: 10)
+        let repeatedPoll = expectation(description: "repeated app poll")
+        manager.poll(sub) { messages in XCTAssertTrue(messages.isEmpty); repeatedPoll.fulfill() }
+        wait(for: [repeatedPoll], timeout: 10)
+        let attachment = XCTAttachment(string: "Stock \(base), message \(msg.id), app schedules 1, system delivered 1, direct/poll-id NSE callbacks passive and soundless")
+        attachment.name = "stock-alert-receipt"; attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+
+    func testAlreadyAlertedPollByIDExpiryStaysQuietAndUnseenIDFailsOpen() throws {
+        for previouslyAlerted in [false, true] {
+            let sub = subscription("http://127.0.0.1:1"), msg = message(sub)
+            store.save(notificationsFromMessages: [msg], withSubscription: sub)
+            if previouslyAlerted { store.recordPresentation(message: msg, baseUrl: sub.baseUrl!) }
+            let service = NotificationService()
+            let content = UNMutableNotificationContent(); content.sound = .default
+            content.userInfo = ["id": "wake", "time": String(msg.time), "event": "poll_request", "topic": sub.urlHash(), "poll_id": msg.id, "base_url": sub.baseUrl!]
+            let done = expectation(description: "expiry handoff"); done.assertForOverFulfill = true
+            service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) {
+                if previouslyAlerted { XCTAssertNil($0.sound); XCTAssertEqual($0.interruptionLevel, .passive) }
+                else { XCTAssertNotNil($0.sound); XCTAssertNotEqual($0.interruptionLevel, .passive) }
+                done.fulfill()
+            }
+            service.serviceExtensionTimeWillExpire()
+            wait(for: [done], timeout: 10)
+        }
+    }
+}
+
+extension AlertedTests {
+    func testIndependentSQLiteContextsSerializeSuccessfulHandoffs() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("shared.sqlite")
+        let app = Store(inMemory: true, storeURL: url)
+        let sub = app.saveSubscription(baseUrl: "https://shared-alerted.example", topic: "shared")
+        let msg = message(sub)
+        app.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let nse = Store(inMemory: true, storeURL: url)
+        defer {
+            for s in [nse, app] {
+                s.context.reset()
+                for disk in s.container.persistentStoreCoordinator.persistentStores { try? s.container.persistentStoreCoordinator.remove(disk) }
+            }
+        }
+        // Warm a stale NSE context before the app commits its alert flag.
+        XCTAssertFalse(nse.wasAlerted(message: msg, baseUrl: sub.baseUrl!))
+        let entered = expectation(description: "app handoff started")
+        let appFinished = expectation(description: "app committed")
+        var commit: ((Bool) -> Void)?
+        app.deliverAlert(message: msg, baseUrl: sub.baseUrl!, delivery: { commit = $0; entered.fulfill() }, completion: { appFinished.fulfill() })
+        wait(for: [entered], timeout: 10)
+        let suppressed = expectation(description: "NSE serialized behind app")
+        nse.deliverAlert(message: msg, baseUrl: sub.baseUrl!, delivery: { done in
+            XCTFail("the second process must see the first process's successful handoff"); done(true)
+        }, suppressed: { suppressed.fulfill() })
+        commit?(true)
+        wait(for: [appFinished, suppressed], timeout: 10)
+        XCTAssertTrue(nse.wasAlerted(message: msg, baseUrl: sub.baseUrl!))
+        // Verify the relationship+id unique index on an actual iOS SQLite store.
+        let other = app.saveSubscription(baseUrl: "https://another-alerted.example", topic: sub.topic!)
+        app.save(notificationsFromMessages: [msg], withSubscription: other)
+        XCTAssertEqual(other.notificationCount(), 1)
+        let c = app.container.newBackgroundContext()
+        var rejected = false
+        c.performAndWait {
+            let duplicate = NSEntityDescription.insertNewObject(forEntityName: "Notification", into: c)
+            duplicate.setValue(msg.id, forKey: "id"); duplicate.setValue("duplicate", forKey: "message")
+            duplicate.setValue(c.object(with: sub.objectID), forKey: "subscription")
+            do { try c.save() } catch { rejected = true; c.rollback() }
+        }
+        XCTAssertTrue(rejected, "same subscription and id must remain unique at the database layer")
+    }
+}
+
+extension AlertedTests {
+    func testNativeInitialHistoryPollDoesNotDropFirstPush() throws {
+        guard let base = ProcessInfo.processInfo.environment["REALERT_STOCK_URL"] else { throw XCTSkip("opt-in loopback initial-history flow") }
+        let sub = subscription(base, topic: "initial-\(UUID().uuidString)")
+        let published = expectation(description: "publish during initial subscription window")
+        ApiService.shared.publish(subscription: sub, user: nil, message: "Initial poll must not swallow this push", title: "History race",
+            completionHandler: { published.fulfill() }, failureHandler: { XCTFail("publish failed: \($0)"); published.fulfill() })
+        wait(for: [published], timeout: 10)
+        var manager = SubscriptionManager(store: store)
+        manager.polling = PollCoordinator(cooldown: ServerCooldown(defaults: nil))
+        let saved = expectation(description: "completion-discarding initial poll")
+        var messages: [Message] = []
+        manager.fetch = { request, completed in
+            XCTAssertNil(request.since, "the initial poll requests since=all")
+            ApiService.shared.poll(request) { incoming, error in
+                messages = incoming ?? []
+                completed(incoming, error)
+                saved.fulfill()
+            }
+        }
+        manager.poll(sub)
+        wait(for: [saved], timeout: 10)
+        XCTAssertEqual(sub.unreadCount(), 1)
+        XCTAssertFalse(try row(sub).alerted); XCTAssertFalse(try row(sub).presented)
+        let msg = try XCTUnwrap(messages.first)
+        let first = try XCTUnwrap(receive(msg, base: base))
+        XCTAssertNotNil(first.sound); XCTAssertNotEqual(first.interruptionLevel, .passive)
+        XCTAssertTrue(try row(sub).alerted)
+        let repeatPush = try XCTUnwrap(receive(msg, base: base))
+        XCTAssertNil(repeatPush.sound); XCTAssertEqual(repeatPush.interruptionLevel, .passive)
+        print("REALERT_INITIAL_HISTORY_RECEIPT id=\(msg.id) since=all unread=1 firstNSE=alert repeatNSE=passive")
+    }
+
+    func testSameIDOnTwoTopicsOfOneServerRemainsIndependent() throws {
+        let a = subscription(topic: "first-topic"), b = subscription(topic: "second-topic")
+        let first = message(a, id: "one-server-id"), second = message(b, id: first.id)
+        store.save(notificationsFromMessages: [first], withSubscription: a)
+        store.recordPresentation(message: first, baseUrl: a.baseUrl!)
+        let output = try XCTUnwrap(receive(second, base: b.baseUrl!))
+        XCTAssertNotNil(output.sound); XCTAssertNotEqual(output.interruptionLevel, .passive)
+        XCTAssertEqual(a.notificationCount(), 1); XCTAssertEqual(b.notificationCount(), 1)
+    }
+}
+
+/// XCTest skips the app's launch bootstrap. Install its real foreground delegate policy here so
+/// the stock integration measures the OS asking for banner/sound/list presentation.
+private final class AlertPresentationRecorder: NSObject, UNUserNotificationCenterDelegate {
+    private let policy = AppDelegate()
+    private let lock = NSLock()
+    private struct Delivery: Hashable {
+        let identifier: String
+        let date: Date
+    }
+    private var deliveries = Set<Delivery>()
+    private var callbackCount = 0
+    private var options: [UNNotificationPresentationOptions] = []
+    var rawCallbacks: Int { lock.lock(); defer { lock.unlock() }; return callbackCount }
+    var bannerCount: Int { lock.lock(); defer { lock.unlock() }; return options.filter { $0.contains(.banner) }.count }
+    var soundCount: Int { lock.lock(); defer { lock.unlock() }; return options.filter { $0.contains(.sound) }.count }
+    var presentations: Int { lock.lock(); defer { lock.unlock() }; return options.count }
+    func userNotificationCenter(_ center: UNUserNotificationCenter, willPresent notification: UNNotification,
+                                withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void) {
+        print("REALERT_OS_CALLBACK id=\(notification.request.identifier) date=\(String(format: "%.9f", notification.date.timeIntervalSince1970)) level=\(notification.request.content.interruptionLevel.rawValue) sound=\(notification.request.content.sound != nil)")
+        policy.userNotificationCenter(center, willPresent: notification) { options in
+            self.lock.lock()
+            self.callbackCount += 1
+            // iOS 18.0 can invoke willPresent twice for the SAME delivery date. Preserve separate
+            // delivery dates, so re-adding this same request id still counts as a second alert.
+            if self.deliveries.insert(Delivery(identifier: notification.request.identifier, date: notification.date)).inserted {
+                self.options.append(options)
+            }
+            self.lock.unlock()
+            completionHandler(options)
+        }
+    }
+}
+
+extension AlertedTests {
+    func testOldDeliveryCannotMarkAConcurrentSequenceReplacementAlerted() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("replacement.sqlite")
+        let app = Store(inMemory: true, storeURL: url)
+        let sub = app.saveSubscription(baseUrl: "https://replacement-alerted.example", topic: "job")
+        let old = Message(id: "old", time: 100, event: "message", topic: "job", message: "Old version", sequenceID: "sequence")
+        let new = Message(id: "new", time: 101, event: "message", topic: "job", message: "Replacement", sequenceID: "sequence")
+        app.save(notificationsFromMessages: [old], withSubscription: sub)
+        let nse = Store(inMemory: true, storeURL: url)
+        let nseSub = try XCTUnwrap(nse.getSubscriptions()?.first)
+        defer {
+            for s in [nse, app] {
+                s.context.reset()
+                for disk in s.container.persistentStoreCoordinator.persistentStores { try? s.container.persistentStoreCoordinator.remove(disk) }
+            }
+        }
+        var replaced = false
+        // Interpose the other process at the unsafe fetch -> managed-object-save boundary. An
+        // atomic predicate-scoped UPDATE has no such boundary, so replace immediately afterward.
+        let observer = NotificationCenter.default.addObserver(forName: .NSManagedObjectContextWillSave, object: app.context, queue: nil) { _ in
+            guard !replaced else { return }; replaced = true
+            nse.save(notificationsFromMessages: [new], withSubscription: nseSub)
+        }
+        app.recordPresentation(message: old, baseUrl: sub.baseUrl!)
+        NotificationCenter.default.removeObserver(observer)
+        if !replaced { nse.save(notificationsFromMessages: [new], withSubscription: nseSub) }
+        XCTAssertFalse(nse.wasAlerted(message: new, baseUrl: sub.baseUrl!), "delivery of old must never mark the replacement alerted")
+        app.recordPresentation(message: old, baseUrl: sub.baseUrl!)
+        XCTAssertFalse(nse.wasAlerted(message: new, baseUrl: sub.baseUrl!))
+    }
+}
+
+extension AlertedTests {
+    func testOSRecorderDetectsSameIDRescheduledAsASecondAlert() throws {
+        guard ProcessInfo.processInfo.environment["REALERT_STOCK_URL"] != nil else { throw XCTSkip("opt-in real OS presentation measurement control") }
+        let center = UNUserNotificationCenter.current()
+        let original = center.delegate, recorder = AlertPresentationRecorder()
+        center.delegate = recorder
+        let id = "measurement-control-\(UUID().uuidString)"
+        defer { center.delegate = original; center.removeDeliveredNotifications(withIdentifiers: [id]) }
+        let content = UNMutableNotificationContent()
+        content.title = "Measurement control"; content.body = "Intentional repeated scheduling"; content.sound = .default
+        content.userInfo = Message(id: id, time: 1, event: "message", topic: "measurement-control", message: content.body).toUserInfo()
+        for expected in 1...2 {
+            let added = expectation(description: "intentional schedule \(expected)")
+            center.add(UNNotificationRequest(identifier: id, content: content, trigger: nil)) { XCTAssertNil($0); added.fulfill() }
+            wait(for: [added], timeout: 10)
+            let displayed = expectation(description: "OS processes delivery \(expected)")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { displayed.fulfill() }
+            wait(for: [displayed], timeout: 10)
+            XCTAssertEqual(recorder.bannerCount, expected, "normalization must not hide an actual same-id re-alert")
+            XCTAssertEqual(recorder.soundCount, expected)
+            XCTAssertEqual(recorder.presentations, expected)
+        }
+        print("REALERT_MEASUREMENT_CONTROL sameIDReschedules=2 countedBannerDeliveries=\(recorder.bannerCount) rawCallbacks=\(recorder.rawCallbacks)")
+    }
+}
+
+
+extension AlertedTests {
+    func testNSEHandoffHasReleasedAlertLockAndCommittedFlag() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("handoff.sqlite")
+        let disk = Store(inMemory: true, storeURL: url)
+        let sub = disk.saveSubscription(baseUrl: "https://handoff-alerted.example", topic: "handoff")
+        let msg = message(sub)
+        disk.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let service = NotificationService(); service.makeStore = { disk }
+        let content = UNMutableNotificationContent(); content.sound = .default
+        content.userInfo = msg.toUserInfo(); content.userInfo["base_url"] = sub.baseUrl!
+        let done = expectation(description: "content handler observes completed transaction")
+        service.didReceive(UNNotificationRequest(identifier: "handoff", content: content, trigger: nil)) { output in
+            let fd = open(url.appendingPathExtension("alerts.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+            XCTAssertGreaterThanOrEqual(fd, 0)
+            if fd >= 0 {
+                let result = flock(fd, LOCK_EX | LOCK_NB)
+                XCTAssertEqual(result, 0, "the NSE must release its shared-container lock before calling the handler")
+                if result == 0 { flock(fd, LOCK_UN) }
+                close(fd)
+            }
+            var sqlite: OpaquePointer?
+            XCTAssertEqual(sqlite3_open(url.path, &sqlite), SQLITE_OK)
+            if let sqlite {
+                // This would fail with SQLITE_BUSY if the handoff retained a pending write lock.
+                XCTAssertEqual(sqlite3_exec(sqlite, "BEGIN IMMEDIATE", nil, nil, nil), SQLITE_OK)
+                sqlite3_exec(sqlite, "ROLLBACK", nil, nil, nil)
+                sqlite3_close(sqlite)
+            }
+            // A fresh coordinator must already observe the durable flag at the handoff boundary.
+            let reader = Store(inMemory: true, storeURL: url)
+            XCTAssertTrue(reader.wasAlerted(message: msg, baseUrl: "https://handoff-alerted.example"),
+                          "no deferred flag write may follow the content handler")
+            XCTAssertNotNil(output.sound)
+            done.fulfill()
+        }
+        wait(for: [done], timeout: 10)
+    }
+
+    func testExpiryDoesNotWaitForAlertLockOrDeliveryQueue() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("expiry.sqlite")
+        let disk = Store(inMemory: true, storeURL: url)
+        let sub = disk.saveSubscription(baseUrl: "http://127.0.0.1:1", topic: "expiry")
+        let msg = message(sub)
+        disk.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let fd = open(url.appendingPathExtension("alerts.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+        XCTAssertGreaterThanOrEqual(fd, 0)
+        XCTAssertEqual(flock(fd, LOCK_EX | LOCK_NB), 0)
+        defer { flock(fd, LOCK_UN); close(fd) }
+        let service = NotificationService(); service.makeStore = { disk }
+        let content = UNMutableNotificationContent(); content.sound = .default
+        content.userInfo = ["id": "wake", "time": String(msg.time), "event": "poll_request", "topic": sub.urlHash(), "poll_id": msg.id, "base_url": sub.baseUrl!]
+        var calls = 0
+        service.didReceive(UNNotificationRequest(identifier: "expiry", content: content, trigger: nil)) { output in
+            calls += 1
+            XCTAssertNotNil(output.sound, "uncertain expiry must deliver the first alert")
+        }
+        let start = Date()
+        service.serviceExtensionTimeWillExpire()
+        XCTAssertEqual(calls, 1, "expiry must hand off synchronously, without waiting for a lock or GCD worker")
+        XCTAssertLessThan(Date().timeIntervalSince(start), 0.25)
+        flock(fd, LOCK_UN)
+        let settled = expectation(description: "late fetch cannot hand off twice")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.25) { settled.fulfill() }
+        wait(for: [settled], timeout: 5)
+        XCTAssertEqual(calls, 1)
+    }
+}
+
+
+extension AlertedTests {
+    func testAppBackgroundExpirationReleasesLockAndIgnoresLateSchedulerSuccess() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let delegate = AppDelegate()
+        var expire: (() -> Void)?, schedulerResult: ((Error?) -> Void)?
+        var ended = 0
+        delegate.beginNotificationBackgroundTask = { expiration in
+            XCTAssertTrue(Thread.isMainThread)
+            expire = expiration
+            return UIBackgroundTaskIdentifier(rawValue: 123)
+        }
+        delegate.endNotificationBackgroundTask = { task in
+            XCTAssertTrue(Thread.isMainThread)
+            XCTAssertEqual(task.rawValue, 123)
+            ended += 1
+        }
+        let scheduled = expectation(description: "scheduler pending inside background task")
+        delegate.notificationScheduler = { _, completed in
+            XCTAssertNotNil(expire, "background execution starts before the shared lock and scheduling")
+            schedulerResult = completed; scheduled.fulfill()
+        }
+        let cancelled = expectation(description: "background task ends after lock release")
+        delegate.showNotification(baseUrl: sub.baseUrl!, msg) { cancelled.fulfill() }
+        wait(for: [scheduled], timeout: 10)
+        expire?()
+        wait(for: [cancelled], timeout: 2)
+        XCTAssertEqual(ended, 1)
+        XCTAssertFalse(try row(sub).alerted)
+        let available = expectation(description: "another delivery can take the released lock")
+        store.deliverAlert(message: msg, baseUrl: sub.baseUrl!, delivery: { result in result(false) }, completion: { available.fulfill() })
+        wait(for: [available], timeout: 2)
+        schedulerResult?(nil)
+        let late = expectation(description: "ignore callback after cancellation")
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) { late.fulfill() }
+        wait(for: [late], timeout: 2)
+        XCTAssertFalse(try row(sub).alerted, "a suspended/expired scheduler cannot start another database write")
+        XCTAssertEqual(ended, 1)
+    }
+
+    func testContendedDeliveryDoesNotParkOtherStoreDeliveries() throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        let url = directory.appendingPathComponent("contended.sqlite")
+        let disk = Store(inMemory: true, storeURL: url)
+        let sub = disk.saveSubscription(baseUrl: "https://contended-alerted.example", topic: "contended")
+        let msg = message(sub)
+        disk.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let fd = open(url.appendingPathExtension("alerts.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+        XCTAssertGreaterThanOrEqual(fd, 0)
+        XCTAssertEqual(flock(fd, LOCK_EX | LOCK_NB), 0)
+        defer { flock(fd, LOCK_UN); close(fd) }
+        let cancelled = expectation(description: "contended attempt cancelled")
+        let cancel = disk.deliverAlert(message: msg, baseUrl: sub.baseUrl!, delivery: { _ in XCTFail("external lock still owned") }, completion: { cancelled.fulfill() })
+        let otherSub = subscription(), other = message(otherSub)
+        store.save(notificationsFromMessages: [other], withSubscription: otherSub)
+        let unblocked = expectation(description: "serial delivery queue remains available")
+        store.deliverAlert(message: other, baseUrl: otherSub.baseUrl!, delivery: { result in result(false) }, completion: { unblocked.fulfill() })
+        wait(for: [unblocked], timeout: 2)
+        cancel()
+        wait(for: [cancelled], timeout: 2)
+    }
+}
+
+
+extension AlertedTests {
+    func testDeniedBackgroundTimeFailsOpenWithoutFlagWrite() throws {
+        let sub = subscription(), msg = message(sub)
+        store.save(notificationsFromMessages: [msg], withSubscription: sub)
+        let delegate = AppDelegate()
+        delegate.beginNotificationBackgroundTask = { _ in .invalid }
+        delegate.endNotificationBackgroundTask = { _ in XCTFail("no task was acquired") }
+        var schedules = 0
+        delegate.notificationScheduler = { _, completed in schedules += 1; completed(nil) }
+        let done = expectation(description: "unprotected scheduler fails open")
+        delegate.showNotification(baseUrl: sub.baseUrl!, msg) { done.fulfill() }
+        wait(for: [done], timeout: 2)
+        XCTAssertEqual(schedules, 1)
+        XCTAssertFalse(try row(sub).alerted, "without execution time no shared-container write may follow scheduling")
     }
 }
