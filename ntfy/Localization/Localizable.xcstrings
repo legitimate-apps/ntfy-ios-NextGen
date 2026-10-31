@@ -23692,6 +23692,194 @@
           }
         }
       }
+    },
+    "Messages that already alerted you no longer alert again when received a second time.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages that already alerted you no longer alert again when received a second time."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichten, die dich bereits benachrichtigt haben, lösen beim erneuten Empfang keine weitere Benachrichtigung aus."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes que ya generaron una alerta no vuelven a hacerlo al recibirse de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi che hanno già generato un avviso non ne generano un altro se vengono ricevuti di nuovo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości, które już wywołały alert, nie wywołują go ponownie po kolejnym odebraniu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichten waarvoor je al een melding hebt gekregen, geven geen nieuwe melding als ze opnieuw binnenkomen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages qui vous ont déjà alerté ne déclenchent plus d’alerte lorsqu’ils sont reçus une deuxième fois."
+          }
+        }
+      }
+    },
+    "See when a server refuses sign-in, with a button in the topic screen to check the server user.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See when a server refuses sign-in, with a button in the topic screen to check the server user."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Du siehst jetzt, wenn ein Server die Anmeldung ablehnt. Im Thema kannst du über eine Schaltfläche den Server-Benutzer prüfen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ahora se indica si un servidor rechaza el inicio de sesión. Revisa el usuario del servidor con el botón de la pantalla del tópico."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora puoi vedere quando un server rifiuta l'accesso e verificare l'utente del server con il pulsante nella schermata dell'argomento."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aplikacja informuje teraz, gdy serwer odrzuci logowanie. Przycisk na ekranie tematu pozwala sprawdzić konto na serwerze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je ziet nu wanneer een server het inloggen weigert. Met de knop in het onderwerp kun je de gebruiker voor die server controleren."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’app indique désormais quand un serveur refuse la connexion. Un bouton dans le sujet vous permet de vérifier votre utilisateur pour ce serveur."
+          }
+        }
+      }
+    },
+    "Send messages with an optional title, priority, tags and an attachment from a topic screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send messages with an optional title, priority, tags and an attachment from a topic screen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sende Nachrichten direkt aus einem Thema, auf Wunsch mit Titel, Priorität, Tags und einem Anhang."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envía mensajes desde la pantalla de un tópico, con título, prioridad, etiquetas y un archivo adjunto opcionales."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia messaggi dalla schermata di un argomento, con titolo, priorità, tag e un allegato facoltativi."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłaj wiadomości z ekranu tematu, opcjonalnie dodając tytuł, priorytet, tagi i jeden załącznik."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstuur berichten vanuit een onderwerp, eventueel met een titel, prioriteit, tags en één bijlage."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyez des messages depuis un sujet, avec un titre, une priorité, des tags et une pièce jointe si vous le souhaitez."
+          }
+        }
+      }
+    },
+    "Share links, text, photos and files to your subscribed topics from other apps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share links, text, photos and files to your subscribed topics from other apps."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sende Links, Text, Fotos und Dateien aus anderen Apps an abonnierte Themen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Comparte enlaces, texto, fotos y archivos desde otras apps con los tópicos a los que te has suscrito."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi link, testo, foto e file da altre app con gli argomenti a cui sei iscritto."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępniaj linki, tekst, zdjęcia i pliki z innych aplikacji w subskrybowanych tematach."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deel links, tekst, foto’s en bestanden vanuit andere apps met de onderwerpen waarop je bent geabonneerd."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partagez des liens, du texte, des photos et des fichiers depuis d’autres apps vers les sujets auxquels vous êtes abonné."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

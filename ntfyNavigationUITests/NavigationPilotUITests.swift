@@ -1,5 +1,6 @@
 import XCTest
 import CoreFoundation
+import Vision
 
 final class NavigationPilotUITests: XCTestCase {
     lazy var app = XCUIApplication(bundleIdentifier: setting("NTFYTestAppID"))
@@ -10,7 +11,7 @@ final class NavigationPilotUITests: XCTestCase {
     let newTopic = "zz-nav-118-new"
     override func setUp() {
         continueAfterFailure = false
-        app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.20.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.21.0", "-notificationPermissionPrimerOffered", "YES"]
         app.launchEnvironment["DYLD_INSERT_LIBRARIES"] = setting("NTFYTestHarness")
     }
     func test00ResolveLaunchAlert() {
@@ -92,8 +93,8 @@ final class NavigationPilotUITests: XCTestCase {
         CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName("ntfy.navigation.fixture.response" as CFString), nil, nil, true)
         assertTarget()
     }
-    func testVersion120UpdateSheet() {
-        verifyVersion120UpdateSheet(app: app, german: false)
+    func testVersion121UpdateSheet() {
+        verifyVersion121UpdateSheet(app: app, german: false)
     }
     func testWhatsNewIsReplacedByURL() {
         app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.17.0", "-notificationPermissionPrimerOffered", "YES"]
@@ -373,7 +374,7 @@ final class GermanLocalizationUITests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = false
-        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.20.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.21.0", "-notificationPermissionPrimerOffered", "YES"]
     }
     func capture(_ name: String) {
         let tree = XCTAttachment(string: app.debugDescription)
@@ -402,8 +403,8 @@ final class GermanLocalizationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Add subscription"].exists)
         XCTAssertTrue(app.buttons["Neues Abo"].exists)
     }
-    func testVersion120UpdateSheet() {
-        verifyVersion120UpdateSheet(app: app, german: true)
+    func testVersion121UpdateSheet() {
+        verifyVersion121UpdateSheet(app: app, german: true)
     }
     func testGermanMainScreens() {
         launch()
@@ -578,10 +579,10 @@ final class GermanLocalizationUITests: XCTestCase {
 
 private extension XCTestCase {
     /// Exercise the automatic update path with the subscribed run.py fixture, not a manual sheet.
-    func verifyVersion120UpdateSheet(app: XCUIApplication, german: Bool) {
+    func verifyVersion121UpdateSheet(app: XCUIApplication, german: Bool) {
         let language = german ? ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE"]
                               : ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
-        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.19.0",
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.20.0",
                                          "-notificationPermissionPrimerOffered", "YES"]
         app.launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -589,20 +590,33 @@ private extension XCTestCase {
             if springboard.buttons[label].waitForExistence(timeout: 1) { springboard.buttons[label].tap() }
         }
         XCTAssertTrue(app.navigationBars[german ? "Neuigkeiten" : "What's new"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["1.20.0"].exists)
-        XCTAssertFalse(app.staticTexts["1.19.0"].exists, "only the unseen release should be shown")
+        XCTAssertTrue(app.staticTexts["1.21.0"].exists)
+        XCTAssertFalse(app.staticTexts["1.20.0"].exists, "only the unseen release should be shown")
         let bullets: [String] = german ? [
-            "Bilder in Nachrichten verschwinden nicht mehr aus der App, nachdem sie in einer Benachrichtigung angezeigt wurden.",
-            "Die App und ihre Benachrichtigungen sind jetzt auch auf Spanisch, Italienisch, Polnisch, Niederländisch und Französisch verfügbar und folgen der Sprache deines iPhones."
+            "Sende Nachrichten direkt aus einem Thema, auf Wunsch mit Titel, Priorität, Tags und einem Anhang.",
+            "Sende Links, Text, Fotos und Dateien aus anderen Apps an abonnierte Themen.",
+            "Nachrichten, die dich bereits benachrichtigt haben, lösen beim erneuten Empfang keine weitere Benachrichtigung aus.",
+            "Du siehst jetzt, wenn ein Server die Anmeldung ablehnt. Im Thema kannst du über eine Schaltfläche den Server-Benutzer prüfen."
         ] : [
-            "Message images no longer disappear from the app after appearing in a notification.",
-            "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language."
+            "Send messages with an optional title, priority, tags and an attachment from a topic screen.",
+            "Share links, text, photos and files to your subscribed topics from other apps.",
+            "Messages that already alerted you no longer alert again when received a second time.",
+            "See when a server refuses sign-in, with a button in the topic screen to check the server user."
         ]
+        var renderedGerman = ""
         func capture(_ page: Int) {
-            let name = (german ? "de" : "en") + "-whats-new-1.20-page-\(page)"
+            let name = (german ? "de" : "en") + "-whats-new-1.21-page-\(page)"
             let tree = XCTAttachment(string: app.debugDescription)
             tree.name = name + ".txt"; tree.lifetime = .keepAlways; add(tree)
-            let shot = XCTAttachment(screenshot: app.screenshot())
+            let screenshot = app.screenshot()
+            if german {
+                let request = VNRecognizeTextRequest()
+                request.recognitionLevel = .accurate
+                request.recognitionLanguages = ["de-DE"]
+                XCTAssertNoThrow(try VNImageRequestHandler(data: screenshot.pngRepresentation, options: [:]).perform([request]))
+                renderedGerman += (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ") + " "
+            }
+            let shot = XCTAttachment(screenshot: screenshot)
             shot.name = name; shot.lifetime = .keepAlways; add(shot)
         }
         var seen = Set<String>()
@@ -616,7 +630,12 @@ private extension XCTestCase {
             if next.isHittable { break }
             app.scrollViews.firstMatch.swipeUp()
         }
-        XCTAssertEqual(seen, Set(bullets), "both release bullets must resolve in the selected language")
+        XCTAssertEqual(seen, Set(bullets), "all four release bullets must resolve in the selected language")
+        if german {
+            // AX retains the complete label even when SwiftUI draws an ellipsis. Inspect pixels too.
+            let words = renderedGerman.lowercased().components(separatedBy: CharacterSet.letters.inverted).joined()
+            XCTAssertTrue(words.contains("themen"), "The German sharing bullet must render its final words: \(renderedGerman)")
+        }
         XCTAssertTrue(next.isHittable)
         next.tap()
         XCTAssertTrue(app.navigationBars[german ? "Abonnierte Themen" : "Subscribed topics"].waitForExistence(timeout: 5))

@@ -194,6 +194,27 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testVersion121ReleaseNotesResolveInEveryBundledLanguage() throws {
+        let release = try XCTUnwrap(ReleaseNotes.shipped.first { $0.version == "1.21.0" })
+        XCTAssertEqual(release.bullets.count, 4)
+        let expected: [String: [String]] = [
+            "en": ["Send messages with an optional title, priority, tags and an attachment from a topic screen.", "Share links, text, photos and files to your subscribed topics from other apps.", "Messages that already alerted you no longer alert again when received a second time.", "See when a server refuses sign-in, with a button in the topic screen to check the server user."],
+            "de": ["Sende Nachrichten direkt aus einem Thema, auf Wunsch mit Titel, Priorität, Tags und einem Anhang.", "Sende Links, Text, Fotos und Dateien aus anderen Apps an abonnierte Themen.", "Nachrichten, die dich bereits benachrichtigt haben, lösen beim erneuten Empfang keine weitere Benachrichtigung aus.", "Du siehst jetzt, wenn ein Server die Anmeldung ablehnt. Im Thema kannst du über eine Schaltfläche den Server-Benutzer prüfen."],
+            "es": ["Envía mensajes desde la pantalla de un tópico, con título, prioridad, etiquetas y un archivo adjunto opcionales.", "Comparte enlaces, texto, fotos y archivos desde otras apps con los tópicos a los que te has suscrito.", "Los mensajes que ya generaron una alerta no vuelven a hacerlo al recibirse de nuevo.", "Ahora se indica si un servidor rechaza el inicio de sesión. Revisa el usuario del servidor con el botón de la pantalla del tópico."],
+            "it": ["Invia messaggi dalla schermata di un argomento, con titolo, priorità, tag e un allegato facoltativi.", "Condividi link, testo, foto e file da altre app con gli argomenti a cui sei iscritto.", "I messaggi che hanno già generato un avviso non ne generano un altro se vengono ricevuti di nuovo.", "Ora puoi vedere quando un server rifiuta l'accesso e verificare l'utente del server con il pulsante nella schermata dell'argomento."],
+            "pl": ["Wysyłaj wiadomości z ekranu tematu, opcjonalnie dodając tytuł, priorytet, tagi i jeden załącznik.", "Udostępniaj linki, tekst, zdjęcia i pliki z innych aplikacji w subskrybowanych tematach.", "Wiadomości, które już wywołały alert, nie wywołują go ponownie po kolejnym odebraniu.", "Aplikacja informuje teraz, gdy serwer odrzuci logowanie. Przycisk na ekranie tematu pozwala sprawdzić konto na serwerze."],
+            "nl": ["Verstuur berichten vanuit een onderwerp, eventueel met een titel, prioriteit, tags en één bijlage.", "Deel links, tekst, foto’s en bestanden vanuit andere apps met de onderwerpen waarop je bent geabonneerd.", "Berichten waarvoor je al een melding hebt gekregen, geven geen nieuwe melding als ze opnieuw binnenkomen.", "Je ziet nu wanneer een server het inloggen weigert. Met de knop in het onderwerp kun je de gebruiker voor die server controleren."],
+            "fr": ["Envoyez des messages depuis un sujet, avec un titre, une priorité, des tags et une pièce jointe si vous le souhaitez.", "Partagez des liens, du texte, des photos et des fichiers depuis d’autres apps vers les sujets auxquels vous êtes abonné.", "Les messages qui vous ont déjà alerté ne déclenchent plus d’alerte lorsqu’ils sont reçus une deuxième fois.", "L’app indique désormais quand un serveur refuse la connexion. Un bouton dans le sujet vous permet de vérifier votre utilisateur pour ce serveur."]
+        ]
+        XCTAssertEqual(Set(Bundle.main.localizations.filter { $0 != "Base" }), Set(expected.keys))
+        for (language, bullets) in expected {
+            let bundle = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            for (index, key) in expected["en"]!.enumerated() {
+                XCTAssertEqual(bundle.localizedString(forKey: key, value: nil, table: nil), bullets[index], language)
+            }
+        }
+    }
+
     private func stringUnits(_ node: Any) -> [[String: Any]] {
         guard let object = node as? [String: Any] else { return [] }
         if let unit = object["stringUnit"] as? [String: Any] { return [unit] }
