@@ -7,6 +7,10 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		0E90FA4408C923A1B64D200D /* DiagnosticFixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8447874A56896964DD5EA0BF /* DiagnosticFixtures */; };
+		98369CBCCAA2B94F358ABF70 /* DiagnosticReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA0A6167E6918951959B6CD /* DiagnosticReportsView.swift */; };
+		E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */; };
+		F3359A54F7126EFCC8332441 /* DiagnosticReports.swift in Sources */ = {isa = PBXBuildFile; fileRef = E35B6F3CB1D3DA3B27C97E66 /* DiagnosticReports.swift */; };
 		01088FE73E3079E35ED33E9C /* NotificationResponseRelay.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */; };
 		01673B6F4FE6DB3B32637A10 /* TopicEncryption+Message.swift in Sources */ = {isa = PBXBuildFile; fileRef = 29EE00022FD0000100F927E4 /* TopicEncryption+Message.swift */; };
 		02024E60283D7CBB0064224A /* Extensions.swift in Sources */ = {isa = PBXBuildFile; fileRef = 02024E5F283D7CBB0064224A /* Extensions.swift */; };
@@ -203,6 +207,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		5CA0A6167E6918951959B6CD /* DiagnosticReportsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReportsView.swift; sourceTree = "<group>"; };
+		8447874A56896964DD5EA0BF /* DiagnosticFixtures */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; path = DiagnosticFixtures; sourceTree = "<group>"; };
+		D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReportTests.swift; sourceTree = "<group>"; };
+		E35B6F3CB1D3DA3B27C97E66 /* DiagnosticReports.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReports.swift; sourceTree = "<group>"; };
         A121A1E90000000000000001 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 9.xcdatamodel"; sourceTree = "<group>"; };
 		02024E5F283D7CBB0064224A /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		117A00022FD0000100F927E4 /* LaunchExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchExperience.swift; sourceTree = "<group>"; };
@@ -357,6 +365,7 @@
 		2939B2152F8F293C00A52946 /* Settings */ = {
 			isa = PBXGroup;
 			children = (
+				5CA0A6167E6918951959B6CD /* DiagnosticReportsView.swift */,
 				2939B20F2F8F293C00A52946 /* AboutView.swift */,
 				2E1C0A012FF0000100A52946 /* LicensesView.swift */,
 				18A28C5B2FBCF00000A52946 /* AttachmentAutoDownloadView.swift */,
@@ -518,6 +527,7 @@
 		9474F210283326E000CDE4DD /* Utils */ = {
 			isa = PBXGroup;
 			children = (
+				E35B6F3CB1D3DA3B27C97E66 /* DiagnosticReports.swift */,
 				BA1180000000000000000001 /* ServerCapabilities.swift */,
 				9474F20E283326C500CDE4DD /* ApiService.swift */,
 				94CD1969283E666900973B93 /* EmojiManager.swift */,
@@ -566,6 +576,8 @@
 		BCDAB7772E43C161501373ED /* ntfyTests */ = {
 			isa = PBXGroup;
 			children = (
+				D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */,
+				8447874A56896964DD5EA0BF /* DiagnosticFixtures */,
 				C12100000000000000000002 /* ComposeTests.swift */,
 				DE1190000000000000000013 /* LocalizationTests.swift */,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
@@ -751,6 +763,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				0E90FA4408C923A1B64D200D /* DiagnosticFixtures in Resources */,
                 DE1190000000000000000005,
 				B64119000000000000000001 /* base64-binary.json in Resources */,
 			);
@@ -773,6 +786,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				F3359A54F7126EFCC8332441 /* DiagnosticReports.swift in Sources */,
+				98369CBCCAA2B94F358ABF70 /* DiagnosticReportsView.swift in Sources */,
 				29EE00142FD0000100F927E4 /* TopicEncryptionView.swift in Sources */,
 				29EE00132FD0000100F927E4 /* TopicEncryptionSnippets.swift in Sources */,
 				29EE00122FD0000100F927E4 /* TopicEncryption+Message.swift in Sources */,
@@ -915,6 +930,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				DE1190000000000000000004 /* LocalizationTests.swift in Sources */,
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
 				BA1180000000000000000012 /* ServerContractTests.swift in Sources */,

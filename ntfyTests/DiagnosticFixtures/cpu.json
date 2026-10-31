@@ -1,0 +1,56 @@
+{
+  "version": "1.0.0",
+  "timeStampBegin": "2026-10-31 12:00:00",
+  "timeStampEnd": "2026-10-31 13:00:00",
+  "cpuExceptionDiagnostics": [
+    {
+      "diagnosticMetaData": {
+        "platformArchitecture": "arm64e",
+        "appBuildVersion": "35",
+        "appVersion": "1.21.0",
+        "osVersion": "iPhone OS 26.5 (23F77)",
+        "deviceType": "iPhone18,1",
+        "pid": 42,
+        "isTestFlightApp": false,
+        "bundleIdentifier": "org.example.ntfy-nextgen",
+        "regionFormat": "US",
+        "totalCPUTime": "90 sec",
+        "totalSampledTime": "120 sec",
+        "futureFreeText": "https://private-server.invalid/secret-topic-name?token=tk_super_secret"
+      },
+      "callStackTree": {
+        "callStackPerThread": true,
+        "callStacks": [
+          {
+            "threadAttributed": true,
+            "callStackRootFrames": [
+              {
+                "binaryUUID": "70B89F27-1634-3580-A695-57CDB41D7743",
+                "offsetIntoBinaryTextSegment": 165304,
+                "sampleCount": 1,
+                "binaryName": "ntfy",
+                "address": 7170766264,
+                "subFrames": [
+                  {
+                    "binaryUUID": "77A62F2E-8212-30F3-84C1-E8497440ACF8",
+                    "binaryName": "libdyld.dylib",
+                    "address": 7170808612,
+                    "offsetIntoBinaryTextSegment": 6948,
+                    "sampleCount": 1
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      "signpostData": [
+        {
+          "signpostName": "https://private-server.invalid/secret-topic-name?token=tk_super_secret",
+          "signpostCategory": "https://private-server.invalid/secret-topic-name?token=tk_super_secret"
+        }
+      ],
+      "unknown": "https://private-server.invalid/secret-topic-name?token=tk_super_secret"
+    }
+  ]
+}

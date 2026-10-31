@@ -68,6 +68,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             return true
         }
 
+        DiagnosticSubscriber.shared.start()
+        #if DEBUG
+        DiagnosticSubscriber.shared.receiveDebugFixtureIfRequested()
+        #endif
+
         // Lift any password still sitting in the Core Data store into the Keychain and blank the
         // column. Idempotent and cheap — stores written by this build already have none.
         Store.shared.migrateCredentialsToKeychain()
