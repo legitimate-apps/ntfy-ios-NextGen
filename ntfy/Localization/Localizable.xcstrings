@@ -24585,6 +24585,476 @@
           }
         }
       }
+    },
+    "Notification sound": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification sound"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Benachrichtigungston"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonido de notificación"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suono di notifica"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dźwięk powiadomienia"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingsgeluid"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Son de notification"
+          }
+        }
+      }
+    },
+    "Short ping": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Short ping"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kurzer Ping"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Pitido corto"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Segnale breve"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Krótki sygnał"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Korte ping"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bip court"
+          }
+        }
+      }
+    },
+    "Chime": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Chime"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Glockenspiel"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campanilla"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Campanello"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dzwonek"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Klokkenspel"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Carillon"
+          }
+        }
+      }
+    },
+    "Insistent alert": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Insistent alert"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dringender Alarm"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerta insistente"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avviso insistente"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uporczywy alarm"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aanhoudend alarm"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerte insistante"
+          }
+        }
+      }
+    },
+    "Imported sounds": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Imported sounds"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importierte Töne"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sonidos importados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Suoni importati"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaimportowane dźwięki"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geïmporteerde geluiden"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sons importés"
+          }
+        }
+      }
+    },
+    "Import sound from Files": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import sound from Files"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ton aus Dateien importieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importar sonido desde Archivos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa suono da File"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj dźwięk z Plików"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geluid uit Bestanden importeren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importer un son depuis Fichiers"
+          }
+        }
+      }
+    },
+    "Couldn't use this sound": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't use this sound"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Ton konnte nicht verwendet werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo usar este sonido"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile usare questo suono"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można użyć tego dźwięku"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dit geluid kan niet worden gebruikt"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’utiliser ce son"
+          }
+        }
+      }
+    },
+    "Tap a sound to select and preview it. Muted topics stay quiet. Critical alerts use the system critical sound.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tap a sound to select and preview it. Muted topics stay quiet. Critical alerts use the system critical sound."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tippe auf einen Ton, um ihn auszuwählen und anzuhören. Stummgeschaltete Themen bleiben still. Kritische Hinweise verwenden den kritischen Systemton."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toca un sonido para seleccionarlo y escucharlo. Los temas silenciados siguen en silencio. Las alertas críticas usan el sonido crítico del sistema."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tocca un suono per selezionarlo e ascoltarlo. Gli argomenti silenziati restano silenziosi. Gli avvisi critici usano il suono critico di sistema."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stuknij dźwięk, aby go wybrać i odsłuchać. Wyciszone tematy pozostają ciche. Alerty krytyczne używają krytycznego dźwięku systemowego."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tik op een geluid om het te kiezen en te beluisteren. Gedempte onderwerpen blijven stil. Kritieke meldingen gebruiken het kritieke systeemgeluid."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Touchez un son pour le sélectionner et l’écouter. Les sujets en sourdine restent silencieux. Les alertes critiques utilisent le son critique du système."
+          }
+        }
+      }
+    },
+    "Import audio from Files, up to 50 MB. The first 29 seconds are used. iOS system ringtones are not available to apps.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Import audio from Files, up to 50 MB. The first 29 seconds are used. iOS system ringtones are not available to apps."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importiere Audio aus Dateien mit bis zu 50 MB. Die ersten 29 Sekunden werden verwendet. iOS-Systemklingeltöne sind für Apps nicht verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa audio desde Archivos, hasta 50 MB. Se usan los primeros 29 segundos. Las apps no tienen acceso a los tonos del sistema iOS."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importa audio da File, fino a 50 MB. Vengono usati i primi 29 secondi. Le suonerie di sistema iOS non sono disponibili per le app."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importuj plik audio z Plików, do 50 MB. Używane jest pierwsze 29 sekund. Dzwonki systemowe iOS nie są dostępne dla aplikacji."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importeer audio uit Bestanden, tot 50 MB. De eerste 29 seconden worden gebruikt. iOS-systeembeltonen zijn niet beschikbaar voor apps."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Importez un fichier audio depuis Fichiers, jusqu’à 50 Mo. Les 29 premières secondes sont utilisées. Les sonneries système iOS ne sont pas accessibles aux apps."
+          }
+        }
+      }
+    },
+    "Choose a readable audio file up to 50 MB. Protected or unsupported audio cannot be imported.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose a readable audio file up to 50 MB. Protected or unsupported audio cannot be imported."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle eine lesbare Audiodatei mit bis zu 50 MB. Geschützte oder nicht unterstützte Audiodateien können nicht importiert werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige un archivo de audio legible de hasta 50 MB. No se puede importar audio protegido o no compatible."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli un file audio leggibile fino a 50 MB. Non è possibile importare audio protetto o non supportato."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz czytelny plik audio do 50 MB. Nie można importować chronionego ani nieobsługiwanego dźwięku."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies een leesbaar audiobestand tot 50 MB. Beveiligde of niet-ondersteunde audio kan niet worden geïmporteerd."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez un fichier audio lisible jusqu’à 50 Mo. Les fichiers protégés ou non pris en charge ne peuvent pas être importés."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

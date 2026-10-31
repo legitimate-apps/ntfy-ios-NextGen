@@ -379,6 +379,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         showNotification(baseUrl: baseUrl, message, completionHandler: completionHandler)
     }
 
+    var soundLibrary: TopicSoundLibrary = .shared
+
     var notificationScheduler: (UNNotificationRequest, @escaping (Error?) -> Void) -> Void = {
         UNUserNotificationCenter.current().add($0, withCompletionHandler: $1)
     }
@@ -393,10 +395,11 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     func showNotification(baseUrl: String, _ message: Message, completionHandler: (() -> Void)? = nil) {
         let user = Store.shared.getBasicUser(baseUrl: baseUrl)
         let displayName = Store.shared.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
+        let soundName = Store.shared.topicSoundName(baseUrl: baseUrl, topic: message.topic, library: soundLibrary)
         let content = UNMutableNotificationContent()
-        content.modify(message: message, baseUrl: baseUrl, displayName: displayName)
+        content.modify(message: message, baseUrl: baseUrl, displayName: displayName, soundName: soundName)
         content.attachImageIfNeeded(message: message, baseUrl: baseUrl, user: user) {
-            content.configureInterruption(message: message)
+            content.configureInterruption(message: message, soundName: soundName)
             content.applyTopicMute(baseUrl: baseUrl, topic: message.topic)
             let request = UNNotificationRequest(identifier: message.id, content: content, trigger: nil /* now */)
             // Acquire background execution on main before the shared-container lock or scheduler.
@@ -452,6 +455,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         willPresent notification: UNNotification,
         withCompletionHandler completionHandler: @escaping (UNNotificationPresentationOptions) -> Void
     ) {
+        if notification.request.identifier == TopicSoundPreview.requestID {
+            completionHandler([.sound])
+            return
+        }
         let userInfo = notification.request.content.userInfo
         Log.d(tag, "Notification received via userNotificationCenter(willPresent)", userInfo)
         var wakeManager = SubscriptionManager(store: Store.shared)
