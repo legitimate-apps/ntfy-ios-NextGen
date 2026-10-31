@@ -418,6 +418,35 @@ final class FcmTeardownLedgerTests: XCTestCase {
         XCTAssertTrue(fake.unsubscribes.isEmpty)
     }
 
+    func testSubscriptionManagerDeletesRowWithMissingTopicWithoutTeardown() {
+        assertMissingIdentityRowIsRemoved(missingTopic: true)
+    }
+
+    func testSubscriptionManagerDeletesRowWithMissingBaseUrlWithoutTeardown() {
+        assertMissingIdentityRowIsRemoved(missingTopic: false)
+    }
+
+    private func assertMissingIdentityRowIsRemoved(missingTopic: Bool) {
+        let fake = Subscriber()
+        let r = reconciler(fake)
+        var manager = SubscriptionManager(store: store)
+        manager.reconciler = r
+        let row = live()
+        let id = row.objectID
+        XCTAssertFalse(id.isTemporaryID, "the fixture starts with a saved subscription")
+        // Current models require both values, so clear one on a saved row without saving the
+        // invalid update. Deleting it must still commit, just as it did before journaling.
+        if missingTopic { row.topic = nil } else { row.baseUrl = nil }
+        manager.unsubscribe(row)
+        drain()
+        XCTAssertFalse(store.getSubscriptions()?.contains { $0.objectID == id } ?? true,
+                       "the malformed subscription must remain removable")
+        XCTAssertFalse(store.context.hasChanges, "the deletion must be saved")
+        XCTAssertTrue(r.teardownLedger.entries.isEmpty, "no identity means no teardown intent")
+        XCTAssertTrue(fake.unsubscribes.isEmpty)
+        XCTAssertTrue(fake.subscribes.isEmpty, "missing-identity deletion must not dispatch FCM work")
+    }
+
     func testNoApnsTokenKeepsIntentWithoutSpendingAttempt() {
         let fake = Subscriber()
         fake.hasApnsToken = false

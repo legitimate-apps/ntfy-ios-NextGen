@@ -88,8 +88,12 @@ struct SubscriptionManager {
             // exists to prevent.
             let baseUrl = subscription.baseUrl
             let topic = subscription.topic
-            guard let baseUrl, let topic,
-                  let intent = reconciler.prepareUnsubscribe(baseUrl: baseUrl, topic: topic) else {
+            guard let baseUrl, let topic else {
+                // A malformed row has no FCM identity but still needs to be removable.
+                store.delete(subscription: subscription)
+                return
+            }
+            guard let intent = reconciler.prepareUnsubscribe(baseUrl: baseUrl, topic: topic) else {
                 Log.w(tag, "Not deleting subscription because its FCM teardown intent could not be recorded")
                 return
             }
