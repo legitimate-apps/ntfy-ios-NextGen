@@ -34,7 +34,7 @@ SwiftUI + Swift concurrency; match the surrounding upstream style — this is a 
 diffs clean and upstreamable. Don't reformat files you aren't changing.
 
 ## Contributing
-See `CONTRIBUTING.md`. Report bugs via GitHub issues or Discord (see README).
+See `CONTRIBUTING.md`. Report bugs via GitHub issues (see README).
 
 ## License
 MIT — see `LICENSE`. Original credit to @Copephobia and Philipp C. Heckel.

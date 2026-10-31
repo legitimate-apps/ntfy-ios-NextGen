@@ -2161,10 +2161,10 @@ final class ntfyTests: XCTestCase {
         let context = Store.shared.context
         let subscription = Subscription(context: context)
         subscription.baseUrl = "https://ntfy.retired.example"
-        subscription.topic = "basket-alerts"
+        subscription.topic = "garage-alerts"
         defer { context.delete(subscription) }
 
-        XCTAssertEqual(subscription.shortDisplayName(), "basket-alerts",
+        XCTAssertEqual(subscription.shortDisplayName(), "garage-alerts",
                        "the row's name line must be the topic alone, so it can't be truncated away by the host")
         XCTAssertFalse(subscription.shortDisplayName().contains("/"),
                        "the name line must never contain the server address")
@@ -2174,11 +2174,11 @@ final class ntfyTests: XCTestCase {
         let context = Store.shared.context
         let subscription = Subscription(context: context)
         subscription.baseUrl = "https://ntfy.sh"
-        subscription.topic = "basket-alerts"
-        subscription.customDisplayName = "Basket alerts"
+        subscription.topic = "garage-alerts"
+        subscription.customDisplayName = "Garage alerts"
         defer { context.delete(subscription) }
 
-        XCTAssertEqual(subscription.shortDisplayName(), "Basket alerts")
+        XCTAssertEqual(subscription.shortDisplayName(), "Garage alerts")
     }
 
     func testRowNameFallsBackToTopicForAWhitespaceOnlyCustomName() {
@@ -2187,11 +2187,11 @@ final class ntfyTests: XCTestCase {
         let context = Store.shared.context
         let subscription = Subscription(context: context)
         subscription.baseUrl = "https://ntfy.sh"
-        subscription.topic = "basket-alerts"
+        subscription.topic = "garage-alerts"
         subscription.customDisplayName = "   "
         defer { context.delete(subscription) }
 
-        XCTAssertEqual(subscription.shortDisplayName(), "basket-alerts",
+        XCTAssertEqual(subscription.shortDisplayName(), "garage-alerts",
                        "a whitespace-only name must not produce an empty row headline")
     }
 
@@ -2199,10 +2199,10 @@ final class ntfyTests: XCTestCase {
         let context = Store.shared.context
         let subscription = Subscription(context: context)
         subscription.baseUrl = "https://ntfy.retired.example/"
-        subscription.topic = "basket-alerts"
+        subscription.topic = "garage-alerts"
         defer { context.delete(subscription) }
 
-        XCTAssertEqual(subscription.shortUrlString(), "ntfy.retired.example/basket-alerts",
+        XCTAssertEqual(subscription.shortUrlString(), "ntfy.retired.example/garage-alerts",
                        "the address line is the full topic URL, scheme stripped and no trailing slash")
         XCTAssertEqual(subscription.serverHost(), "ntfy.retired.example",
                        "VoiceOver announces only the server, since the name line already said the topic")
