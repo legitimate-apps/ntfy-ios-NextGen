@@ -104,6 +104,8 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             reconciler: FcmSubscriptionReconciler.shared
         )
 
+        ManagedConfiguration.shared.start()
+
         // Register app permissions for push notifications
         UNUserNotificationCenter.current().delegate = self
         Messaging.messaging().delegate = self
