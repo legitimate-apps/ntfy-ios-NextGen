@@ -15,7 +15,7 @@ configuration profile. The MDM service supplies it under
 | `topics` | Array of dictionaries, optional | Subscriptions to create. |
 | `topics[].server` | String, required | Server for this topic, independent of `defaultServer`. |
 | `topics[].topic` | String, required | Topic name: 1 to 64 ASCII letters, digits, underscores or hyphens. |
-| `topics[].displayName` | String, optional | Name shown in the topic list, at most 256 characters. Blank clears the managed name. |
+| `topics[].displayName` | String, optional | Name shown in the topic list, at most 256 characters. Blank removes the admin name as described below. |
 
 Servers must be full HTTP or HTTPS URLs with a host. A port and reverse proxy path
 are supported. Embedded usernames, passwords, queries, fragments and whitespace
@@ -76,8 +76,11 @@ repairs registrations that have failed or are waiting for notification permissio
 New subscriptions use the same persistence, initial poll and push registration path
 as subscriptions added by a person. An existing personal subscription on the same
 server and topic is left unchanged, including its display name. It is not adopted
-by the administrator. For topics the configuration created, subsequent configuration
-changes update the display name, including clearing it when omitted.
+by the administrator. For topics the configuration created, an admin name applies when
+first supplied or changed. The app remembers the last admin-applied name across
+launches. If no admin name was supplied, a user name is left alone. If the admin
+removes a name by omitting it or making it blank, the app clears it only if the
+current name still matches the last admin-applied value. A later user name stays.
 
 Removing a topic, sending an empty dictionary or removing the configuration keeps
 the subscription and its messages, but releases it to user control. It will continue
@@ -87,8 +90,10 @@ revoke permission on the server; profile removal is not a data wipe or access co
 Invalid entries also release their previous management without deleting data.
 
 Users can rename, mute, pin or unsubscribe from any topic. There is no managed badge
-or locked control. A managed display name is reapplied on the next configuration
-read. Unsubscribing from a topic still listed in configuration is temporary: the app
+or locked control. An unchanged admin name does not overwrite a later user rename
+on refresh. A new or changed admin name does apply, including over a user rename,
+because that configuration change is an explicit naming request. Unsubscribing
+from a topic still listed in configuration is temporary: the app
 recreates it at the next read. A topic manually recreated by the user before that
 read is personal and remains under their control. Administrators can use a display
 name such as `Operations alerts` to identify the purpose of a topic.

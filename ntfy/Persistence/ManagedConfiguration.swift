@@ -8,6 +8,7 @@ final class ManagedConfiguration: NSObject {
     static let feedbackKey = "com.apple.feedback.managed"
     static let shared = ManagedConfiguration(manager: SubscriptionManager(store: .shared))
     private static let ownershipKey = "managedConfigurationSubscriptionIDs"
+    private static let namesKey = "managedConfigurationDisplayNames"
     private static let defaultKey = "managedConfigurationDefault"
     private let manager: SubscriptionManager
     private let defaults: UserDefaults
@@ -101,6 +102,8 @@ final class ManagedConfiguration: NSObject {
             return // A malformed collection must not release ownership of existing topics.
         }
         let owned = defaults.dictionary(forKey: Self.ownershipKey) as? [String: String] ?? [:]
+        let appliedNames = defaults.dictionary(forKey: Self.namesKey) as? [String: String] ?? [:]
+        var nextAppliedNames: [String: String] = [:]
         var nextOwned: [String: String] = [:]
         var seen: Set<String> = []
         for (index, value) in (rawTopics as? [Any] ?? []).enumerated() {
@@ -133,15 +136,21 @@ final class ManagedConfiguration: NSObject {
                 nextOwned[key] = id
                 let name = (entry["displayName"] as? String)?.trimmingCharacters(in: .whitespacesAndNewlines)
                 let displayName = name?.isEmpty == true ? nil : name
-                if subscription.customDisplayName != displayName {
+                let previousName = created ? nil : appliedNames[id]
+                // A refresh is not a new naming request. Removing an admin name clears only
+                // that value, preserving a different name the user supplied afterwards.
+                if displayName != previousName &&
+                    (displayName != nil || subscription.customDisplayName == previousName) {
                     store.updateSubscription(subscription: subscription, displayName: displayName)
                 }
+                nextAppliedNames[id] = displayName
             }
             applied += 1
         }
         // Removed topics keep their history and become personal subscriptions. This also avoids
         // destructive cleanup after a temporarily missing or malformed profile.
         if owned != nextOwned { defaults.set(nextOwned, forKey: Self.ownershipKey) }
+        if appliedNames != nextAppliedNames { defaults.set(nextAppliedNames, forKey: Self.namesKey) }
         feedback(applied: applied, errors: errors)
     }
 

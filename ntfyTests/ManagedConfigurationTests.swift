@@ -118,6 +118,68 @@ final class ManagedConfigurationTests: XCTestCase {
         XCTAssertEqual(fetches, 2)
     }
 
+    func testUnnamedManagedTopicsPreserveUserNamesOnActivationAndReaderRestart() throws {
+        let entries = [topic("omitted"), topic("empty", displayName: "  ")]
+        apply(["topics": entries])
+        let omitted = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "omitted"))
+        let empty = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "empty"))
+        store.updateSubscription(subscription: omitted, displayName: "My omitted topic")
+        store.updateSubscription(subscription: empty, displayName: "My empty topic")
+        subject.start() // The same refresh path used on launch and activation.
+        NotificationCenter.default.post(name: UIApplication.didBecomeActiveNotification, object: nil)
+        drain()
+        XCTAssertEqual(omitted.customDisplayName, "My omitted topic")
+        XCTAssertEqual(empty.customDisplayName, "My empty topic")
+        apply(["topics": entries + [topic("additional")]])
+        XCTAssertEqual(omitted.customDisplayName, "My omitted topic")
+        XCTAssertEqual(empty.customDisplayName, "My empty topic")
+        subject = ManagedConfiguration(manager: manager, defaults: defaults)
+        subject.refresh()
+        XCTAssertEqual(omitted.customDisplayName, "My omitted topic")
+        XCTAssertEqual(empty.customDisplayName, "My empty topic")
+    }
+
+    func testAdminNameChangesApplyButUnchangedNamePreservesLaterUserRename() throws {
+        apply(["topics": [topic("alerts", displayName: "First admin name")]])
+        let row = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "alerts"))
+        XCTAssertEqual(row.customDisplayName, "First admin name")
+        store.updateSubscription(subscription: row, displayName: "My name")
+        subject = ManagedConfiguration(manager: manager, defaults: defaults)
+        subject.refresh()
+        XCTAssertEqual(row.customDisplayName, "My name")
+        apply(["topics": [topic("alerts", displayName: "Second admin name")]])
+        XCTAssertEqual(row.customDisplayName, "Second admin name")
+        store.updateSubscription(subscription: row, displayName: "My later name")
+        subject.refresh()
+        XCTAssertEqual(row.customDisplayName, "My later name")
+        XCTAssertEqual(fetches, 1)
+        XCTAssertEqual(subscriber.calls.count, 1)
+    }
+
+    func testRemovingAdminNameClearsItsValueButPreservesLaterUserName() throws {
+        apply(["topics": [topic("owned", displayName: "Admin"), topic("renamed", displayName: "Admin")]])
+        let owned = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "owned"))
+        let renamed = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "renamed"))
+        store.updateSubscription(subscription: renamed, displayName: "My replacement")
+        subject = ManagedConfiguration(manager: manager, defaults: defaults)
+        apply(["topics": [topic("owned"), topic("renamed", displayName: "")]])
+        XCTAssertNil(owned.customDisplayName)
+        XCTAssertEqual(renamed.customDisplayName, "My replacement")
+        store.updateSubscription(subscription: owned, displayName: "My name after removal")
+        subject = ManagedConfiguration(manager: manager, defaults: defaults)
+        subject.refresh()
+        XCTAssertEqual(owned.customDisplayName, "My name after removal")
+        XCTAssertEqual(renamed.customDisplayName, "My replacement")
+    }
+
+    func testAdminCanFirstSetANameAfterUserRenamesAnUnnamedTopic() throws {
+        apply(["topics": [topic("alerts")]])
+        let row = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "alerts"))
+        store.updateSubscription(subscription: row, displayName: "My name")
+        apply(["topics": [topic("alerts", displayName: "Admin supplied name")]])
+        XCTAssertEqual(row.customDisplayName, "Admin supplied name")
+    }
+
     func testUserRecreatedTopicIsNotClaimedByOldOwnership() throws {
         apply(["topics": [topic("alerts", displayName: "IT")]])
         let row = try XCTUnwrap(store.getSubscription(baseUrl: server, topic: "alerts"))
