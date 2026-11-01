@@ -24,16 +24,28 @@ struct ActionExecutor {
     /// (ntfy #1728 — e.g. a remote "Approve" button that otherwise leaves the
     /// banner on screen with no change). Adapted from binwiederhier/ntfy-ios#38
     /// (@abreparentesis) for this fork's ActionExecutor.
+    /// Completion follows the final HTTP result notification enqueue, or an immediate refusal.
+    /// Cancel the returned progress when background time expires; queued retries then send nothing.
+    @discardableResult
     static func execute(
         _ action: Action,
         notificationId: String? = nil,
         baseUrl: String? = nil,
-        credentialStore: CredentialStoring = KeychainCredentialStore.shared
-    ) {
+        credentialStore: CredentialStoring = KeychainCredentialStore.shared,
+        completion: @escaping () -> Void = {}
+    ) -> Progress {
+        let execution = Progress(totalUnitCount: 1)
         Log.d(tag, "Executing user action", action)
         guard registerTap(actionId: action.id) else {
             Log.d(tag, "Ignoring a repeat tap on an action that just ran", action.id)
-            return
+            completion()
+            return execution
+        }
+        defer {
+            if let ids = identifiersToClear(for: action, notificationId: notificationId) {
+                Log.d(tag, "Clearing delivered notification(s) for action.clear", ids)
+                UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
+            }
         }
         switch action.action {
         case "view":
@@ -43,7 +55,8 @@ struct ActionExecutor {
                 Log.w(tag, "Unable to parse action URL", action)
             }
         case "http":
-            http(action, baseUrl: baseUrl, credentialStore: credentialStore)
+            http(action, baseUrl: baseUrl, credentialStore: credentialStore, execution: execution, completion: completion)
+            return execution
         case "copy":
             if let value = action.value {
                 UIPasteboard.general.string = value
@@ -54,10 +67,8 @@ struct ActionExecutor {
             Log.w(tag, "Action \(action.action) not supported", action)
         }
 
-        if let ids = identifiersToClear(for: action, notificationId: notificationId) {
-            Log.d(tag, "Clearing delivered notification(s) for action.clear", ids)
-            UNUserNotificationCenter.current().removeDeliveredNotifications(withIdentifiers: ids)
-        }
+        completion()
+        return execution
     }
 
     /// Pure decision — which delivered-notification identifiers a tap on `action`
@@ -73,23 +84,26 @@ struct ActionExecutor {
         return [notificationId]
     }
     
-    private static func http(_ action: Action, baseUrl: String?, credentialStore: CredentialStoring) {
+    private static func http(_ action: Action, baseUrl: String?, credentialStore: CredentialStoring,
+                             execution: Progress, completion: @escaping () -> Void) {
         guard let request = makeHTTPRequest(action, baseUrl: baseUrl, credentialStore: credentialStore) else {
             Log.w(tag, "Unable to execute HTTP action, no or invalid URL", action)
+            completion()
             return
         }
-        perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: 1)
+        perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: 1, execution: execution, completion: completion)
     }
 
     private static func perform(_ request: URLRequest, action: Action, baseUrl: String?,
-                                credentialStore: CredentialStoring, attempt: Int) {
+                                credentialStore: CredentialStoring, attempt: Int, execution: Progress, completion: @escaping () -> Void) {
+        guard !execution.isCancelled else { completion(); return }
         let server = cooldownServer(for: request, baseUrl: baseUrl)
         guard let permit = ServerCooldown.shared.claimAttempt(server: server, manual: attempt == 1, kind: .action) else {
             let seconds = max(1, Int(ceil(ServerCooldown.shared.deadline(for: server, kind: .action).timeIntervalSinceNow)))
             let detail = ServerCooldown.shared.hasNonTimeRefusal(server: server, kind: .action)
                 ? String(localized: "The server or action request must change before trying again.")
                 : String(format: NSLocalizedString("The server is limiting this action. Try again in %lld seconds.", comment: "Retry interval in seconds"), locale: DeliveryHealthCopy.retryIntervalLocale(), seconds)
-            notifyActionResult(action, success: false, detail: detail)
+            notifyActionResult(action, success: false, detail: detail, completion: completion)
             return
         }
         let method = request.httpMethod ?? "POST"
@@ -102,7 +116,8 @@ struct ActionExecutor {
         } else {
             session = .shared
         }
-        session.dataTask(with: request) { (data, response, error) in
+        let task = session.dataTask(with: request) { (data, response, error) in
+            execution.cancellationHandler = nil
             if let http = response as? HTTPURLResponse, http.statusCode == 429,
                RetryDirective.parse(condition: http.value(forHTTPHeaderField: "Retry-After-Condition"),
                                     retryAfter: http.value(forHTTPHeaderField: "Retry-After")) != nil {
@@ -112,7 +127,7 @@ struct ActionExecutor {
             if let delay = retryDelay(response: response, error: error, attempt: attempt) {
                 Log.w(self.tag, "HTTP \(method) action not processed, retrying in \(delay)s")
                 DispatchQueue.global().asyncAfter(deadline: .now() + delay) {
-                    perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: attempt + 1)
+                    perform(request, action: action, baseUrl: baseUrl, credentialStore: credentialStore, attempt: attempt + 1, execution: execution, completion: completion)
                 }
                 return
             }
@@ -121,16 +136,20 @@ struct ActionExecutor {
                 ServerCooldown.shared.succeeded(server: server, attempt: permit)
                 Log.d(self.tag, "HTTP \(method) action succeeded", response)
                 recordOutcome(actionId: action.id, success: true)
-                notifyActionResult(action, success: true, detail: nil)
+                notifyActionResult(action, success: true, detail: nil, completion: completion)
             case .failure(let reason):
                 Log.e(self.tag, "HTTP \(method) action failed: \(reason)")
                 guard recordOutcome(actionId: action.id, success: false) else {
                     Log.d(self.tag, "Keeping the earlier success for this action on screen")
+                    completion()
                     return
                 }
-                notifyActionResult(action, success: false, detail: reason)
+                notifyActionResult(action, success: false, detail: reason, completion: completion)
             }
-        }.resume()
+        }
+        execution.cancellationHandler = { task.cancel() }
+        if execution.isCancelled { task.cancel() }
+        task.resume()
         // A per-action delegate session is retained until invalidated; let the task finish, then free it.
         if session !== URLSession.shared {
             session.finishTasksAndInvalidate()
@@ -275,7 +294,7 @@ struct ActionExecutor {
 
     /// Posts a local notification so the user sees whether an action succeeded — the
     /// only feedback channel that works from a banner tap, where there is no in-app UI.
-    private static func notifyActionResult(_ action: Action, success: Bool, detail: String?) {
+    private static func notifyActionResult(_ action: Action, success: Bool, detail: String?, completion: @escaping () -> Void) {
         let content = UNMutableNotificationContent()
         content.title = success ? "✅ \(action.label)" : String(localized: "⚠️ \(action.label) failed")
         if !success, let detail = detail {
@@ -286,6 +305,7 @@ struct ActionExecutor {
         content.relevanceScore = 0
         let request = UNNotificationRequest(identifier: resultNotificationId, content: content, trigger: nil /* now */)
         UNUserNotificationCenter.current().add(request) { error in
+            defer { completion() }
             if let error = error {
                 Log.e(tag, "Unable to post action-result notification", error)
             }

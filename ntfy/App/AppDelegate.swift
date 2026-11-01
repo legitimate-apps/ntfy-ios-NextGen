@@ -534,11 +534,30 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         
         // Execute user action or click action (if any)
         if let action = action {
-            ActionExecutor.execute(
-                action,
-                notificationId: notificationId,
-                baseUrl: baseUrl
-            )
+            if action.action == "http" {
+                let execute = {
+                    var task = UIBackgroundTaskIdentifier.invalid
+                    var execution: Progress?
+                    var finished = false
+                    // The response and expiration callbacks share one main-thread finish path.
+                    let finish = {
+                        guard !finished else { return }
+                        finished = true
+                        if task != .invalid { self.endNotificationBackgroundTask(task) }
+                        completionHandler()
+                    }
+                    task = self.beginNotificationBackgroundTask {
+                        execution?.cancel()
+                        finish()
+                    }
+                    execution = ActionExecutor.execute(action, notificationId: notificationId, baseUrl: baseUrl) {
+                        DispatchQueue.main.async(execute: finish)
+                    }
+                }
+                if Thread.isMainThread { execute() } else { DispatchQueue.main.async(execute: execute) }
+                return
+            }
+            ActionExecutor.execute(action, notificationId: notificationId, baseUrl: baseUrl)
         } else if let click = message.click, click != "", let url = URL(string: click) {
             UIApplication.shared.open(url, options: [:], completionHandler: nil)
         }
