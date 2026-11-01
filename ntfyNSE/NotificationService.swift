@@ -41,6 +41,7 @@ class NotificationService: UNNotificationServiceExtension {
             expiryIsQuiet = alerted || muted
         }
     }
+    private var quietHours = QuietHours.load()
     private var expiryIsQuiet = false
     private var processedIdentity: (message: Message, baseUrl: String)?
 
@@ -50,6 +51,7 @@ class NotificationService: UNNotificationServiceExtension {
         NotificationExtensionLifetime.shared.requestStarted()
         if self.store == nil { self.store = makeStore() }
         self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
+        quietHours = QuietHours.load()
         presentationMessage = nil
         alertIdentity = nil
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)
@@ -117,7 +119,11 @@ class NotificationService: UNNotificationServiceExtension {
         if expiring {
             store?.quietAlerts.cancelScheduling()
             presentationLock.lock()
-            let quiet = expiryIsQuiet
+            var info = final.userInfo
+            if let identity = processedIdentity {
+                info["base_url"] = identity.baseUrl; info["topic"] = identity.message.topic
+            }
+            let quiet = expiryIsQuiet || quietHours.isQuiet(userInfo: info)
             presentationLock.unlock()
             if quiet { final.sound = nil; final.interruptionLevel = .passive; final.relevanceScore = 0 }
             _ = handoff(final)

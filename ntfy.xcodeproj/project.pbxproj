@@ -7,6 +7,12 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		36F3897CDC503084F420B8E4 = {isa = PBXBuildFile; fileRef = 00430C4D44D528D53F5950F8; };
+		729248E8E1BB5BEEC70AAFF9 = {isa = PBXBuildFile; fileRef = E025341946943C384D6CD042; };
+		AB972269B58CFCF67743BFD8 = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
+		22F7005DEE2B3B5D8D3AA005 = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
+		70C0A426085ED8D1F7D716AF = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
+		1E89EB0639BDDB580553BA66 = {isa = PBXBuildFile; fileRef = 1B1207CA777D028ED9906632; };
 		A12300000000000000000001 /* BackgroundHTTPActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12300000000000000000002 /* BackgroundHTTPActionTests.swift */; };
 		547100000000000000000303 = {isa = PBXBuildFile; fileRef = 547000000000000000000003; };
 		547100000000000000000304 = {isa = PBXBuildFile; fileRef = 547000000000000000000004; };
@@ -229,6 +235,10 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		00430C4D44D528D53F5950F8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietHoursStorageTests.swift"; sourceTree = SOURCE_ROOT; };
+		E025341946943C384D6CD042 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Settings/QuietHoursView.swift"; sourceTree = SOURCE_ROOT; };
+		C34B0B1308D16855C0A4108A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Persistence/QuietHours.swift"; sourceTree = SOURCE_ROOT; };
+		1B1207CA777D028ED9906632 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietHoursTests.swift"; sourceTree = SOURCE_ROOT; };
 		A12300000000000000000002 /* BackgroundHTTPActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundHTTPActionTests.swift; sourceTree = "<group>"; };
 		547000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietTopicIntegrationTests.swift"; sourceTree = SOURCE_ROOT; };
 		547000000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietTopicAlertTests.swift"; sourceTree = SOURCE_ROOT; };
@@ -416,6 +426,10 @@
 				18A28C5B2FBCF00000A52946 /* AttachmentAutoDownloadView.swift */,
 				2939B2102F8F293C00A52946 /* DefaultServerView.swift */,
 				2939B2112F8F293C00A52946 /* SettingsView.swift */,
+				00430C4D44D528D53F5950F8,
+				E025341946943C384D6CD042,
+				C34B0B1308D16855C0A4108A,
+				1B1207CA777D028ED9906632,
 				DE2A6A249B224F38A1F69C4D /* NotificationStatusView.swift */,
                 A18000120000000000000002 /* RetentionSettingsView.swift */,
 				29B4EB052FD7C5C1005CA516 /* CriticalAlertsSettingView.swift */,
@@ -846,6 +860,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				729248E8E1BB5BEEC70AAFF9,
+				70C0A426085ED8D1F7D716AF,
 				F3359A54F7126EFCC8332441 /* DiagnosticReports.swift in Sources */,
 				98369CBCCAA2B94F358ABF70 /* DiagnosticReportsView.swift in Sources */,
 				546100000000000000000000 /* TopicSound.swift in Sources */,
@@ -933,6 +949,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				22F7005DEE2B3B5D8D3AA005,
 				546100000000000000000001 /* TopicSound.swift in Sources */,
 				547100000000000000000001 /* QuietTopicAlerts.swift in Sources */,
 				29EE00222FD0000100F927E4 /* TopicEncryption+Message.swift in Sources */,
@@ -967,6 +984,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				AB972269B58CFCF67743BFD8,
 				546100000000000000000002 /* TopicSound.swift in Sources */,
 				547100000000000000000002 /* QuietTopicAlerts.swift in Sources */,
 				C7293D2D43834D67FDE52F01 /* ShareViewController.swift in Sources */,
@@ -1004,6 +1022,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				36F3897CDC503084F420B8E4,
+				1E89EB0639BDDB580553BA66,
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
 				547100000000000000000303,

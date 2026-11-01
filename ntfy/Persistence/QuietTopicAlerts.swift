@@ -99,6 +99,22 @@ final class QuietTopicAlerts {
         active.forEach { $0.finish(POSIXError(.ECANCELED)) }
     }
 
+    private func applyQuietHours(_ content: UNMutableNotificationContent, at date: Date) {
+        content.sound = .default
+        content.interruptionLevel = .active
+        if QuietHours.load().isQuiet(userInfo: content.userInfo, now: date) {
+            content.sound = nil; content.interruptionLevel = .passive; content.relevanceScore = 0
+        }
+    }
+
+    /// Refresh under the same operation queue and cross-process coordination as new receipts.
+    func refreshQuietHours() {
+        defaults.synchronize()
+        for key in defaults.dictionaryRepresentation().keys where key.hasPrefix("quietTopic.v1.") {
+            update(key: key, presentationOnly: true) { $0 }
+        }
+    }
+
     private func runNext() {
         guard activeID == nil else { return }
         while !jobs.isEmpty {
@@ -111,6 +127,12 @@ final class QuietTopicAlerts {
     }
 
     private func update(identity: String, completion: @escaping (Error?) -> Void = { _ in },
+                        transform: @escaping ([String: Any]?) -> [String: Any]?) {
+        update(key: Self.identifier(identity), completion: completion, transform: transform)
+    }
+
+    private func update(key: String, presentationOnly: Bool = false,
+                        completion: @escaping (Error?) -> Void = { _ in },
                         transform: @escaping ([String: Any]?) -> [String: Any]?) {
         pending.enter()
         let id = UUID()
@@ -127,7 +149,6 @@ final class QuietTopicAlerts {
                 }
             }
             let work = {
-                let key = Self.identifier(identity)
                 let deadline = Date().addingTimeInterval(5)
                 func finish(_ error: Error?) { operation.finish(error) }
                 func attempt() {
@@ -160,6 +181,10 @@ final class QuietTopicAlerts {
                     }
                     let interval = state["interval"] as? Double ?? 0
                     let received = state["received"] as? Double ?? Date().timeIntervalSince1970
+                    if presentationOnly && received + interval <= Date().timeIntervalSince1970 {
+                        finish(nil)
+                        return
+                    }
                     let content = UNMutableNotificationContent()
                     content.title = state["title"] as? String ?? state["topic"] as? String ?? ""
                     let duration = Self.intervalTitle(interval, bundle: self.bundle)
@@ -168,6 +193,7 @@ final class QuietTopicAlerts {
                     content.interruptionLevel = .active
                     content.userInfo = [Self.marker: true, "base_url": state["baseUrl"] as? String ?? "", "topic": state["topic"] as? String ?? ""]
                     let trigger = UNTimeIntervalNotificationTrigger(timeInterval: max(1, received + interval - Date().timeIntervalSince1970), repeats: false)
+                    self.applyQuietHours(content, at: trigger.nextTriggerDate() ?? Date())
                     self.schedule(UNNotificationRequest(identifier: key, content: content, trigger: trigger)) { error in
                         self.queue.async {
                             guard !operation.isFinished else { return }

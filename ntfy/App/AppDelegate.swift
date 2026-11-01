@@ -80,6 +80,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
                 }
             }
         }
+        QuietTopicAlerts.shared.refreshQuietHours()
         DiagnosticSubscriber.shared.start()
         #if DEBUG
         DiagnosticSubscriber.shared.receiveDebugFixtureIfRequested()
@@ -143,8 +144,13 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             forName: UIApplication.didBecomeActiveNotification, object: nil, queue: .main
         ) { [weak self] _ in
             self?.handleRelayedNotificationResponses()
+            QuietTopicAlerts.shared.refreshQuietHours()
         }
         handleRelayedNotificationResponses()
+    }
+
+    func applicationSignificantTimeChange(_ application: UIApplication) {
+        QuietTopicAlerts.shared.refreshQuietHours()
     }
 
     private func handleRelayedNotificationResponses() {
@@ -475,7 +481,7 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         let userInfo = notification.request.content.userInfo
         if userInfo[QuietTopicAlerts.marker] as? Bool == true {
-            completionHandler([.banner, .sound, .list])
+            completionHandler(QuietHours.load().isQuiet(userInfo: userInfo) ? [.list] : [.banner, .sound, .list])
             return
         }
         Log.d(tag, "Notification received via userNotificationCenter(willPresent)", userInfo)
