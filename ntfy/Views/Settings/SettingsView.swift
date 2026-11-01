@@ -21,8 +21,8 @@ struct SettingsView: View {
                     header: Text(String(localized: "Notifications")),
                     footer: Text(String(localized: "Automatically download attachments up to the selected size. Attachments larger than this limit must be downloaded manually."))
                 ) {
-                    AttachmentAutoDownloadView()
                     NavigationLink(String(localized: "Quiet hours")) { QuietHoursView() }
+                    AttachmentAutoDownloadView()
                 }
                 NotificationStatusView()
                 RetentionSettingsView(store: store)
