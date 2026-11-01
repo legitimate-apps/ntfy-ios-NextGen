@@ -22,8 +22,9 @@ class NotificationService: UNNotificationServiceExtension {
     }
     private var deliveryGate: NotificationDeliveryGate?
     private let presentationLock = NSLock()
-    private var processedMessage: Message?
-    private var presentationMessage: Message? {
+    var soundLibrary: TopicSoundLibrary = .shared
+    private var processedMessage: (message: Message, soundName: String?)?
+    private var presentationMessage: (message: Message, soundName: String?)? {
         get { presentationLock.lock(); defer { presentationLock.unlock() }; return processedMessage }
         set { presentationLock.lock(); defer { presentationLock.unlock() }; processedMessage = newValue }
     }
@@ -99,7 +100,7 @@ class NotificationService: UNNotificationServiceExtension {
 
     private func deliver(_ content: UNNotificationContent, expiring: Bool = false) {
         let final = content.mutableCopy() as! UNMutableNotificationContent
-        if let presentationMessage { final.configureInterruption(message: presentationMessage) }
+        if let presentationMessage { final.configureInterruption(message: presentationMessage.message, soundName: presentationMessage.soundName) }
         if !expiring { final.applyTopicMute() }
         let handoff = { (output: UNNotificationContent) -> Bool in
             guard self.deliveryGate?.deliver(output) == true else {
@@ -199,13 +200,15 @@ class NotificationService: UNNotificationServiceExtension {
         bestAttemptContent = content
         let user = store?.getBasicUser(baseUrl: baseUrl)
         let displayName = store?.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
+        let soundName = store?.topicSoundName(baseUrl: baseUrl, topic: message.topic, library: soundLibrary)
         content.modify(
             message: message,
             baseUrl: baseUrl,
             displayName: displayName,
+            soundName: soundName,
             categoryRegistrationTimeout: NotificationServiceTiming.categoryRegistrationTimeout
         )
-        presentationMessage = message
+        presentationMessage = (message, soundName)
         bestAttemptContent = content
         content.attachImageIfNeeded(
             message: message,

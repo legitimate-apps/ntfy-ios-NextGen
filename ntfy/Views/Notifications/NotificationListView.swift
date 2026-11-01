@@ -34,6 +34,7 @@ struct NotificationListView: View {
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
     @State private var showMuteOptions = false
+    @State private var showSoundOptions = false
     @State private var showQRCodeSheet = false
     @State private var showComposeSheet = false
     @State private var showUserEditor = false
@@ -155,6 +156,7 @@ struct NotificationListView: View {
                     return deleted
                 }, onCancel: { showUserEditor = false })
         }
+        .sheet(isPresented: $showSoundOptions) { TopicSoundView(subscription: subscription) }
         .sheet(isPresented: $showMuteOptions) { TopicMuteView(subscription: subscription) }
         .listStyle(PlainListStyle())
         .navigationBarTitleDisplayMode(.inline)
@@ -183,6 +185,7 @@ struct NotificationListView: View {
                     editButton
                 } else {
                     Menu {
+                        TopicSoundButton(showingOptions: $showSoundOptions)
                         TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                         if notificationsModel.notifications.count > 0 {
                             editButton
@@ -461,6 +464,9 @@ struct NotificationListView: View {
     
     private func cancelSubscriptionNotifications() {
         let notificationCenter = UNUserNotificationCenter.current()
+        // Notification Center calls back off-main. Snapshot values before leaving the view's queue.
+        let subscriptionBaseUrl = normalizeBaseUrl(subscription.baseUrl ?? "")
+        let subscriptionTopic = subscription.topicName()
         notificationCenter.getDeliveredNotifications { notifications in
             let ids = notifications
                 .filter { notification in
@@ -470,7 +476,7 @@ struct NotificationListView: View {
                         // against the normalized stored one meant a self-hosted server configured
                         // with a trailing slash never matched, so opening the topic left its banners
                         // sitting in Notification Center until the user cleared them by hand.
-                        return subscription.matches(baseUrl: baseUrl, topic: topic)
+                        return normalizeBaseUrl(baseUrl) == subscriptionBaseUrl && topic == subscriptionTopic
                     }
                     return false
                 }

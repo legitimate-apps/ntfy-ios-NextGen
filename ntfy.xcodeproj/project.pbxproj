@@ -167,6 +167,12 @@
         F11900000000000000000005 /* NotificationService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9474F1E6282F3FFD00CDE4DD; };
 		F87484C0F13BD434C4BEC60F /* Foundation.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = C8C21EC8EF14BA1005CF4A4F /* Foundation.framework */; };
 		FD8D93D0550469EBF7F604E3 /* ntfy.xcdatamodeld in Sources */ = {isa = PBXBuildFile; fileRef = 9474F1F52830830700CDE4DD /* ntfy.xcdatamodeld */; };
+		546100000000000000000000 /* TopicSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000000; };
+		546100000000000000000001 /* TopicSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000000; };
+		546100000000000000000002 /* TopicSound.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000000; };
+		546100000000000000000100 /* TopicSoundImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000001; };
+		546100000000000000000200 /* TopicSoundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000002; };
+		546100000000000000000303 /* TopicSoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000003; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -329,6 +335,10 @@
         F11900000000000000000014 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 8.xcdatamodel"; sourceTree = "<group>"; };
 		F576A27EB64E4AB483082C5F /* DeliveryHealth.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeliveryHealth.swift; sourceTree = "<group>"; };
 		FFB072E4CE7885C446A0546C /* ntfyTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ntfyTests.swift; sourceTree = "<group>"; };
+		546000000000000000000000 /* TopicSound.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Persistence/TopicSound.swift"; sourceTree = SOURCE_ROOT; };
+		546000000000000000000001 /* TopicSoundImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Utils/TopicSoundImporter.swift"; sourceTree = SOURCE_ROOT; };
+		546000000000000000000002 /* TopicSoundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Subscriptions/TopicSoundView.swift"; sourceTree = SOURCE_ROOT; };
+		546000000000000000000003 /* TopicSoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/TopicSoundTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -416,6 +426,11 @@
 		9474F1B4282F2AA700CDE4DD = {
 			isa = PBXGroup;
 			children = (
+				546000000000000000000000,
+				546000000000000000000001,
+				546000000000000000000002,
+				546000000000000000000003,
+
 				DE1190000000000000000011 /* Localizable.xcstrings */,
 				DE1190000000000000000012 /* InfoPlist.xcstrings */,
 				DE1190000000000000000014 /* Localization */,
@@ -794,6 +809,9 @@
 			files = (
 				F3359A54F7126EFCC8332441 /* DiagnosticReports.swift in Sources */,
 				98369CBCCAA2B94F358ABF70 /* DiagnosticReportsView.swift in Sources */,
+				546100000000000000000000 /* TopicSound.swift in Sources */,
+				546100000000000000000100 /* TopicSoundImporter.swift in Sources */,
+				546100000000000000000200 /* TopicSoundView.swift in Sources */,
 				29EE00142FD0000100F927E4 /* TopicEncryptionView.swift in Sources */,
 				29EE00132FD0000100F927E4 /* TopicEncryptionSnippets.swift in Sources */,
 				29EE00122FD0000100F927E4 /* TopicEncryption+Message.swift in Sources */,
@@ -871,6 +889,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				546100000000000000000001 /* TopicSound.swift in Sources */,
 				29EE00222FD0000100F927E4 /* TopicEncryption+Message.swift in Sources */,
 				29EE00212FD0000100F927E4 /* TopicEncryption.swift in Sources */,
 				9407EDDB284ADE1F00C1C334 /* User.swift in Sources */,
@@ -903,6 +922,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				546100000000000000000002 /* TopicSound.swift in Sources */,
 				C7293D2D43834D67FDE52F01 /* ShareViewController.swift in Sources */,
 				01673B6F4FE6DB3B32637A10 /* TopicEncryption+Message.swift in Sources */,
 				C60B76F05F4FB2335868CDAF /* TopicEncryption.swift in Sources */,
@@ -938,6 +958,7 @@
 			buildActionMask = 2147483647;
 			files = (
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
+				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
 				DE1190000000000000000004 /* LocalizationTests.swift in Sources */,
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
 				DDDFAC17B65143878A1319E9 /* FcmTeardownLedgerTests.swift in Sources */,

@@ -95,6 +95,7 @@ extension UNMutableNotificationContent {
         message: Message,
         baseUrl: String,
         displayName: String? = nil,
+        soundName: String? = nil,
         categoryRegistrationTimeout: TimeInterval = 3
     ) {
         // Body and title.
@@ -147,7 +148,7 @@ extension UNMutableNotificationContent {
         // and iOS has granted critical alert permission.
         self.threadIdentifier = topicUrl(baseUrl: baseUrl, topic: message.topic)
         
-        configureInterruption(message: message)
+        configureInterruption(message: message, soundName: soundName)
 
         applyTopicMute(baseUrl: baseUrl, topic: message.topic)
 
@@ -164,7 +165,8 @@ extension UNMutableNotificationContent {
         self.userInfo["base_url"] = baseUrl
     }
 
-    func configureInterruption(message: Message) {
+    func configureInterruption(message: Message, soundName: String? = nil,
+                               criticalEnabled: Bool? = nil, criticalAuthorized: Bool? = nil) {
         // Map priorities to interruption level (light up screen, ...) and relevance (order)
         switch message.priority {
         case 1:
@@ -180,7 +182,7 @@ extension UNMutableNotificationContent {
             self.interruptionLevel = .timeSensitive
             self.relevanceScore = 0.75
         case 5:
-            if Store.shared.getCriticalAlertsEnabled() && Store.getCriticalAlertsAuthorized() {
+            if (criticalEnabled ?? Store.shared.getCriticalAlertsEnabled()) && (criticalAuthorized ?? Store.getCriticalAlertsAuthorized()) {
                 self.sound = .defaultCritical
                 self.interruptionLevel = .critical
             } else {
@@ -194,6 +196,11 @@ extension UNMutableNotificationContent {
             self.relevanceScore = 0.5
         }
         
+        // Passive priority mapping stays intact. Critical alerts retain the system critical sound.
+        if let soundName, self.interruptionLevel != .critical {
+            self.sound = UNNotificationSound(named: UNNotificationSoundName(rawValue: soundName))
+        }
+
         if message.isUpdate {
             self.sound = nil
             self.interruptionLevel = .passive

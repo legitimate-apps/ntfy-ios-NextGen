@@ -489,7 +489,7 @@ class Store: ObservableObject {
     /// refresh or relaunch — a subscription the user can still see, whose push is silently dead,
     /// and whose `fcmSubscribed` still reads true so reconciliation skips rebuilding it.
     @discardableResult
-    func delete(subscription: Subscription) -> Bool {
+    func delete(subscription: Subscription, soundLibrary: TopicSoundLibrary = .shared) -> Bool {
         var deleted = false
         context.performAndWait {
             // Capture plain paths — not the managed objects — before deleting, and unlink only
@@ -513,10 +513,12 @@ class Store: ObservableObject {
             let subscriptionTopicUrl = subscription.baseUrl.flatMap { baseUrl in
                 subscription.topic.map { topicUrl(baseUrl: baseUrl, topic: $0) }
             }
+            let soundIdentity = subscription.objectID.uriRepresentation().absoluteString
             context.delete(subscription)
             do {
                 try context.save()
                 deleted = true
+                soundLibrary.setChoice(nil, for: soundIdentity)
                 // The password belongs to this subscription. A failed delete doesn't block the
                 // unsubscribe: the `encrypted` flag goes with the row, nothing reads secrets for an
                 // unflagged topic, and setting a password again overwrites it, so a re-subscribe can't
