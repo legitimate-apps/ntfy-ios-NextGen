@@ -23693,6 +23693,711 @@
         }
       }
     },
+    "Diagnostic reports": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnostic reports"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnoseberichte"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informes de diagnóstico"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapporti diagnostici"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporty diagnostyczne"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Diagnoserapporten"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapports de diagnostic"
+          }
+        }
+      }
+    },
+    "Crash": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crash"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Absturz"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fallo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Arresto anomalo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Awaria"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Crash"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plantage"
+          }
+        }
+      }
+    },
+    "Hang": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hang"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blockierung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bloqueo"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocco"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zawieszenie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Vastloper"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Blocage"
+          }
+        }
+      }
+    },
+    "CPU usage": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU usage"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU-Auslastung"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uso de CPU"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uso della CPU"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użycie procesora"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "CPU-gebruik"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisation du processeur"
+          }
+        }
+      }
+    },
+    "Disk writes": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Disk writes"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schreibzugriffe"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Escrituras en disco"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scritture su disco"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zapis na dysku"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schijfschrijfacties"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Écritures sur disque"
+          }
+        }
+      }
+    },
+    "App launch": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App launch"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "App-Start"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inicio de la app"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Avvio dell’app"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchomienie aplikacji"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Appstart"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lancement de l’app"
+          }
+        }
+      }
+    },
+    "No diagnostic reports": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No diagnostic reports"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Keine Diagnoseberichte"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay informes de diagnóstico"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nessun rapporto diagnostico"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak raportów diagnostycznych"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen diagnoserapporten"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun rapport de diagnostic"
+          }
+        }
+      }
+    },
+    "iOS provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS stellt nach manchen Abstürzen, Blockierungen oder Ressourcenproblemen Berichte bereit. Sie können verzögert eintreffen und erfassen nicht jeden Vorfall."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS proporciona informes después de algunos fallos, bloqueos o problemas de recursos. Pueden llegar más tarde y no cubren todos los incidentes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS fornisce rapporti dopo alcuni arresti anomali, blocchi o problemi di risorse. Possono arrivare in ritardo e non coprono ogni evento."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS udostępnia raporty po niektórych awariach, zawieszeniach lub problemach z zasobami. Mogą pojawić się z opóźnieniem i nie obejmują wszystkich zdarzeń."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS levert rapporten na sommige crashes, vastlopers of problemen met bronnen. Ze kunnen later aankomen en omvatten niet elk incident."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS fournit des rapports après certains plantages, blocages ou problèmes de ressources. Ils peuvent arriver plus tard et ne couvrent pas tous les incidents."
+          }
+        }
+      }
+    },
+    "Reports stay on this device until you share them. Message content, topic names, server addresses and credentials are excluded. Up to 20 reports are kept for 30 days, within 10 MB.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Reports stay on this device until you share them. Message content, topic names, server addresses and credentials are excluded. Up to 20 reports are kept for 30 days, within 10 MB."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichte bleiben auf diesem Gerät, bis Sie sie teilen. Nachrichteninhalte, Themennamen, Serveradressen und Zugangsdaten werden ausgeschlossen. Bis zu 20 Berichte werden 30 Tage lang gespeichert, insgesamt höchstens 10 MB."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los informes permanecen en este dispositivo hasta que los compartas. Se excluyen el contenido de los mensajes, los nombres de los tópicos, las direcciones de los servidores y las credenciales. Se guardan hasta 20 informes durante 30 días, con un límite total de 10 MB."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I rapporti restano su questo dispositivo finché non li condividi. Sono esclusi contenuti dei messaggi, nomi degli argomenti, indirizzi dei server e credenziali. Vengono conservati fino a 20 rapporti per 30 giorni, entro un limite totale di 10 MB."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Raporty pozostają na tym urządzeniu do czasu ich udostępnienia. Nie zawierają treści wiadomości, nazw tematów, adresów serwerów ani danych logowania. Przechowywanych jest do 20 raportów przez 30 dni, łącznie do 10 MB."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapporten blijven op dit apparaat totdat je ze deelt. Berichtinhoud, onderwerpnamen, serveradressen en inloggegevens worden weggelaten. Er worden maximaal 20 rapporten 30 dagen bewaard, met een totale limiet van 10 MB."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les rapports restent sur cet appareil jusqu’à ce que vous les partagiez. Le contenu des messages, les noms des sujets, les adresses des serveurs et les identifiants sont exclus. Jusqu’à 20 rapports sont conservés pendant 30 jours, dans une limite totale de 10 Mo."
+          }
+        }
+      }
+    },
+    "Date shown is the end of the iOS reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date shown is the end of the iOS reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das angezeigte Datum ist das Ende des iOS-Berichtszeitraums. Die JSON-Datei enthält Aufrufstapel und technische Metadaten. Sie können sie einem Fehlerbericht anhängen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La fecha mostrada es el final del período del informe de iOS. El archivo JSON contiene pilas de llamadas y metadatos técnicos. Puedes adjuntarlo a un informe de error."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La data indicata è la fine del periodo del rapporto iOS. Il file JSON contiene stack di chiamate e metadati tecnici. Puoi allegarlo a una segnalazione di errore."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Widoczna data oznacza koniec okresu raportowania iOS. Plik JSON zawiera stosy wywołań i metadane techniczne. Możesz dołączyć go do zgłoszenia błędu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De getoonde datum is het einde van de iOS-rapportageperiode. Het JSON-bestand bevat aanroepstapels en technische metadata. Je kunt het bij een foutmelding voegen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La date affichée est la fin de la période de rapport iOS. Le fichier JSON contient les piles d’appels et les métadonnées techniques. Vous pouvez le joindre à un signalement de bug."
+          }
+        }
+      }
+    },
+    "Share report": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Share report"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht teilen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Compartir informe"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Condividi rapporto"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Udostępnij raport"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapport delen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Partager le rapport"
+          }
+        }
+      }
+    },
+    "Delete report": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete report"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht löschen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminar informe"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elimina rapporto"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usuń raport"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapport verwijderen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le rapport"
+          }
+        }
+      }
+    },
+    "Delete report?": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Delete report?"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bericht löschen?"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "¿Eliminar informe?"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eliminare il rapporto?"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usunąć raport?"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Rapport verwijderen?"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Supprimer le rapport ?"
+          }
+        }
+      }
+    },
+    "Could not access reports": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Could not access reports"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugriff auf Berichte fehlgeschlagen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo acceder a los informes"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile accedere ai rapporti"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można uzyskać dostępu do raportów"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen toegang tot rapporten"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’accéder aux rapports"
+          }
+        }
+      }
+    },
+    "Please try again after unlocking your device or freeing storage space.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Please try again after unlocking your device or freeing storage space."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versuchen Sie es erneut, nachdem Sie Ihr Gerät entsperrt oder Speicherplatz freigegeben haben."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inténtalo de nuevo después de desbloquear el dispositivo o liberar espacio de almacenamiento."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Riprova dopo aver sbloccato il dispositivo o liberato spazio di archiviazione."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie po odblokowaniu urządzenia lub zwolnieniu miejsca."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer het opnieuw nadat je het apparaat hebt ontgrendeld of opslagruimte hebt vrijgemaakt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Veuillez réessayer après avoir déverrouillé votre appareil ou libéré de l’espace de stockage."
+          }
+        }
+      }
+    },
     "Messages that already alerted you no longer alert again when received a second time.": {
       "extractionState": "manual",
       "localizations": {
