@@ -27,6 +27,7 @@
 		118B00010000000000000006 /* TopicQRCode.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118B00010000000000000005 /* TopicQRCode.swift */; };
 		118BEEF00000000000000001 /* RelayCheck.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118CAFE00000000000000001 /* RelayCheck.swift */; };
 		118BEEF00000000000000002 /* RelayCheckTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 118CAFE00000000000000002 /* RelayCheckTests.swift */; };
+		123B00000000000000000002 /* ManagedConfigurationTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123A00000000000000000002 /* ManagedConfigurationTests.swift */; };
 		12AC5FD71685570DA7A729D3 /* ntfyShare.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 8E02FCB6B166A5F5F2F5718E /* ntfyShare.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		18A28C5C2FBCF00000A52946 /* AttachmentAutoDownloadView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 18A28C5B2FBCF00000A52946 /* AttachmentAutoDownloadView.swift */; };
 		20158E94B11143EDB4B529A7 /* LazyView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 30D0A3191E9F40DCA43960C3 /* LazyView.swift */; };
@@ -112,6 +113,7 @@
 		948671482841B1430093C7A4 /* NotificationContent.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948671462841B0B20093C7A4 /* NotificationContent.swift */; };
 		9486714A2841D0CE0093C7A4 /* ActionExecutor.swift in Sources */ = {isa = PBXBuildFile; fileRef = 948671492841D0CE0093C7A4 /* ActionExecutor.swift */; };
 		94A3F7C8283734D900C48E79 /* SubscriptionManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */; };
+		123B00000000000000000001 /* ManagedConfiguration.swift in Sources */ = {isa = PBXBuildFile; fileRef = 123A00000000000000000001 /* ManagedConfiguration.swift */; };
 		94A3F7CA28386B2100C48E79 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7C928386B2100C48E79 /* Config.swift */; };
 		94A3F7CB28386B2100C48E79 /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7C928386B2100C48E79 /* Config.swift */; };
 		94A3F7D1283734D900C48E79 /* FcmSubscriptionReconciler.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */; };
@@ -244,6 +246,7 @@
 		118B00010000000000000005 /* TopicQRCode.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TopicQRCode.swift; sourceTree = "<group>"; };
 		118CAFE00000000000000001 /* RelayCheck.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayCheck.swift; sourceTree = "<group>"; };
 		118CAFE00000000000000002 /* RelayCheckTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelayCheckTests.swift; sourceTree = "<group>"; };
+		123A00000000000000000002 /* ManagedConfigurationTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedConfigurationTests.swift; sourceTree = "<group>"; };
 		18A28C5B2FBCF00000A52946 /* AttachmentAutoDownloadView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AttachmentAutoDownloadView.swift; sourceTree = "<group>"; };
 		1ECED713042427E5769135C1 /* Info.plist */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		2939B20F2F8F293C00A52946 /* AboutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AboutView.swift; sourceTree = "<group>"; };
@@ -312,6 +315,7 @@
 		948671462841B0B20093C7A4 /* NotificationContent.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationContent.swift; sourceTree = "<group>"; };
 		948671492841D0CE0093C7A4 /* ActionExecutor.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ActionExecutor.swift; sourceTree = "<group>"; };
 		94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubscriptionManager.swift; sourceTree = "<group>"; };
+		123A00000000000000000001 /* ManagedConfiguration.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ManagedConfiguration.swift; sourceTree = "<group>"; };
 		94A3F7C928386B2100C48E79 /* Config.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FcmSubscriptionReconciler.swift; sourceTree = "<group>"; };
 		94B736D6284AF9BE003D69FB /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
@@ -551,6 +555,7 @@
                 A18000110000000000000002 /* Retention.swift */,
                 F11900000000000000000011 /* TopicMute.swift */,
 				94A3F7C7283734D900C48E79 /* SubscriptionManager.swift */,
+				123A00000000000000000001 /* ManagedConfiguration.swift */,
 				6DF78FBEBA7B4D7894873214 /* PollCoordinator.swift */,
 				94A3F7D0283734D900C48E79 /* FcmSubscriptionReconciler.swift */,
 				300924C0CFF04C96AC031DE6 /* FcmTeardownLedger.swift */,
@@ -639,6 +644,7 @@
 				A18000010000000000000002 /* RetentionTests.swift */,
 				F11900000000000000000013 /* TopicMuteTests.swift */,
 				118CAFE00000000000000002 /* RelayCheckTests.swift */,
+				123A00000000000000000002 /* ManagedConfigurationTests.swift */,
 				C11800010000000000000005 /* ClearThroughTests.swift */,
 				2E1C0A052FF0000100A52946 /* LicensesTests.swift */,
 				2E1C0B042FF0000100A52946 /* NotificationResponseRelayTests.swift */,
@@ -874,6 +880,7 @@
 				9474F212283327C200CDE4DD /* Helpers.swift in Sources */,
 				9474F217283531A300CDE4DD /* Log.swift in Sources */,
 				94A3F7C8283734D900C48E79 /* SubscriptionManager.swift in Sources */,
+				123B00000000000000000001 /* ManagedConfiguration.swift in Sources */,
 				7C6C8829170C43C2A5BA01C5 /* PollCoordinator.swift in Sources */,
 				94A3F7D1283734D900C48E79 /* FcmSubscriptionReconciler.swift in Sources */,
 				EE53067E705943E89B31F8DA /* FcmTeardownLedger.swift in Sources */,
@@ -1012,6 +1019,7 @@
 				F11900000000000000000004 /* TopicMuteTests.swift in Sources */,
 				F11900000000000000000005 /* NotificationService.swift in Sources */,
 				118BEEF00000000000000002 /* RelayCheckTests.swift in Sources */,
+				123B00000000000000000002 /* ManagedConfigurationTests.swift in Sources */,
 				C11800010000000000000004 /* ClearThroughTests.swift in Sources */,
 				2E1C0A062FF0000100A52946 /* LicensesTests.swift in Sources */,
 				2E1C0B052FF0000100A52946 /* NotificationResponseRelayTests.swift in Sources */,

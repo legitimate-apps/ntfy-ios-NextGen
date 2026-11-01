@@ -63,3 +63,5 @@ Note: these requirements are strictly based off of my development on this app. T
 - https://cocoacasts.com/cocoa-fundamentals-how-to-access-builds-settings-in-swifti
 - https://www.hackingwithswift.com/articles/216/complete-guide-to-navigationview-in-swiftui
 - https://stackoverflow.com/a/70731861/1440785
+
+For organization deployments, see [Managed app configuration](MANAGED_CONFIGURATION.md).
