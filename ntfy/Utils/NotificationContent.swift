@@ -134,14 +134,7 @@ extension UNMutableNotificationContent {
             }
         }
         
-        // Add custom actions
-        //
-        // We re-define the categories every time here, which is weird, but it works. When tapped, the action sets the
-        // actionIdentifier in the application(didReceive) callback. This logic is handled in the AppDelegate. This approach
-        // is described in a comment in https://stackoverflow.com/questions/30103867/changing-action-titles-in-interactive-notifications-at-run-time#comment122812568_30107065
-        //
-        // We also must set the .foreground flag, which brings the notification to the foreground and avoids an error about
-        // permissions. This is described in https://stackoverflow.com/a/44580916/1440785
+        // HTTP buttons authenticate without opening the app on iPhone and iPad.
         configureNotificationActions(message: message, timeout: categoryRegistrationTimeout)
         
         // Group by topic, and only elevate priority 5 alerts to critical when the user opted in
@@ -346,9 +339,7 @@ extension UNMutableNotificationContent {
 
     private func configureNotificationActions(message: Message, timeout: TimeInterval) {
         let userActions = message.actions ?? []
-        let actions = userActions.prefix(4).map {
-            UNNotificationAction(identifier: $0.id, title: $0.label, options: [.foreground])
-        }
+        let actions = Self.notificationActions(for: userActions)
 
         let categoryId = UNMutableNotificationContent.actionCategoryIdentifier(for: userActions)
         let identifier = categoryId.isEmpty ? UNMutableNotificationContent.categoryPrefix + "dismiss" : categoryId
@@ -370,19 +361,27 @@ extension UNMutableNotificationContent {
     /// The hash is SHA-256 (not Swift's `Hasher`, which is seeded per-process) precisely
     /// because the main app and the Notification Service Extension are separate processes
     /// that must agree on the id for an identical action set. Only the fields that shape the
-    /// rendered banner buttons — each action's identifier and title, in order, capped at the
-    /// same 4 iOS renders — feed the hash. Returns `""` when there are no actions.
+    /// rendered banner buttons: identifier, title and options, in order, capped at the
+    /// same 4 iOS renders, feed the hash. Old delivered categories remain until pruned.
+    /// Returns `""` when there are no actions.
     /// Namespace for the categories this app registers, so pruning can tell ours apart
     /// from any category registered elsewhere.
     static let categoryPrefix = "ntfyActions."
 
-    static func actionCategoryIdentifier(for actions: [Action]) -> String {
+    static func notificationActions(for actions: [Action], onMac: Bool = ProcessInfo.processInfo.isiOSAppOnMac) -> [UNNotificationAction] {
+        actions.prefix(4).map {
+            UNNotificationAction(identifier: $0.id, title: $0.label,
+                options: $0.action == "http" && !onMac ? [.authenticationRequired] : [.foreground])
+        }
+    }
+
+    static func actionCategoryIdentifier(for actions: [Action], onMac: Bool = ProcessInfo.processInfo.isiOSAppOnMac) -> String {
         let capped = actions.prefix(4)
         guard !capped.isEmpty else { return "" }
         // Delimit fields/records with control chars that can't appear in button text so
         // e.g. [("a","bc")] and [("ab","c")] hash to different categories.
-        let canonical = capped
-            .map { "\($0.id)\u{1f}\($0.label)" }
+        let canonical = notificationActions(for: Array(capped), onMac: onMac)
+            .map { "\($0.identifier)\u{1f}\($0.title)\u{1f}\($0.options.rawValue)" }
             .joined(separator: "\u{1e}")
         let digest = SHA256.hash(data: Data(canonical.utf8))
         let hex = digest.prefix(8).map { String(format: "%02x", $0) }.joined()

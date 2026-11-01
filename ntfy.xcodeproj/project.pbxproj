@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A12300000000000000000001 /* BackgroundHTTPActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12300000000000000000002 /* BackgroundHTTPActionTests.swift */; };
 		0E90FA4408C923A1B64D200D /* DiagnosticFixtures in Resources */ = {isa = PBXBuildFile; fileRef = 8447874A56896964DD5EA0BF /* DiagnosticFixtures */; };
 		98369CBCCAA2B94F358ABF70 /* DiagnosticReportsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5CA0A6167E6918951959B6CD /* DiagnosticReportsView.swift */; };
 		E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */; };
@@ -215,6 +216,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A12300000000000000000002 /* BackgroundHTTPActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundHTTPActionTests.swift; sourceTree = "<group>"; };
 		5CA0A6167E6918951959B6CD /* DiagnosticReportsView.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReportsView.swift; sourceTree = "<group>"; };
 		8447874A56896964DD5EA0BF /* DiagnosticFixtures */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = folder; path = DiagnosticFixtures; sourceTree = "<group>"; };
 		D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReportTests.swift; sourceTree = "<group>"; };
@@ -601,6 +603,7 @@
 				C12100000000000000000002 /* ComposeTests.swift */,
 				DE1190000000000000000013 /* LocalizationTests.swift */,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
+				A12300000000000000000002 /* BackgroundHTTPActionTests.swift */,
 				10E74BB28FBB4650A30BBAEC /* FcmTeardownLedgerTests.swift */,
 				B64119000000000000000002 /* base64-binary.json */,
 				BA1180000000000000000011 /* ServerContractTests.swift */,
@@ -961,6 +964,7 @@
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
 				DE1190000000000000000004 /* LocalizationTests.swift in Sources */,
 				9B84D8DCA80BE0722286AFD4 /* ntfyTests.swift in Sources */,
+				A12300000000000000000001 /* BackgroundHTTPActionTests.swift in Sources */,
 				DDDFAC17B65143878A1319E9 /* FcmTeardownLedgerTests.swift in Sources */,
 				BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
 				C12100000000000000000001 /* ComposeTests.swift in Sources */,
