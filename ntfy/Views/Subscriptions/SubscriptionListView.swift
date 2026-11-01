@@ -233,7 +233,7 @@ struct SubscriptionItemNavView: View {
                 // setup test looked for pin here, found nothing and concluded the app had none.
                 .contextMenu {
                     QuietTopicButton(showingOptions: $showQuietOptions)
-                        TopicSoundButton(showingOptions: $showSoundOptions)
+                    TopicSoundButton(showingOptions: $showSoundOptions)
                     TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                     Button {
                         toggleRead()
