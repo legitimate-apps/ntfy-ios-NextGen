@@ -98,7 +98,11 @@ class NotificationService: UNNotificationServiceExtension {
         UNNotificationContent.encryptionSafeFallback(request.content)
     }
 
-    private func deliver(_ content: UNNotificationContent, expiring: Bool = false) {
+    private func deliver(_ content: UNNotificationContent, expiring: Bool = false, quietReady: Bool = false) {
+        if !expiring, !quietReady, let store {
+            store.quietAlerts.flush { self.deliver(content, quietReady: true) }
+            return
+        }
         let final = content.mutableCopy() as! UNMutableNotificationContent
         if let presentationMessage { final.configureInterruption(message: presentationMessage.message, soundName: presentationMessage.soundName) }
         if !expiring { final.applyTopicMute() }
@@ -111,6 +115,7 @@ class NotificationService: UNNotificationServiceExtension {
             return true
         }
         if expiring {
+            store?.quietAlerts.cancelScheduling()
             presentationLock.lock()
             let quiet = expiryIsQuiet
             presentationLock.unlock()
