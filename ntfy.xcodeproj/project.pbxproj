@@ -174,6 +174,11 @@
 		546100000000000000000100 /* TopicSoundImporter.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000001; };
 		546100000000000000000200 /* TopicSoundView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000002; };
 		546100000000000000000303 /* TopicSoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 546000000000000000000003; };
+        C12200000000000000000001 /* TopicPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000011; };
+        C12200000000000000000002 /* TopicPublisher.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000011; };
+        C12200000000000000000003 /* SendMessageIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000012; };
+        C12200000000000000000004 /* ShortcutsPublishTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000013; };
+        C12200000000000000000005 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000014; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -341,6 +346,16 @@
 		546000000000000000000001 /* TopicSoundImporter.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Utils/TopicSoundImporter.swift"; sourceTree = SOURCE_ROOT; };
 		546000000000000000000002 /* TopicSoundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Subscriptions/TopicSoundView.swift"; sourceTree = SOURCE_ROOT; };
 		546000000000000000000003 /* TopicSoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/TopicSoundTests.swift"; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfy/Utils/TopicPublisher.swift; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfy/Intents/SendMessageIntent.swift; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000013 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ShortcutsPublishTests.swift; sourceTree = "<group>"; };
+        C12200000000000000000020 /* en */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = en; path = ntfy/Intents/en.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000021 /* de */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = de; path = ntfy/Intents/de.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000022 /* es */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = es; path = ntfy/Intents/es.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000023 /* it */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = it; path = ntfy/Intents/it.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000024 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = ntfy/Intents/pl.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000025 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = ntfy/Intents/nl.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+        C12200000000000000000026 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = ntfy/Intents/fr.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -571,6 +586,9 @@
 				948671492841D0CE0093C7A4 /* ActionExecutor.swift */,
 				2E1C0B012FF0000100A52946 /* NotificationResponseRelay.swift */,
 				B41DCA4C2F0F12323B64C2F2 /* ComposeModel.swift */,
+                C12200000000000000000011 /* TopicPublisher.swift */,
+                C12200000000000000000012 /* SendMessageIntent.swift */,
+                C12200000000000000000014 /* AppShortcuts.strings */,
 				D8A525327394C98DA833E141 /* ShareItemLoader.swift */,
 			);
 			path = Utils;
@@ -601,6 +619,7 @@
 				D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */,
 				8447874A56896964DD5EA0BF /* DiagnosticFixtures */,
 				C12100000000000000000002 /* ComposeTests.swift */,
+                C12200000000000000000013 /* ShortcutsPublishTests.swift */,
 				DE1190000000000000000013 /* LocalizationTests.swift */,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				A12300000000000000000002 /* BackgroundHTTPActionTests.swift */,
@@ -764,6 +783,7 @@
 			buildActionMask = 2147483647;
 			files = (
                 DE1190000000000000000001,
+                C12200000000000000000005 /* AppShortcuts.strings in Resources */,
                 DE1190000000000000000003,
 				A3769C0118DB43D18B6C92DB /* PrivacyInfo.xcprivacy in Resources */,
 				9474F1C8282F2AA800CDE4DD /* Preview Assets.xcassets in Resources */,
@@ -884,6 +904,8 @@
 				C12100000000000000000003 /* ComposeSheetView.swift in Sources */,
 				9407EDDA284ADE1F00C1C334 /* User.swift in Sources */,
 				B4D772720755F4FCFBBA8FF4 /* ComposeModel.swift in Sources */,
+                C12200000000000000000001 /* TopicPublisher.swift in Sources */,
+                C12200000000000000000003 /* SendMessageIntent.swift in Sources */,
 				DD0F22698F581086E7B82B31 /* ShareItemLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -952,6 +974,7 @@
 				C7D8B807ACC2390A914E53E5 /* ClearThrough.swift in Sources */,
 				392C7F125252068D9128086D /* Subscription.swift in Sources */,
 				CB83D4441E50671CE8691B9B /* ComposeModel.swift in Sources */,
+                C12200000000000000000002 /* TopicPublisher.swift in Sources */,
 				97574EADD31E979DF9C120CB /* ShareItemLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -968,6 +991,7 @@
 				DDDFAC17B65143878A1319E9 /* FcmTeardownLedgerTests.swift in Sources */,
 				BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
 				C12100000000000000000001 /* ComposeTests.swift in Sources */,
+                C12200000000000000000004 /* ShortcutsPublishTests.swift in Sources */,
 				A18000010000000000000001 /* RetentionTests.swift in Sources */,
 				F11900000000000000000004 /* TopicMuteTests.swift in Sources */,
 				F11900000000000000000005 /* NotificationService.swift in Sources */,
@@ -1001,6 +1025,23 @@
 			targetProxy = 59A0CFCCB2EF927DAAC0DDBF /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
+
+/* Begin PBXVariantGroup section */
+        C12200000000000000000014 /* AppShortcuts.strings */ = {
+            isa = PBXVariantGroup;
+            children = (
+                C12200000000000000000020 /* en */,
+                C12200000000000000000021 /* de */,
+                C12200000000000000000022 /* es */,
+                C12200000000000000000023 /* it */,
+                C12200000000000000000024 /* pl */,
+                C12200000000000000000025 /* nl */,
+                C12200000000000000000026 /* fr */,
+            );
+            name = AppShortcuts.strings;
+            sourceTree = "<group>";
+        };
+/* End PBXVariantGroup section */
 
 /* Begin XCBuildConfiguration section */
 		3ACD4ADF9109871FDF27BB82 /* Release */ = {

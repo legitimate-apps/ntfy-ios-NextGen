@@ -102,11 +102,6 @@ final class ComposeModel: ObservableObject {
 
     func send(subscription: Subscription, store: Store, completion: @escaping () -> Void) {
         guard canSend else { return }
-        let keyState = store.topicKeyState(for: subscription)
-        guard keyState != .unavailable else {
-            error = String(localized: "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent.")
-            return
-        }
         let baseURL = subscription.baseUrl ?? ""
         let fingerprint = "\(subscription.urlString())|\(message)|\(title)|\(tags)|\(priority)|\(clickURL)|\(attachmentURL)|\(delay)|\(markdown)|\(fileURL?.absoluteString ?? "")"
         if !lastAttempt.isEmpty && fingerprint != lastAttempt {
@@ -115,27 +110,16 @@ final class ComposeModel: ObservableObject {
         lastAttempt = fingerprint
         busy = true
         error = ""
-        ApiService.shared.publish(subscription: subscription, user: store.getBasicUser(baseUrl: baseURL),
-            message: message, title: title, priority: priority,
-            tags: tags.split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }.filter { !$0.isEmpty },
-            options: options, encryptionKey: keyState.key,
-            completionHandler: {
-                DispatchQueue.main.async {
-                    self.busy = false
+        TopicPublisher.send(subscription: subscription, store: store, message: message, title: title,
+            priority: priority, tags: tags, options: options) { result in
+                self.busy = false
+                switch result {
+                case .success:
                     self.removeFile()
                     completion()
+                case .failure(let failure):
+                    self.error = failure.message
                 }
-            }, failureHandler: { failure in
-                DispatchQueue.main.async {
-                    self.busy = false
-                    self.error = failure.userMessage
-                    if failure == .http(429), ServerCooldown.shared.hasNonTimeRefusal(server: baseURL, kind: .publish) {
-                        self.error = ApiService.PublishError.publishNeedsChange.userMessage
-                    } else if failure == .http(429) {
-                        let seconds = Int(ceil(max(1, ServerCooldown.shared.deadline(for: baseURL, kind: .publish).timeIntervalSinceNow)))
-                        self.error += " " + String(localized: "Try again in \(seconds) seconds.")
-                    }
-                }
-            })
+            }
     }
 }
