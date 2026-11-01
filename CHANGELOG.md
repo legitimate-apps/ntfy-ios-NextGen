@@ -4,6 +4,12 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.22.0
+
+- Choose a notification sound per topic: Default, three built-in tones or an audio file imported from Files. Imported audio uses the first 29 seconds and can be removed.
+- Retry failed topic unsubscriptions for up to 30 days so removed topics stop sending notifications.
+- View and share on-device crash, hang and other diagnostic reports from Settings > About. Reports are never uploaded.
+
 ## 1.21.0
 
 - Send messages from a topic screen, with an optional title, priority, tags and one attachment.

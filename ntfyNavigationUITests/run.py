@@ -114,7 +114,7 @@ suite = "GermanLocalizationUITests" if args.german else "NavigationPilotUITests"
 command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in args.only]
 if not args.only:
     if args.german:
-        names = ["testGermanEmptyList"] if args.empty_fixture else ["testGermanMainScreens", "testGermanLicenseScreens", "testVersion121UpdateSheet"]
+        names = ["testGermanEmptyList"] if args.empty_fixture else ["testGermanMainScreens", "testGermanLicenseScreens", "testVersion122UpdateSheet"]
         command += ["-only-testing:NavigationPilotUITests/" + suite + "/" + name for name in names]
     else:
         command += ["-only-testing:NavigationPilotUITests/" + suite]

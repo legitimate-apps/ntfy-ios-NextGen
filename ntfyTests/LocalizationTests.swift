@@ -215,6 +215,27 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testVersion122ReleaseNotesResolveInEveryBundledLanguage() throws {
+        let release = try XCTUnwrap(ReleaseNotes.shipped.first { $0.version == "1.22.0" })
+        XCTAssertEqual(release.bullets.count, 3)
+        let expected: [String: [String]] = [
+            "en": ["Choose a notification sound for each topic, or import one from Files.", "Removed topics stop sending notifications, even if the first unsubscribe attempt fails.", "View and share diagnostic reports from Settings > About. Reports stay on your phone."],
+            "de": ["Wähle für jedes Thema einen Benachrichtigungston oder importiere einen aus Dateien.", "Entfernte Themen senden keine Benachrichtigungen mehr, auch wenn das Abmelden zunächst fehlschlägt.", "Sieh dir unter Einstellungen > Über Diagnoseberichte an und teile sie. Sie bleiben auf deinem iPhone."],
+            "es": ["Elige un sonido de notificación para cada tópico o importa uno desde Archivos.", "Los tópicos eliminados dejan de enviar notificaciones, aunque falle el primer intento de cancelar la suscripción.", "Consulta y comparte informes de diagnóstico desde Ajustes > Acerca de. Los informes se guardan solo en tu iPhone."],
+            "it": ["Scegli un suono di notifica per ogni argomento o importane uno da File.", "Gli argomenti rimossi non inviano più notifiche, anche se il primo tentativo di annullare l’iscrizione non riesce.", "Visualizza e condividi i rapporti diagnostici da Impostazioni > Informazioni. I rapporti restano sul tuo iPhone."],
+            "pl": ["Wybierz dźwięk powiadomienia dla każdego tematu lub zaimportuj go z Plików.", "Usunięte tematy nie wysyłają już powiadomień, nawet jeśli pierwsza próba anulowania subskrypcji się nie powiedzie.", "Przeglądaj i udostępniaj raporty diagnostyczne: Ustawienia > O aplikacji. Raporty pozostają na Twoim iPhonie."],
+            "nl": ["Kies een meldingsgeluid voor elk onderwerp of importeer er een uit Bestanden.", "Verwijderde onderwerpen sturen geen meldingen meer, ook als het afmelden de eerste keer mislukt.", "Bekijk en deel diagnoserapporten via Instellingen > Over. De rapporten blijven op je iPhone."],
+            "fr": ["Choisissez un son de notification pour chaque sujet ou importez-en un depuis Fichiers.", "Les sujets supprimés n’envoient plus de notifications, même si la première tentative de désabonnement échoue.", "Consultez et partagez vos rapports de diagnostic dans Réglages > À propos. Ils restent sur votre iPhone."]
+        ]
+        XCTAssertEqual(Set(Bundle.main.localizations.filter { $0 != "Base" }), Set(expected.keys))
+        for (language, bullets) in expected {
+            let bundle = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            for (index, key) in expected["en"]!.enumerated() {
+                XCTAssertEqual(bundle.localizedString(forKey: key, value: nil, table: nil), bullets[index], language)
+            }
+        }
+    }
+
     private func stringUnits(_ node: Any) -> [[String: Any]] {
         guard let object = node as? [String: Any] else { return [] }
         if let unit = object["stringUnit"] as? [String: Any] { return [unit] }
