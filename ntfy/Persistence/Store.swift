@@ -69,6 +69,7 @@ class Store: ObservableObject {
     /// Injected so credential and migration behavior can be tested without pretending an unsigned
     /// XCTest host can use the Keychain. Production and the NSE use the real implementation.
     var credentialStore: CredentialStoring
+    var quietAlerts: QuietTopicAlerts = .shared
     /// Per-topic end-to-end encryption passwords and keys. Injected for the same reason as
     /// `credentialStore`.
     var topicSecrets: TopicSecretStoring
@@ -519,6 +520,7 @@ class Store: ObservableObject {
                 try context.save()
                 deleted = true
                 soundLibrary.setChoice(nil, for: soundIdentity)
+                quietAlerts.cancel(identity: soundIdentity)
                 // The password belongs to this subscription. A failed delete doesn't block the
                 // unsubscribe: the `encrypted` flag goes with the row, nothing reads secrets for an
                 // unflagged topic, and setting a password again overwrites it, so a re-subscribe can't
@@ -1991,6 +1993,9 @@ class Store: ObservableObject {
             try advanceCursor(of: subscription, to: last, polledSince: orderedSince)
         }
         try context.save()
+        if !presentations.isEmpty {
+            quietAlerts.received(identity: subscription.objectID.uriRepresentation().absoluteString)
+        }
         removals.forEach(notificationRemover)
         // A single poll can contain create -> update -> clear/delete. Only the final unread version
         // may alert; intermediate versions must never produce a second notification.

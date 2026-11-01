@@ -34,6 +34,7 @@ struct NotificationListView: View {
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
     @State private var showMuteOptions = false
+    @State private var showQuietOptions = false
     @State private var showSoundOptions = false
     @State private var showQRCodeSheet = false
     @State private var showComposeSheet = false
@@ -156,6 +157,7 @@ struct NotificationListView: View {
                     return deleted
                 }, onCancel: { showUserEditor = false })
         }
+        .sheet(isPresented: $showQuietOptions) { QuietTopicView(subscription: subscription) }
         .sheet(isPresented: $showSoundOptions) { TopicSoundView(subscription: subscription) }
         .sheet(isPresented: $showMuteOptions) { TopicMuteView(subscription: subscription) }
         .listStyle(PlainListStyle())
@@ -185,6 +187,7 @@ struct NotificationListView: View {
                     editButton
                 } else {
                     Menu {
+                        QuietTopicButton(showingOptions: $showQuietOptions)
                         TopicSoundButton(showingOptions: $showSoundOptions)
                         TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                         if notificationsModel.notifications.count > 0 {

@@ -68,6 +68,18 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             return true
         }
 
+        QuietTopicAlerts.shared.beginExecution = { cancel, start in
+            DispatchQueue.main.async {
+                var task: UIBackgroundTaskIdentifier = .invalid
+                task = UIApplication.shared.beginBackgroundTask(withName: "Schedule quiet alert", expirationHandler: cancel)
+                if task == .invalid { cancel() }
+                start {
+                    DispatchQueue.main.async {
+                        if task != .invalid { UIApplication.shared.endBackgroundTask(task) }
+                    }
+                }
+            }
+        }
         DiagnosticSubscriber.shared.start()
         #if DEBUG
         DiagnosticSubscriber.shared.receiveDebugFixtureIfRequested()
@@ -460,6 +472,10 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
             return
         }
         let userInfo = notification.request.content.userInfo
+        if userInfo[QuietTopicAlerts.marker] as? Bool == true {
+            completionHandler([.banner, .sound, .list])
+            return
+        }
         Log.d(tag, "Notification received via userNotificationCenter(willPresent)", userInfo)
         var wakeManager = SubscriptionManager(store: Store.shared)
         wakeManager.fetch = { ApiService.shared.poll($0, timeout: 8, completionHandler: $1) }
@@ -469,15 +485,14 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
         }
         if let message = Message.from(userInfo: userInfo) {
             let baseUrl = userInfo["base_url"] as? String ?? Config.appBaseUrl
-            if message.isControl {
+            if message.event == "message" || message.isControl {
                 let result = Store.shared.ingest(pushedMessage: message, baseUrl: baseUrl, topic: message.topic)
                 if case .reconcile(let request) = result {
                     ApiService.shared.poll(request, timeout: 8) { messages, _ in
                         if let messages { _ = Store.shared.save(notificationsFromMessages: messages, polledWith: request) }
                     }
                 }
-                completionHandler([])
-                return
+                if message.isControl { completionHandler([]); return }
             }
         }
         let muted = Store.shared.isNotificationMuted(userInfo: userInfo)
@@ -510,6 +525,13 @@ extension AppDelegate: UNUserNotificationCenterDelegate {
     ) {
         guard responseDeduper.shouldHandle(notificationId: notificationId, actionIdentifier: actionIdentifier) else {
             Log.d(tag, "Ignoring a notification response that was already handled", actionIdentifier)
+            completionHandler()
+            return
+        }
+        if userInfo[QuietTopicAlerts.marker] as? Bool == true {
+            if let baseUrl = userInfo["base_url"] as? String, let topic = userInfo["topic"] as? String {
+                selectedBaseUrl = topicUrl(baseUrl: baseUrl, topic: topic)
+            }
             completionHandler()
             return
         }

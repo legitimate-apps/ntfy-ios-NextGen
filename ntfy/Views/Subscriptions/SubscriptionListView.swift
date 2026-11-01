@@ -191,6 +191,7 @@ struct SubscriptionItemNavView: View {
     let summary: Store.SubscriptionSummary?
     @State private var unsubscribeAlert = false
     @State private var showMuteOptions = false
+    @State private var showQuietOptions = false
     @State private var showSoundOptions = false
     
     private var subscriptionManager: SubscriptionManager {
@@ -231,6 +232,7 @@ struct SubscriptionItemNavView: View {
                 // Long-press offers the same actions for anyone who never tries a swipe. A blind
                 // setup test looked for pin here, found nothing and concluded the app had none.
                 .contextMenu {
+                    QuietTopicButton(showingOptions: $showQuietOptions)
                     TopicSoundButton(showingOptions: $showSoundOptions)
                     TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
                     Button {
@@ -301,6 +303,7 @@ struct SubscriptionItemNavView: View {
             SubscriptionItemRowView(subscription: subscription, summary: summary)
         }
         .accessibilityElement(children: .combine)
+        .sheet(isPresented: $showQuietOptions) { QuietTopicView(subscription: subscription) }
         .sheet(isPresented: $showSoundOptions) { TopicSoundView(subscription: subscription) }
         .sheet(isPresented: $showMuteOptions) {
             TopicMuteView(subscription: subscription)
