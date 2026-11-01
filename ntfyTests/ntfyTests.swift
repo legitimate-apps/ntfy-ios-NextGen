@@ -6820,7 +6820,8 @@ extension ntfyTests {
         XCTAssertEqual(pendingObsolete(defaults), [oldHash], "kept for a later launch")
 
         let nextLaunch = FakeFcmSubscriber()
-        FcmSubscriptionReconciler(store: store, subscriber: nextLaunch, defaults: defaults).reconcile(reason: "launch")
+        FcmSubscriptionReconciler(store: store, subscriber: nextLaunch, defaults: defaults,
+                                  now: { Date().addingTimeInterval(31) }).reconcile(reason: "launch")
         drainMainQueue()
         XCTAssertEqual(nextLaunch.unsubscribed, [oldHash])
         XCTAssertTrue(pendingObsolete(defaults).isEmpty)

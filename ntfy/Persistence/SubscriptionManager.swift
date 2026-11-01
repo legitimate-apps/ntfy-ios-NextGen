@@ -77,7 +77,7 @@ struct SubscriptionManager {
     func unsubscribe(_ subscription: Subscription) {
         Log.d(tag, "Unsubscribing from \(subscription.urlString())")
         DispatchQueue.main.async {
-            // Read the identity out, delete the row, and only then tear down the FCM binding.
+            // Journal the identity, delete the row, and only then dispatch the FCM teardown.
             //
             // The old order — tear down first, delete after — assumed the completion could not run
             // before the delete. Nothing guarantees that: `FcmTopicSubscriber` permits a synchronous
@@ -88,17 +88,25 @@ struct SubscriptionManager {
             // exists to prevent.
             let baseUrl = subscription.baseUrl
             let topic = subscription.topic
+            guard let baseUrl, let topic else {
+                // A malformed row has no FCM identity but still needs to be removable.
+                store.delete(subscription: subscription)
+                return
+            }
+            guard let intent = reconciler.prepareUnsubscribe(baseUrl: baseUrl, topic: topic) else {
+                Log.w(tag, "Not deleting subscription because its FCM teardown intent could not be recorded")
+                return
+            }
             guard store.delete(subscription: subscription) else {
+                reconciler.teardownLedger.remove(intent)
                 // The row is still there, so the user still has this subscription. Tearing down its
                 // FCM binding now would split the two states: the row returns on the next refresh
                 // or relaunch, still reading `fcmSubscribed = true`, so reconciliation skips it and
                 // the user is left with a visible subscription whose push is silently dead.
-                Log.w(tag, "Not tearing down FCM for \(topic ?? "?") — the subscription failed to delete")
+                Log.w(tag, "Not tearing down FCM for \(topic): the subscription failed to delete")
                 return
             }
-            if let baseUrl = baseUrl, let topic = topic {
-                reconciler.unsubscribe(baseUrl: baseUrl, topic: topic)
-            }
+            reconciler.reconcile(reason: "subscription removed")
         }
     }
     

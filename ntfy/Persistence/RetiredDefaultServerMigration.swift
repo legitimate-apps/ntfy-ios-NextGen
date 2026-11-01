@@ -149,14 +149,18 @@ enum RetiredDefaultServerMigration {
             guard store.context.hasChanges else { saved = true; return }
             // Queue the old names before the save: if the process dies after it, the next launch still
             // knows what to tear down. A queued name some row still needs is never torn down.
-            let queueBefore = FcmSubscriptionReconciler.pendingObsoleteTopicNames(defaults: defaults)
-            FcmSubscriptionReconciler.enqueueObsoleteTopicNames(obsoleteNames, defaults: defaults)
+            let intents = FcmSubscriptionReconciler.enqueueObsoleteTopicNames(obsoleteNames, defaults: defaults)
+            guard intents.count == Set(obsoleteNames).count else {
+                store.rollbackAndRefresh()
+                return
+            }
             do {
                 try store.context.save()
                 saved = true
             } catch let error {
                 Log.e(tag, "Cannot move subscriptions off the retired server; will retry next launch", error)
-                FcmSubscriptionReconciler.setPendingObsoleteTopicNames(queueBefore, defaults: defaults)
+                let ledger = FcmTeardownLedger(defaults: defaults)
+                intents.forEach { ledger.rollback($0) }
                 store.rollbackAndRefresh()
             }
         }
