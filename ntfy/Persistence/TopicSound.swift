@@ -64,6 +64,18 @@ final class TopicSoundLibrary {
         names[filename] = title
         defaults.set(names, forKey: "topicSoundImports.v1")
     }
+
+    func removeImport(_ filename: String) throws {
+        var names = defaults.dictionary(forKey: "topicSoundImports.v1") as? [String: String] ?? [:]
+        guard names[filename] != nil, filename == (filename as NSString).lastPathComponent,
+              filename.hasPrefix("ntfy-import-"), filename.hasSuffix(".wav"),
+              let url = directory?.appendingPathComponent(filename) else { return }
+        // Keep the catalog entry on an I/O failure so removal can be retried. Already missing is fine.
+        if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
+        names.removeValue(forKey: filename)
+        defaults.set(names, forKey: "topicSoundImports.v1")
+        // Existing topic references resolve to Default once the file is gone. UUID names are not reused.
+    }
 }
 
 extension Store {

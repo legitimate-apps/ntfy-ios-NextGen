@@ -25055,6 +25055,236 @@
           }
         }
       }
+    },
+    "Couldn't prepare the built-in sounds. Try opening this screen again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't prepare the built-in sounds. Try opening this screen again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die integrierten Töne konnten nicht vorbereitet werden. Öffne diesen Bildschirm erneut."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron preparar los sonidos incluidos. Intenta abrir esta pantalla de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile preparare i suoni integrati. Prova a riaprire questa schermata."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się przygotować wbudowanych dźwięków. Spróbuj ponownie otworzyć ten ekran."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De ingebouwde geluiden konden niet worden voorbereid. Probeer dit scherm opnieuw te openen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de préparer les sons intégrés. Essayez de rouvrir cet écran."
+          }
+        }
+      }
+    },
+    "Couldn't preview this sound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't preview this sound"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Ton konnte nicht vorgehört werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo reproducir la vista previa de este sonido"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile ascoltare l’anteprima di questo suono"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można odtworzyć podglądu tego dźwięku"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan dit geluid niet vooraf beluisteren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible d’écouter ce son"
+          }
+        }
+      }
+    },
+    "Couldn't remove this sound": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Couldn't remove this sound"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dieser Ton konnte nicht entfernt werden"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudo eliminar este sonido"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile rimuovere questo suono"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie można usunąć tego dźwięku"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kan dit geluid niet verwijderen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossible de supprimer ce son"
+          }
+        }
+      }
+    },
+    "Try removing the sound again.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Try removing the sound again."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Versuche erneut, den Ton zu entfernen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Intenta eliminar el sonido de nuevo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prova di nuovo a rimuovere il suono."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Spróbuj ponownie usunąć dźwięk."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Probeer het geluid opnieuw te verwijderen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Réessayez de supprimer le son."
+          }
+        }
+      }
+    },
+    "Your sound was selected, but the preview couldn't play.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Your sound was selected, but the preview couldn't play."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dein Ton wurde ausgewählt, aber die Vorschau konnte nicht abgespielt werden."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se seleccionó el sonido, pero no se pudo reproducir la vista previa."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il suono è stato selezionato, ma non è stato possibile riprodurre l’anteprima."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dźwięk został wybrany, ale nie udało się odtworzyć podglądu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Je geluid is geselecteerd, maar het voorbeeld kon niet worden afgespeeld."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Votre son a été sélectionné, mais l’aperçu n’a pas pu être lu."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

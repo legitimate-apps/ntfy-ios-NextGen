@@ -8,6 +8,11 @@ final class TopicSoundPreview: ObservableObject {
 
     func stop() { player?.stop(); player = nil }
 
+    func select(_ filename: String?, for identity: String, library: TopicSoundLibrary) throws {
+        library.setChoice(filename, for: identity)
+        try play(filename, library: library)
+    }
+
     func play(_ filename: String?, library: TopicSoundLibrary) throws {
         stop()
         if let filename {
@@ -24,6 +29,26 @@ final class TopicSoundPreview: ObservableObject {
     }
 
     static let requestID = "topic-sound-preview"
+}
+
+private enum TopicSoundFailure: String, Identifiable {
+    case importing, preview, removal, preparation
+    var id: String { rawValue }
+    var title: String {
+        switch self {
+        case .preview: return String(localized: "Couldn't preview this sound")
+        case .removal: return String(localized: "Couldn't remove this sound")
+        default: return String(localized: "Couldn't use this sound")
+        }
+    }
+    var message: String {
+        switch self {
+        case .importing: return String(localized: "Choose a readable audio file up to 50 MB. Protected or unsupported audio cannot be imported.")
+        case .preview: return String(localized: "Your sound was selected, but the preview couldn't play.")
+        case .removal: return String(localized: "Try removing the sound again.")
+        case .preparation: return String(localized: "Couldn't prepare the built-in sounds. Try opening this screen again.")
+        }
+    }
 }
 
 struct TopicSoundButton: View {
@@ -43,7 +68,8 @@ struct TopicSoundView: View {
     @State private var imports: [TopicSound] = []
     @State private var importing = false
     @State private var busy = false
-    @State private var failed = false
+    @State private var editMode = EditMode.inactive
+    @State private var failure: TopicSoundFailure?
     @State private var importTask: Task<Void, Never>?
     private let library = TopicSoundLibrary.shared
     private var identity: String { subscription.objectID.uriRepresentation().absoluteString }
@@ -57,6 +83,8 @@ struct TopicSoundView: View {
                 }
                 Section(header: Text(String(localized: "Imported sounds")), footer: Text(String(localized: "Import audio from Files, up to 50 MB. The first 29 seconds are used. iOS system ringtones are not available to apps."))) {
                     ForEach(imports) { sound in soundRow(sound.id, title: sound.title) }
+                        .onDelete(perform: remove)
+                        .deleteDisabled(busy)
                     Button { importing = true } label: {
                         Label(String(localized: "Import sound from Files"), systemImage: "square.and.arrow.down")
                             .foregroundColor(.primary)
@@ -70,6 +98,9 @@ struct TopicSoundView: View {
             .navigationTitle(String(localized: "Notification sound"))
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
+                ToolbarItem(placement: .navigationBarLeading) {
+                    if !imports.isEmpty { EditButton().disabled(busy).accessibilityIdentifier("sound-edit") }
+                }
                 ToolbarItem(placement: .confirmationAction) {
                     Button(String(localized: "Done")) { presentationMode.wrappedValue.dismiss() }
                 }
@@ -84,27 +115,27 @@ struct TopicSoundView: View {
                             guard !Task.isCancelled else { busy = false; return }
                             imports = library.imports
                             select(sound.id)
-                        } catch { failed = true }
+                        } catch { failure = .importing }
                         busy = false
                     }
-                case .failure: failed = true
+                case .failure: failure = .importing
                 }
             }
-            .alert(isPresented: $failed) {
-                Alert(title: Text(String(localized: "Couldn't use this sound")),
-                      message: Text(String(localized: "Choose a readable audio file up to 50 MB. Protected or unsupported audio cannot be imported.")),
+            .alert(item: $failure) { error in
+                Alert(title: Text(error.title), message: Text(error.message),
                       dismissButton: .default(Text("OK")))
             }
             .task {
                 selected = library.resolvedChoice(for: identity)
                 busy = true
                 do { try await Task.detached { try TopicSoundImporter.installBuiltins(library: library) }.value }
-                catch { failed = true }
+                catch { failure = .preparation }
                 imports = library.imports
                 busy = false
             }
             .onDisappear { importTask?.cancel(); preview.stop() }
         }
+        .environment(\.editMode, $editMode)
     }
 
     private func soundRow(_ filename: String?, title: String) -> some View {
@@ -121,10 +152,19 @@ struct TopicSoundView: View {
     }
 
     private func select(_ filename: String?) {
-        do {
-            try preview.play(filename, library: library)
-            library.setChoice(filename, for: identity)
-            selected = filename
-        } catch { failed = true }
+        selected = filename
+        do { try preview.select(filename, for: identity, library: library) }
+        catch { failure = .preview }
+    }
+
+    private func remove(_ offsets: IndexSet) {
+        preview.stop()
+        for sound in offsets.map({ imports[$0] }) {
+            do { try library.removeImport(sound.id) }
+            catch { failure = .removal }
+        }
+        imports = library.imports
+        selected = library.resolvedChoice(for: identity)
+        if imports.isEmpty { editMode = .inactive }
     }
 }

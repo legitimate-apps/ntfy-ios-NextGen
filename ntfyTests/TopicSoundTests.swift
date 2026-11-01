@@ -318,6 +318,92 @@ final class TopicSoundTests: XCTestCase {
         }
         XCTAssertEqual(contents.count, 3)
     }
+
+    func testRemovingImportDeletesFileAndCatalogAndAllReadersFallBackToDefault() throws {
+        let sound = try TopicSoundImporter.importFile(compressedFixture(duration: 0.5), library: library)
+        let file = try XCTUnwrap(library.file(sound.id))
+        let store = Store(inMemory: true)
+        let topics = ["first", "second"].map { store.saveSubscription(baseUrl: "https://sound.example", topic: $0) }
+        for sub in topics { library.setChoice(sound.id, for: sub.objectID.uriRepresentation().absoluteString) }
+        let reader = TopicSoundLibrary(defaults: UserDefaults(suiteName: suite)!, container: root)
+        XCTAssertEqual(store.topicSoundName(baseUrl: "https://sound.example", topic: "first", library: reader), sound.id)
+        try library.removeImport(sound.id)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: file.path))
+        XCTAssertNil((reader.defaults.dictionary(forKey: "topicSoundImports.v1") as? [String: String])?[sound.id])
+        XCTAssertTrue(reader.imports.isEmpty)
+        for sub in topics {
+            let identity = sub.objectID.uriRepresentation().absoluteString
+            XCTAssertEqual(reader.choice(for: identity), sound.id, "Retained references must resolve through file availability")
+            XCTAssertNil(store.topicSoundName(baseUrl: "https://sound.example", topic: sub.topic!, library: reader))
+            let content = UNMutableNotificationContent()
+            content.configureInterruption(message: message(), soundName: reader.resolvedChoice(for: identity))
+            XCTAssertEqual(content.sound, .default)
+        }
+    }
+
+    func testRemovingAlreadyMissingImportStillClearsCatalog() throws {
+        library.registerImport(filename: "ntfy-import-missing.wav", title: "Missing")
+        try library.removeImport("ntfy-import-missing.wav")
+        XCTAssertNil((library.defaults.dictionary(forKey: "topicSoundImports.v1") as? [String: String])?["ntfy-import-missing.wav"])
+    }
+
+    func testFailedFileRemovalKeepsCatalogAndTopicChoice() throws {
+        let sound = try TopicSoundImporter.importFile(compressedFixture(duration: 0.5), library: library)
+        let directory = try XCTUnwrap(library.directory)
+        library.setChoice(sound.id, for: "keep")
+        try FileManager.default.setAttributes([.posixPermissions: 0o555], ofItemAtPath: directory.path)
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: directory.path) }
+        XCTAssertThrowsError(try library.removeImport(sound.id))
+        XCTAssertEqual(library.imports, [sound])
+        XCTAssertEqual(library.resolvedChoice(for: "keep"), sound.id)
+    }
+
+    func testImportRemovalCannotDeleteBuiltinOrEscapeSoundDirectory() throws {
+        try TopicSoundImporter.installBuiltins(library: library)
+        let builtin = TopicSound.builtins[0].id
+        library.registerImport(filename: builtin, title: "Invalid catalog entry")
+        try library.removeImport(builtin)
+        XCTAssertNotNil(library.file(builtin))
+        let outside = root.appendingPathComponent("outside.wav")
+        try Data(repeating: 0, count: 100).write(to: outside)
+        library.registerImport(filename: "../../outside.wav", title: "Invalid path")
+        try library.removeImport("../../outside.wav")
+        XCTAssertTrue(FileManager.default.fileExists(atPath: outside.path))
+    }
+
+    func testPreviewFailureStillPersistsSelectedSound() throws {
+        let filename = "ntfy-import-broken.wav"
+        try FileManager.default.createDirectory(at: library.directory!, withIntermediateDirectories: true)
+        try Data(repeating: 0, count: 100).write(to: library.directory!.appendingPathComponent(filename))
+        let preview = TopicSoundPreview()
+        // A real AVAudioPlayer decoding failure, rather than a mocked successful preview.
+        XCTAssertThrowsError(try preview.select(filename, for: "selected", library: library))
+        XCTAssertEqual(library.choice(for: "selected"), filename)
+        let reader = TopicSoundLibrary(defaults: UserDefaults(suiteName: suite)!, container: root)
+        XCTAssertEqual(reader.choice(for: "selected"), filename)
+    }
+
+    func testSubscriptionManagerUnsubscribeRunsSoundChoiceCleanup() throws {
+        let store = Store(inMemory: true)
+        let sub = store.saveSubscription(baseUrl: "https://sound.example", topic: "manager-\(UUID().uuidString)")
+        let identity = sub.objectID.uriRepresentation().absoluteString
+        let shared = TopicSoundLibrary.shared
+        shared.setChoice(TopicSound.builtins[0].id, for: identity)
+        defer { shared.setChoice(nil, for: identity) }
+        let reconciler = FcmSubscriptionReconciler(store: store, subscriber: TopicSoundNoTokenSubscriber(), defaults: library.defaults)
+        SubscriptionManager(store: store, reconciler: reconciler).unsubscribe(sub)
+        let deleted = expectation(description: "manager's asynchronous store deletion")
+        DispatchQueue.main.async { deleted.fulfill() }
+        wait(for: [deleted], timeout: 3)
+        XCTAssertTrue((store.getSubscriptions() ?? []).isEmpty)
+        XCTAssertNil(shared.choice(for: identity))
+    }
+}
+
+private struct TopicSoundNoTokenSubscriber: FcmTopicSubscriber {
+    var hasApnsToken: Bool { false }
+    func subscribe(toTopic topic: String, completion: @escaping (Error?) -> Void) { completion(nil) }
+    func unsubscribe(fromTopic topic: String, completion: @escaping (Error?) -> Void) { completion(nil) }
 }
 
 private final class TopicSoundDeliveryDelegate: NSObject, UNUserNotificationCenterDelegate {
