@@ -31,6 +31,7 @@ struct NotificationListView: View {
     @State private var showAlert = false
     @State private var activeAlert: ActiveAlert = .clear
     @State private var showCopiedConfirmation = false
+    @State private var showDetails = false
     @State private var showRenameSheet = false
     @State private var showEncryptionSheet = false
     @State private var showMuteOptions = false
@@ -157,6 +158,7 @@ struct NotificationListView: View {
                     return deleted
                 }, onCancel: { showUserEditor = false })
         }
+        .sheet(isPresented: $showDetails) { TopicDetailsView(subscription: subscription) }
         .sheet(isPresented: $showQuietOptions) { QuietTopicView(subscription: subscription) }
         .sheet(isPresented: $showSoundOptions) { TopicSoundView(subscription: subscription) }
         .sheet(isPresented: $showMuteOptions) { TopicMuteView(subscription: subscription) }
@@ -187,6 +189,7 @@ struct NotificationListView: View {
                     editButton
                 } else {
                     Menu {
+                        Button(String(localized: "Topic details")) { showDetails = true }
                         QuietTopicButton(showingOptions: $showQuietOptions)
                         TopicSoundButton(showingOptions: $showSoundOptions)
                         TopicMuteButton(subscription: subscription, showingOptions: $showMuteOptions)
@@ -610,6 +613,56 @@ struct TopicPublishHelpView: View {
             .accessibilityLabel(String(localized: "Copy: \(title)"))
             .accessibilityValue(text)
         }
+    }
+}
+
+struct TopicDetailsView: View {
+    @ObservedObject var subscription: Subscription
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        NavigationView {
+            Form {
+                Section {
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(localized: "Topic URL"))
+                        Text(subscription.urlString())
+                            .foregroundColor(.primary)
+                            .textSelection(.enabled)
+                    }
+                    .accessibilityElement(children: .combine)
+                    VStack(alignment: .leading, spacing: 4) {
+                        Text(String(localized: "Subscribed"))
+                        Group {
+                            if let date = subscription.subscribedAt {
+                                Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute().second())
+                            } else {
+                                Text(String(localized: "Subscription date unknown", defaultValue: "Unknown"))
+                            }
+                        }
+                        .foregroundColor(.primary)
+                    }
+                    .accessibilityElement(children: .combine)
+                    .accessibilityIdentifier("topic-subscribed-date")
+                } header: {
+                    Text(String(localized: "About this topic"))
+                        .foregroundColor(.primary)
+                } footer: {
+                    if subscription.subscribedAt == nil {
+                        Text(String(localized: "The subscription date was not recorded for this topic."))
+                            .foregroundColor(.primary)
+                    }
+                }
+            }
+            .navigationTitle(String(localized: "Topic details"))
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .navigationBarTrailing) {
+                    Button(String(localized: "Done")) { dismiss() }
+                }
+            }
+        }
+        .navigationViewStyle(StackNavigationViewStyle())
     }
 }
 

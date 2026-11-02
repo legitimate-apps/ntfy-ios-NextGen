@@ -285,6 +285,7 @@ class Store: ObservableObject {
             subscription = Subscription(context: context)
             subscription.baseUrl = normalizeBaseUrl(baseUrl)
             subscription.topic = topic
+            subscription.subscribedAt = Date()
             Log.d(Store.tag, "Storing subscription baseUrl=\(subscription.baseUrl ?? "?"), topic=\(topic)")
             do {
                 try context.save()

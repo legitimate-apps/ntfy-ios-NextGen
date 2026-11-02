@@ -8424,10 +8424,10 @@ extension AlertedTests {
             XCTAssertEqual(model.entityVersionHashesByName, store.container.managedObjectModel.entityVersionHashesByName,
                            "all three targets must ship the same current model: \(name)")
             let info = try XCTUnwrap(PropertyListSerialization.propertyList(from: Data(contentsOf: modelURL.appendingPathComponent("VersionInfo.plist")), format: nil) as? [String: Any])
-            XCTAssertEqual(info["NSManagedObjectModel_CurrentVersionName"] as? String, "Model 9", name)
+            XCTAssertEqual(info["NSManagedObjectModel_CurrentVersionName"] as? String, "Model 10", name)
             for entity in model.entityVersionHashesByName.keys.sorted() {
                 let hash = model.entityVersionHashesByName[entity]!.map { String(format: "%02x", $0) }.joined()
-                print("ALERTED_BUNDLE_MODEL_HASH target=\(name) current=Model9 entity=\(entity) hash=\(hash)")
+                print("ALERTED_BUNDLE_MODEL_HASH target=\(name) current=Model10 entity=\(entity) hash=\(hash)")
             }
             if name == "ntfyShare" { shareModel = model }
         }
