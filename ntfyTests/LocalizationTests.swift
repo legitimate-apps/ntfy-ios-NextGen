@@ -236,6 +236,27 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testVersion123ReleaseNotesResolveInEveryBundledLanguage() throws {
+        let release = try XCTUnwrap(ReleaseNotes.shipped.first { $0.version == "1.23.0" })
+        XCTAssertEqual(release.bullets.count, 6)
+        let expected: [String: [String]] = [
+            "en": ["Schedule Quiet hours, with exceptions for priority 5 and chosen topics.", "Run HTTP notification buttons without opening the app. Unlocking is still required.", "Send messages from Shortcuts and Siri.", "Use Alert if quiet to be notified when a topic receives no messages.", "Read code blocks in monospace and choose to open web links in app.", "Fix silent fallback notifications when a message cannot be fetched."],
+            "de": ["Plane Ruhezeiten mit Ausnahmen für Priorität 5 und ausgewählte Themen.", "HTTP-Benachrichtigungsaktionen öffnen die App nicht mehr. Entsperren bleibt nötig.", "Sende Nachrichten mit Kurzbefehlen und Siri.", "„Bei Stille benachrichtigen“ meldet, wenn ein Thema keine Nachrichten empfängt.", "Lies Codeblöcke in Festbreitenschrift und öffne Weblinks auf Wunsch in der App.", "Behebt stumme Ersatzbenachrichtigungen, wenn eine Nachricht nicht geladen werden kann."],
+            "es": ["Programa el Horario de silencio, con excepciones para la prioridad 5 y los tópicos que elijas.", "Ejecuta acciones HTTP desde las notificaciones sin abrir la app. Aún debes desbloquear el dispositivo.", "Envía mensajes con Atajos y Siri.", "Usa Avisar si no hay mensajes para recibir una alerta cuando un tópico deje de recibir mensajes.", "Lee bloques de código con letra monoespaciada y elige si abrir los enlaces web en la app.", "Se corrige la falta de sonido en las notificaciones de respaldo cuando no se puede obtener un mensaje."],
+            "it": ["Programma gli Orari silenziosi, con eccezioni per la priorità 5 e gli argomenti scelti.", "Esegui le azioni HTTP dalle notifiche senza aprire l’app. Devi comunque sbloccare il dispositivo.", "Invia messaggi con Comandi Rapidi e Siri.", "Usa Avvisa se non arrivano messaggi per ricevere un avviso quando un argomento non riceve messaggi.", "Leggi i blocchi di codice con un carattere monospaziato e scegli se aprire i link web nell’app.", "Corrette le notifiche di ripiego senza suono quando non è possibile recuperare un messaggio."],
+            "pl": ["Zaplanuj Godziny ciszy z wyjątkami dla priorytetu 5 i wybranych tematów.", "Uruchamiaj akcje HTTP z powiadomień bez otwierania aplikacji. Nadal trzeba odblokować urządzenie.", "Wysyłaj wiadomości za pomocą Skrótów i Siri.", "Włącz Powiadom o braku wiadomości, aby otrzymać alert, gdy temat nie otrzyma wiadomości.", "Czytaj bloki kodu czcionką o stałej szerokości i wybierz otwieranie linków internetowych w aplikacji.", "Naprawiono brak dźwięku powiadomień zastępczych, gdy nie można pobrać wiadomości."],
+            "nl": ["Plan Stille uren, met uitzonderingen voor prioriteit 5 en gekozen onderwerpen.", "Voer HTTP-acties uit vanuit meldingen zonder de app te openen. Ontgrendelen blijft nodig.", "Verstuur berichten met Opdrachten en Siri.", "Gebruik Melding bij stilte om een melding te krijgen als een onderwerp geen berichten ontvangt.", "Lees codeblokken in een lettertype met vaste breedte en open weblinks desgewenst in de app.", "Geen stille terugvalmeldingen meer als een bericht niet kan worden opgehaald."],
+            "fr": ["Programmez les Heures calmes, avec des exceptions pour la priorité 5 et les sujets de votre choix.", "Exécutez les actions HTTP des notifications sans ouvrir l’app. Le déverrouillage reste nécessaire.", "Envoyez des messages avec Raccourcis et Siri.", "Utilisez Alerter en cas de silence pour être averti quand un sujet ne reçoit aucun message.", "Lisez les blocs de code à chasse fixe et choisissez d’ouvrir les liens web dans l’app.", "Correction des notifications de secours silencieuses quand un message ne peut pas être récupéré."]
+        ]
+        XCTAssertEqual(Set(Bundle.main.localizations.filter { $0 != "Base" }), Set(expected.keys))
+        for (language, bullets) in expected {
+            let bundle = try XCTUnwrap(Bundle.main.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+            for (index, key) in expected["en"]!.enumerated() {
+                XCTAssertEqual(bundle.localizedString(forKey: key, value: nil, table: nil), bullets[index], language)
+            }
+        }
+    }
+
     private func stringUnits(_ node: Any) -> [[String: Any]] {
         guard let object = node as? [String: Any] else { return [] }
         if let unit = object["stringUnit"] as? [String: Any] { return [unit] }

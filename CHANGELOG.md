@@ -4,6 +4,20 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.23.0
+
+- Schedule quiet hours on chosen days, with exceptions for priority 5 and selected topics. Messages stay in history and Notification Center.
+- Run HTTP notification buttons without opening the app on iPhone and iPad. Unlocking is still required.
+- Send messages to subscribed topics from Shortcuts and Siri, with an optional title, priority, tags and click URL.
+- Use Alert if quiet to receive one local alert when a topic receives no messages for a chosen time. An alert can also mean the phone is offline or not receiving messages.
+- Provision a default server and topics on managed devices through MDM app configuration.
+- Hide server addresses in the topic list from Settings. Topics with matching names keep their addresses so they remain distinguishable.
+- Leave Use another server blank to use the configured default server. The field shows which server it will use.
+- Retry catch-up for unreachable topics when the network returns while the app is open.
+- Render fenced Markdown code blocks in selectable monospace text, preserving line breaks and indentation. Long lines wrap.
+- Choose to open message web links in the app from Settings. The option is off by default.
+- Fix silent fallback notifications when a protected or poll-only topic's message cannot be fetched, including refused sign-in, server or network errors and timeouts. The fallback uses the topic's sound when known; mute and quiet hours still apply.
+
 ## 1.22.0
 
 - Choose a notification sound per topic: Default, three built-in tones or an audio file imported from Files. Imported audio uses the first 29 seconds and can be removed.

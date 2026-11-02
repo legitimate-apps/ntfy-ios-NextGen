@@ -27248,6 +27248,288 @@
           }
         }
       }
+    },
+    "Schedule Quiet hours, with exceptions for priority 5 and chosen topics.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schedule Quiet hours, with exceptions for priority 5 and chosen topics."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plane Ruhezeiten mit Ausnahmen für Priorität 5 und ausgewählte Themen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programa el Horario de silencio, con excepciones para la prioridad 5 y los tópicos que elijas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programma gli Orari silenziosi, con eccezioni per la priorità 5 e gli argomenti scelti."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zaplanuj Godziny ciszy z wyjątkami dla priorytetu 5 i wybranych tematów."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Plan Stille uren, met uitzonderingen voor prioriteit 5 en gekozen onderwerpen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Programmez les Heures calmes, avec des exceptions pour la priorité 5 et les sujets de votre choix."
+          }
+        }
+      }
+    },
+    "Run HTTP notification buttons without opening the app. Unlocking is still required.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Run HTTP notification buttons without opening the app. Unlocking is still required."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "HTTP-Benachrichtigungsaktionen öffnen die App nicht mehr. Entsperren bleibt nötig."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ejecuta acciones HTTP desde las notificaciones sin abrir la app. Aún debes desbloquear el dispositivo."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Esegui le azioni HTTP dalle notifiche senza aprire l’app. Devi comunque sbloccare il dispositivo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uruchamiaj akcje HTTP z powiadomień bez otwierania aplikacji. Nadal trzeba odblokować urządzenie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer HTTP-acties uit vanuit meldingen zonder de app te openen. Ontgrendelen blijft nodig."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Exécutez les actions HTTP des notifications sans ouvrir l’app. Le déverrouillage reste nécessaire."
+          }
+        }
+      }
+    },
+    "Send messages from Shortcuts and Siri.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Send messages from Shortcuts and Siri."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sende Nachrichten mit Kurzbefehlen und Siri."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envía mensajes con Atajos y Siri."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Invia messaggi con Comandi Rapidi e Siri."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wysyłaj wiadomości za pomocą Skrótów i Siri."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verstuur berichten met Opdrachten en Siri."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Envoyez des messages avec Raccourcis et Siri."
+          }
+        }
+      }
+    },
+    "Use Alert if quiet to be notified when a topic receives no messages.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Alert if quiet to be notified when a topic receives no messages."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "„Bei Stille benachrichtigen“ meldet, wenn ein Thema keine Nachrichten empfängt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Avisar si no hay mensajes para recibir una alerta cuando un tópico deje de recibir mensajes."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Avvisa se non arrivano messaggi per ricevere un avviso quando un argomento non riceve messaggi."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz Powiadom o braku wiadomości, aby otrzymać alert, gdy temat nie otrzyma wiadomości."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik Melding bij stilte om een melding te krijgen als een onderwerp geen berichten ontvangt."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez Alerter en cas de silence pour être averti quand un sujet ne reçoit aucun message."
+          }
+        }
+      }
+    },
+    "Read code blocks in monospace and choose to open web links in app.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Read code blocks in monospace and choose to open web links in app."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lies Codeblöcke in Festbreitenschrift und öffne Weblinks auf Wunsch in der App."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lee bloques de código con letra monoespaciada y elige si abrir los enlaces web en la app."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Leggi i blocchi di codice con un carattere monospaziato e scegli se aprire i link web nell’app."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czytaj bloki kodu czcionką o stałej szerokości i wybierz otwieranie linków internetowych w aplikacji."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lees codeblokken in een lettertype met vaste breedte en open weblinks desgewenst in de app."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lisez les blocs de code à chasse fixe et choisissez d’ouvrir les liens web dans l’app."
+          }
+        }
+      }
+    },
+    "Fix silent fallback notifications when a message cannot be fetched.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fix silent fallback notifications when a message cannot be fetched."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Behebt stumme Ersatzbenachrichtigungen, wenn eine Nachricht nicht geladen werden kann."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se corrige la falta de sonido en las notificaciones de respaldo cuando no se puede obtener un mensaje."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Corrette le notifiche di ripiego senza suono quando non è possibile recuperare un messaggio."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Naprawiono brak dźwięku powiadomień zastępczych, gdy nie można pobrać wiadomości."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geen stille terugvalmeldingen meer als een bericht niet kan worden opgehaald."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Correction des notifications de secours silencieuses quand un message ne peut pas être récupéré."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
