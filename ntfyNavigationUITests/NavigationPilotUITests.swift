@@ -39,7 +39,7 @@ final class NavigationPilotUITests: XCTestCase {
         app.open(URL(string: "https://ntfy-me.com/" + newTopic)!)
         XCTAssertTrue(app.navigationBars["Add subscription"].waitForExistence(timeout: 8))
         XCTAssertEqual(app.textFields["Topic name, e.g. alerts-k7m2-x9qp"].value as? String, newTopic)
-        XCTAssertEqual(app.textFields["Service URL, e.g. https://ntfy.home.io"].value as? String, "https://ntfy-me.com")
+        XCTAssertEqual(app.textFields["subscription-server-url"].value as? String, "https://ntfy-me.com")
     }
     func testNotificationWarmOffscreen() {
         launchList()
@@ -513,7 +513,7 @@ final class GermanLocalizationUITests: XCTestCase {
         reveal(app.buttons["QR-Code scannen"])
         app.buttons["QR-Code scannen"].tap()
         XCTAssertTrue(app.navigationBars["Abo"].waitForExistence(timeout: 8))
-        let server = app.textFields["Server-URL"]
+        let server = app.textFields["subscription-server-url"]
         reveal(server, up: false)
         XCTAssertEqual(server.value as? String, "http://127.0.0.1:18091")
         capture("add-server-filled")
