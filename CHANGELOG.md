@@ -17,6 +17,8 @@ into the App Store "What's New" field. Engineering detail and upstream tracking 
 - Render fenced Markdown code blocks in selectable monospace text, preserving line breaks and indentation. Long lines wrap.
 - Choose to open message web links in the app from Settings. The option is off by default.
 - Fix silent fallback notifications when a protected or poll-only topic's message cannot be fetched, including refused sign-in, server or network errors and timeouts. The fallback uses the topic's sound when known; mute and quiet hours still apply.
+- Fix Unsubscribe leaving the topic in place on iPhone and iPad. Since 1.22, the app kept the topic when the system reported a saved setting as not synchronized, although it was saved.
+- Use "tópico" consistently for topics in Spanish.
 
 ## 1.22.0
 
