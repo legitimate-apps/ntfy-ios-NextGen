@@ -4,6 +4,7 @@
 import UserNotifications
 import CoreData
 import CryptoKit
+import os.log
 
 /// Persists incoming messages in Core Data and fetches notification content from the original
 /// server when a "poll_request" wakeup is received.
@@ -50,7 +51,13 @@ class NotificationService: UNNotificationServiceExtension {
         NotificationResponseRelay.installInExtensionIfNeeded()
         NotificationExtensionLifetime.shared.requestStarted()
         if self.store == nil { self.store = makeStore() }
-        self.deliveryGate = NotificationDeliveryGate(handler: contentHandler)
+        self.deliveryGate = NotificationDeliveryGate { output in
+            // Release builds expose only presentation metadata, never message or account content.
+            os_log("NSE handoff soundRequested=%{public}d interruptionLevel=%{public}ld",
+                   log: OSLog(subsystem: Config.bundleIdBase, category: "NotificationPresentation"), type: .info,
+                   output.sound == nil ? 0 : 1, output.interruptionLevel.rawValue)
+            contentHandler(output)
+        }
         quietHours = QuietHours.load()
         presentationMessage = nil
         alertIdentity = nil
@@ -232,6 +239,8 @@ class NotificationService: UNNotificationServiceExtension {
     }
     
     private func handlePollRequest(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ pollRequest: Message) {
+        // The server's mutable alert omits aps.sound. Every fallback needs an explicit policy.
+        content.configureInterruption(message: pollRequest)
         let pollId = pollRequest.pollId ?? pollRequest.id
         let preferredBaseUrl = bestAttemptContent?.userInfo["base_url"] as? String
         guard let subscription = store?.findSubscriptionMatch(
@@ -240,7 +249,7 @@ class NotificationService: UNNotificationServiceExtension {
             )
         else {
             Log.w(tag, "Cannot find subscription for poll request topic=\(pollRequest.topic), pollId=\(pollRequest.pollId ?? "<nil>")")
-            deliver(fallbackContent(request))
+            deliver(content)
             return
         }
         
@@ -248,6 +257,8 @@ class NotificationService: UNNotificationServiceExtension {
         alertIdentity = (Message(id: pollId, time: pollRequest.time, event: "message", topic: subscription.topic), subscription.baseUrl)
         // Install the safe topic-named fallback before starting the fetch, including expiry.
         let placeholder = NotificationHealth.fetchFailureContent(request.content, topic: subscription.topic, baseUrl: subscription.baseUrl)
+        placeholder.configureInterruption(message: pollRequest,
+            soundName: store?.topicSoundName(baseUrl: subscription.baseUrl, topic: subscription.topic, library: soundLibrary))
         bestAttemptContent = placeholder
         // Poll original server
         let user = store?.getBasicUser(baseUrl: subscription.baseUrl)

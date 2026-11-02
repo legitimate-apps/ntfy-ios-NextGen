@@ -9302,6 +9302,13 @@ private final class NSEAuthLoopbackServer {
             let line = String(decoding: request[..<delimiter.lowerBound], as: UTF8.self)
             self.checkRequestLine(line, line.contains("poll=1&id=authpoll1234"))
             if line.contains("/pending/") { return }
+            if line.contains("/success/") {
+                let body = Data("{\"id\":\"authpoll1234\",\"time\":1700000000,\"event\":\"message\",\"topic\":\"success\",\"message\":\"Fetched probe\",\"priority\":3}\n".utf8)
+                var response = Data("HTTP/1.1 200 OK\r\nContent-Length: \(body.count)\r\nConnection: close\r\n\r\n".utf8)
+                response.append(body)
+                connection.send(content: response, completion: .contentProcessed { _ in connection.cancel() })
+                return
+            }
             let status = line.contains("status401") ? 401 : line.contains("status403") ? 403 : line.contains("status429") ? 429 : 500
             print("NSE_AUTH_HTTP \(line) response=\(status)")
             let response = Data("HTTP/1.1 \(status) Refused\r\nContent-Length: 0\r\nConnection: close\r\n\r\n".utf8)
@@ -9371,5 +9378,101 @@ final class TopicSignInNoticeTests: XCTestCase {
             XCTAssertFalse(visible.contains("server refused"))
             XCTAssertTrue(visible.contains("no messages yet"), "Other failures retain the existing empty state")
         }
+    }
+}
+
+final class PollRequestSoundTests: XCTestCase {
+    private var server: NSEAuthLoopbackServer!
+    private var base: String { "http://127.0.0.1:\(server.port)" }
+    private var quietBefore: QuietHours!
+
+    override func setUpWithError() throws {
+        quietBefore = QuietHours.load()
+        QuietHours().save()
+        server = try NSEAuthLoopbackServer()
+        let ready = expectation(description: "sound fixture ready")
+        server.start { ready.fulfill() }
+        wait(for: [ready], timeout: 5)
+    }
+
+    override func tearDown() {
+        server.stop()
+        quietBefore.save()
+        super.tearDown()
+    }
+
+    private func check(topic: String, priority: Int? = 3, subscribed: Bool = true,
+                       expire: Bool = false, muted: Bool = false, duplicate: Bool = false,
+                       custom: Bool = false, quiet: Bool = false, direct: Bool = false) throws {
+        let store = Store.shared
+        let sub = subscribed ? store.saveSubscription(baseUrl: base, topic: topic) : nil
+        defer { if let sub { _ = store.delete(subscription: sub) } }
+        if muted, let sub { try store.setTopicMute(until: .distantFuture, subscription: sub) }
+        if duplicate {
+            let message = Message(id: "authpoll1234", time: 1_700_000_000, event: "message", topic: topic, message: "Already shown")
+            store.save(notificationsFromMessages: [message], withSubscription: sub!)
+            store.recordPresentation(message: message, baseUrl: base)
+        }
+        let root = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        let suite = "PollRequestSoundTests.\(UUID().uuidString)"
+        let defaults = UserDefaults(suiteName: suite)!
+        let library = TopicSoundLibrary(defaults: defaults, container: root)
+        defer { defaults.removePersistentDomain(forName: suite); try? FileManager.default.removeItem(at: root) }
+        if custom, let sub {
+            try TopicSoundImporter.installBuiltins(library: library)
+            library.setChoice(TopicSound.builtins[0].id, for: sub.objectID.uriRepresentation().absoluteString)
+        }
+        if quiet { var hours = QuietHours(); hours.enabled = true; hours.start = 0; hours.end = 0; hours.save() }
+        let content = UNMutableNotificationContent()
+        content.title = "Raw poll probe"
+        content.body = "New message"
+        // Exact server presentation shape: mutable alert, no aps.sound or interruption-level.
+        content.userInfo = ["id": "authpoll1234", "time": "1700000000", "event": direct ? "message" : "poll_request",
+                            "topic": topic, "poll_id": "authpoll1234", "base_url": base, "message": "Direct probe"]
+        if let priority { content.userInfo["priority"] = String(priority) }
+        XCTAssertNil(content.sound)
+        let service = NotificationService()
+        service.soundLibrary = library
+        let delivered = expectation(description: "final NSE sound")
+        service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) { output in
+            let silent = muted || duplicate || quiet
+            let expected: UNNotificationInterruptionLevel = silent || (priority ?? 3) <= 2 ? .passive : (priority ?? 3) >= 4 ? .timeSensitive : .active
+            XCTAssertEqual(output.interruptionLevel, expected)
+            if silent { XCTAssertNil(output.sound) }
+            else if custom, let sound = output.sound {
+                let data = try! NSKeyedArchiver.archivedData(withRootObject: sound, requiringSecureCoding: true)
+                let plist = try! PropertyListSerialization.propertyList(from: data, format: nil) as! [String: Any]
+                XCTAssertTrue((plist["$objects"] as! [Any]).contains { ($0 as? String) == TopicSound.builtins[0].id })
+            } else { XCTAssertEqual(output.sound, .default) }
+            print("POLL_SOUND topic=\(topic) priority=\(priority.map(String.init) ?? "nil") direct=\(direct) expiry=\(expire) quiet=\(silent) sound=\(String(describing: output.sound)) level=\(output.interruptionLevel.rawValue) body=\(output.body)")
+            delivered.fulfill()
+        }
+        if expire { service.serviceExtensionTimeWillExpire() }
+        wait(for: [delivered], timeout: 5)
+        withExtendedLifetime(service) {}
+    }
+
+    func testRefusedAndFailedPollsHaveDefaultSound() throws {
+        for topic in ["status401", "status403", "status429", "status500"] { try check(topic: topic) }
+    }
+    func testExpiryAndUnknownTopicHaveDefaultSound() throws {
+        try check(topic: "pending", expire: true)
+        try check(topic: "unknown", subscribed: false)
+    }
+    func testFallbackHonorsPriorityIncludingMissingRelayPriority() throws {
+        for priority in [nil, 1, 2, 4, 5] { try check(topic: "status500", priority: priority) }
+    }
+    func testFallbackPreservesTopicSound() throws { try check(topic: "status500", custom: true) }
+    func testMuteQuietHoursAndDuplicateStillSilenceFailureAndExpiry() throws {
+        for expire in [false, true] {
+            try check(topic: expire ? "pending" : "status500", expire: expire, muted: true)
+            try check(topic: expire ? "pending" : "status401", expire: expire, duplicate: true)
+            try check(topic: expire ? "pending" : "status500", expire: expire, quiet: true)
+            QuietHours().save()
+        }
+    }
+    func testPlainMessageAndFetchedMessageKeepSameSound() throws {
+        try check(topic: "success", direct: true)
+        try check(topic: "success")
     }
 }
