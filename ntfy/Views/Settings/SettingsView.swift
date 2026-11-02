@@ -5,6 +5,7 @@ import StoreKit
 struct SettingsView: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var delegate: AppDelegate
+    @AppStorage(TopicServerAddressPolicy.preferenceKey) private var showServerAddresses = TopicServerAddressPolicy.defaultValue
     @State private var userDialog: UserDialog?
     
     var body: some View {
@@ -12,10 +13,15 @@ struct SettingsView: View {
             Form {
                 Section(
                     header: Text(String(localized: "General")),
-                    footer: Text(String(localized: "When subscribing to new topics, this server will be used as a default."))
+                    footer: VStack(alignment: .leading, spacing: 8) {
+                        Text(String(localized: "When subscribing to new topics, this server will be used as a default."))
+                        Text(String(localized: "Topics with matching names always show their addresses."))
+                    }
                 ) {
                     DefaultServerView()
                     TopicSortOrderView()
+                    Toggle(String(localized: "Show server addresses"), isOn: $showServerAddresses)
+                        .accessibilityHint(String(localized: "Topics with matching names always show their addresses."))
                 }
                 Section(
                     header: Text(String(localized: "Notifications")),
