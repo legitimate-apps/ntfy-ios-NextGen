@@ -18,6 +18,7 @@ struct SubscriptionListView: View {
     @StateObject private var subscriptionsModel = SubscriptionsObservable()
     @ObservedObject private var launchExperience = LaunchExperience.shared
     @Environment(\.scenePhase) private var scenePhase
+    @AppStorage(TopicServerAddressPolicy.preferenceKey) private var showServerAddresses = TopicServerAddressPolicy.defaultValue
     @State private var showingAddDialog = false
     @State private var handledTopicLink = false
     @State private var openedSubscription: Subscription?
@@ -80,10 +81,14 @@ struct SubscriptionListView: View {
     }
 
     private var topicList: some View {
-        List {
+        let ambiguousNames = TopicServerAddressPolicy.ambiguousNames(in: subscriptionsModel.subscriptions)
+        return List {
             ForEach(subscriptionsModel.subscriptions) { subscription in
                 SubscriptionItemNavView(subscription: subscription,
-                                        summary: subscriptionsModel.summaries[subscription.objectID])
+                                        summary: subscriptionsModel.summaries[subscription.objectID],
+                                        showServerAddress: TopicServerAddressPolicy.showsAddress(
+                                            name: subscription.shortDisplayName(), showAddresses: showServerAddresses,
+                                            ambiguousNames: ambiguousNames))
             }
         }
         // This link lives outside the lazy List rows, so an external request can open any topic.
@@ -189,6 +194,7 @@ struct SubscriptionItemNavView: View {
     @EnvironmentObject private var store: Store
     @ObservedObject var subscription: Subscription
     let summary: Store.SubscriptionSummary?
+    var showServerAddress: Bool = true
     @State private var unsubscribeAlert = false
     @State private var showMuteOptions = false
     @State private var showQuietOptions = false
@@ -300,7 +306,7 @@ struct SubscriptionItemNavView: View {
             .opacity(0.0)
             .buttonStyle(PlainButtonStyle())
             
-            SubscriptionItemRowView(subscription: subscription, summary: summary)
+            SubscriptionItemRowView(subscription: subscription, summary: summary, showServerAddress: showServerAddress)
         }
         .accessibilityElement(children: .combine)
         .sheet(isPresented: $showQuietOptions) { QuietTopicView(subscription: subscription) }
@@ -326,13 +332,16 @@ struct SubscriptionItemNavView: View {
 }
 
 struct SubscriptionItemRowView: View {
+    @Environment(\.sizeCategory) private var sizeCategory
     @ObservedObject private var deliveryHealth = DeliveryHealthMonitor.shared
     @ObservedObject var subscription: Subscription
     let summary: Store.SubscriptionSummary?
+    let showServerAddress: Bool
 
-    init(subscription: Subscription, summary: Store.SubscriptionSummary?) {
+    init(subscription: Subscription, summary: Store.SubscriptionSummary?, showServerAddress: Bool = true) {
         self.subscription = subscription
         self.summary = summary
+        self.showServerAddress = showServerAddress
     }
 
     var body: some View {
@@ -374,27 +383,25 @@ struct SubscriptionItemRowView: View {
                         .fixedSize(horizontal: true, vertical: false)
                         .layoutPriority(1)
                 }
+                if !showServerAddress {
+                    rowAccessory(unread: unread)
+                }
             }
 
-            HStack(alignment: .center, spacing: 6) {
-                // Monospaced so hostnames stay scannable, middle-truncated so both the server and the
-                // topic survive on narrow screens instead of losing the tail.
-                Text(address)
-                    .font(.system(.footnote, design: .monospaced))
-                    .foregroundColor(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-                    .accessibilityLabel(Text(String(localized: "on \(subscription.serverHost())")))
-                Spacer(minLength: 8)
-                if unread > 0 {
-                    UnreadBadge(count: unread)
+            if showServerAddress {
+                HStack(alignment: .center, spacing: 6) {
+                    // Monospaced so hostnames stay scannable, middle-truncated so both the server and the
+                    // topic survive on narrow screens instead of losing the tail.
+                    Text(address)
+                        .font(.system(.footnote, design: .monospaced))
+                        .foregroundColor(.secondary)
+                        .lineLimit(sizeCategory.isAccessibilityCategory ? nil : 1)
+                        .fixedSize(horizontal: false, vertical: true)
+                        .truncationMode(.middle)
+                        .accessibilityLabel(Text(String(localized: "on \(subscription.serverHost())")))
+                    Spacer(minLength: 8)
+                    rowAccessory(unread: unread)
                 }
-                // Sits on the middle line, which centres it against the three-line row while
-                // keeping it on the same trailing edge as the timestamp above.
-                Image(systemName: "chevron.forward")
-                    .font(.footnote.weight(.semibold))
-                    .foregroundColor(Color(UIColor.tertiaryLabel))
-                    .accessibilityHidden(true) // decorative: the row itself is the control
             }
 
             HStack(spacing: 0) {
@@ -417,6 +424,16 @@ struct SubscriptionItemRowView: View {
             }
         }
         .padding(.vertical, 6)
+    }
+
+    private func rowAccessory(unread: Int) -> some View {
+        HStack(spacing: 6) {
+            if unread > 0 { UnreadBadge(count: unread) }
+            Image(systemName: "chevron.forward")
+                .font(.footnote.weight(.semibold))
+                .foregroundColor(Color(UIColor.tertiaryLabel))
+                .accessibilityHidden(true)
+        }
     }
 }
 
@@ -484,5 +501,21 @@ struct SubscriptionListView_Previews: PreviewProvider {
             .environment(\.managedObjectContext, store.context)
             .environmentObject(store)
             .environmentObject(AppDelegate())
+    }
+}
+
+enum TopicServerAddressPolicy {
+    static let preferenceKey = "showTopicServerAddresses"
+    static let defaultValue = true
+
+    static func ambiguousNames(in subscriptions: [Subscription]) -> Set<String> {
+        let groups = Dictionary(grouping: subscriptions) { $0.shortDisplayName().lowercased() }
+        return Set(groups.compactMap { name, topics in
+            Set(topics.map { $0.urlString() }).count > 1 ? name : nil
+        })
+    }
+
+    static func showsAddress(name: String, showAddresses: Bool = defaultValue, ambiguousNames: Set<String>) -> Bool {
+        showAddresses || ambiguousNames.contains(name.lowercased())
     }
 }

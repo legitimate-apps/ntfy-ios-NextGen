@@ -13,6 +13,7 @@
 		22F7005DEE2B3B5D8D3AA005 = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
 		70C0A426085ED8D1F7D716AF = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
 		1E89EB0639BDDB580553BA66 = {isa = PBXBuildFile; fileRef = 1B1207CA777D028ED9906632; };
+		BF604363E097B7921ABBA131 = {isa = PBXBuildFile; fileRef = CE0D7AE636FF4807D4E3659F; };
 		A12300000000000000000001 /* BackgroundHTTPActionTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A12300000000000000000002 /* BackgroundHTTPActionTests.swift */; };
 		547100000000000000000303 = {isa = PBXBuildFile; fileRef = 547000000000000000000003; };
 		547100000000000000000304 = {isa = PBXBuildFile; fileRef = 547000000000000000000004; };
@@ -239,6 +240,7 @@
 		E025341946943C384D6CD042 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Settings/QuietHoursView.swift"; sourceTree = SOURCE_ROOT; };
 		C34B0B1308D16855C0A4108A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Persistence/QuietHours.swift"; sourceTree = SOURCE_ROOT; };
 		1B1207CA777D028ED9906632 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietHoursTests.swift"; sourceTree = SOURCE_ROOT; };
+		CE0D7AE636FF4807D4E3659F = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/TopicServerAddressTests.swift"; sourceTree = SOURCE_ROOT; };
 		A12300000000000000000002 /* BackgroundHTTPActionTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BackgroundHTTPActionTests.swift; sourceTree = "<group>"; };
 		547000000000000000000003 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietTopicIntegrationTests.swift"; sourceTree = SOURCE_ROOT; };
 		547000000000000000000004 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietTopicAlertTests.swift"; sourceTree = SOURCE_ROOT; };
@@ -651,6 +653,7 @@
                 C12200000000000000000013 /* ShortcutsPublishTests.swift */,
 				DE1190000000000000000013 /* LocalizationTests.swift */,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
+				CE0D7AE636FF4807D4E3659F,
 				A12300000000000000000002 /* BackgroundHTTPActionTests.swift */,
 				10E74BB28FBB4650A30BBAEC /* FcmTeardownLedgerTests.swift */,
 				B64119000000000000000002 /* base64-binary.json */,
@@ -1024,6 +1027,7 @@
 			files = (
 				36F3897CDC503084F420B8E4,
 				1E89EB0639BDDB580553BA66,
+				BF604363E097B7921ABBA131,
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
 				547100000000000000000303,
