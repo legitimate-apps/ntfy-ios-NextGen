@@ -9,6 +9,7 @@ struct AppMain: App {
     @StateObject private var store = Store.shared
 
     init() {
+        NetworkCatchUp.shared.start()
         Log.d(tag, "Launching ntfy 🥳. Welcome!")
         Log.d(tag, "Base URL is \(Config.appBaseUrl), user agent is \(ApiService.userAgent)")
     }
@@ -21,6 +22,9 @@ struct AppMain: App {
                 .environment(\.managedObjectContext, store.context)
                 .onReceive(Timer.publish(every: 900, on: .main, in: .common).autoconnect()) { _ in
                     if UIApplication.shared.applicationState == .active { store.pruneNotifications() }
+                }
+                .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
+                    NetworkCatchUp.shared.deactivate()
                 }
                 .onReceive(NotificationCenter.default.publisher(for: UIApplication.didBecomeActiveNotification)) { _ in
                     // Use this hook instead of applicationDidBecomeActive, see https://stackoverflow.com/a/68888509/1440785
@@ -35,7 +39,7 @@ struct AppMain: App {
                     delegate.refreshNotificationSettings()
                     // Catch up once per foreground transition. Returning to the topic list or
                     // switching tabs does not poll again; explicit refresh is available there.
-                    SubscriptionManager(store: store).pollAll(store.getSubscriptions() ?? [], manual: false) {}
+                    NetworkCatchUp.shared.activate()
                     // Self-heal a desynced device (ntfy#1305). Before this, a
                     // topic whose FCM binding failed stayed dead until the user
                     // reinstalled the app — which is exactly what the upstream
