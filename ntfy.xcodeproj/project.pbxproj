@@ -200,6 +200,7 @@
 		CA1230000000000000000104 /* NetworkCatchUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000004; };
 		4FC3A3F2D420A9D16E198363 /* FencedCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0838035913A3CB558627FE; };
 		A5B03076345C11A40DCAF272 /* InAppBrowserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D910590ECBC89F840C457B8; };
+		C12315620000000000000001 /* PollFallbackSoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12315620000000000000002 /* PollFallbackSoundTests.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -394,6 +395,7 @@
 		CA1230000000000000000004 /* NetworkCatchUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/App/NetworkCatchUp.swift"; sourceTree = SOURCE_ROOT; };
 		EF0838035913A3CB558627FE /* FencedCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/FencedCodeTests.swift"; sourceTree = SOURCE_ROOT; };
 		2D910590ECBC89F840C457B8 /* InAppBrowserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/InAppBrowserTests.swift"; sourceTree = SOURCE_ROOT; };
+		C12315620000000000000002 /* PollFallbackSoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollFallbackSoundTests.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -660,6 +662,7 @@
 		BCDAB7772E43C161501373ED /* ntfyTests */ = {
 			isa = PBXGroup;
 			children = (
+				C12315620000000000000002 /* PollFallbackSoundTests.swift */,
 				CA1230000000000000000001 /* NetworkCatchUpTests.swift */,
 				CA1230000000000000000002 /* RecoveryPollingTests.swift */,
 				D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */,
@@ -1042,6 +1045,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				C12315620000000000000001 /* PollFallbackSoundTests.swift in Sources */,
 				CA1230000000000000000102 /* RecoveryPollingTests.swift in Sources */,
 				CA1230000000000000000101 /* NetworkCatchUpTests.swift in Sources */,
 				4FC3A3F2D420A9D16E198363 /* FencedCodeTests.swift in Sources */,

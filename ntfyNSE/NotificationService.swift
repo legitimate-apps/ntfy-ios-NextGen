@@ -249,7 +249,9 @@ class NotificationService: UNNotificationServiceExtension {
             )
         else {
             Log.w(tag, "Cannot find subscription for poll request topic=\(pollRequest.topic), pollId=\(pollRequest.pollId ?? "<nil>")")
-            deliver(content)
+            let fallback = fallbackContent(request).mutableCopy() as! UNMutableNotificationContent
+            fallback.configureInterruption(message: pollRequest)
+            deliver(fallback)
             return
         }
         
