@@ -16,6 +16,7 @@ struct NotificationRowView: View {
     @ObservedObject var notification: Notification
     let onCopyMessage: () -> Void
     @StateObject private var attachmentController = NotificationAttachmentController()
+    @State private var browserURL: URL?
     @State private var attachmentPresentation: AttachmentPresentation?
     
     var body: some View {
@@ -36,6 +37,7 @@ struct NotificationRowView: View {
                     Label(String(localized: "Delete"), systemImage: "trash.circle")
                 }
             }
+            .background(InAppBrowser(url: $browserURL))
             .sheet(item: $attachmentPresentation) { attachmentPresentation in
                 switch attachmentPresentation.mode {
                 case .preview:
@@ -73,7 +75,8 @@ struct NotificationRowView: View {
                             ActionExecutor.execute(
                                 action,
                                 notificationId: notification.id,
-                                baseUrl: notification.subscription?.baseUrl
+                                baseUrl: notification.subscription?.baseUrl,
+                                openURL: openMessageURL
                             )
                             if action.copiesText {
                                 UINotificationFeedbackGenerator().notificationOccurred(.success)
@@ -168,7 +171,7 @@ struct NotificationRowView: View {
                     attributedText: renderMessageTitle(title),
                     style: .title,
                     isInteractionEnabled: !isEditing,
-                    onPlainTap: handleRowTap
+                    onOpenURL: openMessageURL, onPlainTap: handleRowTap
                 )
                 .fixedSize(horizontal: false, vertical: true)
                 .padding([.bottom], 2)
@@ -206,7 +209,7 @@ struct NotificationRowView: View {
             attributedText: notification.renderedMessageAttributedString(),
             style: .body,
             isInteractionEnabled: !isEditing,
-            onPlainTap: handleRowTap
+            onOpenURL: openMessageURL, onPlainTap: handleRowTap
         )
         .fixedSize(horizontal: false, vertical: true)
     }
@@ -281,9 +284,15 @@ struct NotificationRowView: View {
         onCopyMessage()
     }
     
+    private func openMessageURL(_ url: URL) {
+        if InAppBrowser.shouldOpen(url, enabled: UserDefaults.standard.bool(forKey: InAppBrowser.preferenceKey)) {
+            browserURL = url
+        } else { openURL(url) }
+    }
+
     private func handleRowTap() {
         if let clickUrl {
-            openURL(clickUrl)
+            openMessageURL(clickUrl)
         } else {
             copyMessage()
         }
@@ -312,10 +321,11 @@ extension NotificationRowView {
         let attributedText: AttributedString
         let style: MessageTextStyle
         let isInteractionEnabled: Bool
+        let onOpenURL: (URL) -> Void
         let onPlainTap: () -> Void
 
         func makeCoordinator() -> Coordinator {
-            Coordinator(onPlainTap: onPlainTap)
+            Coordinator(onOpenURL: onOpenURL, onPlainTap: onPlainTap)
         }
 
         func makeUIView(context: Context) -> MessageTextView {
@@ -327,15 +337,18 @@ extension NotificationRowView {
         }
 
         func updateUIView(_ textView: MessageTextView, context: Context) {
+            context.coordinator.onOpenURL = onOpenURL
             context.coordinator.onPlainTap = onPlainTap
             configureMessageTextView(textView, isInteractionEnabled: isInteractionEnabled)
             textView.setMessageText(makeMessageNSAttributedString(attributedText, style: style))
         }
 
         final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
+            var onOpenURL: (URL) -> Void
             var onPlainTap: () -> Void
 
-            init(onPlainTap: @escaping () -> Void) {
+            init(onOpenURL: @escaping (URL) -> Void, onPlainTap: @escaping () -> Void) {
+                self.onOpenURL = onOpenURL
                 self.onPlainTap = onPlainTap
             }
 
@@ -409,7 +422,15 @@ extension NotificationRowView {
                 in characterRange: NSRange,
                 interaction: UITextItemInteraction
             ) -> Bool {
-                true
+                guard interaction == .invokeDefaultAction else { return true }
+                onOpenURL(URL)
+                return false
+            }
+
+            @available(iOS 17.0, *)
+            func textView(_ textView: UITextView, primaryActionFor textItem: UITextItem, defaultAction: UIAction) -> UIAction? {
+                guard case .link(let url) = textItem.content else { return defaultAction }
+                return UIAction { [weak self] _ in self?.onOpenURL(url) }
             }
 
             @available(iOS 17.0, *)

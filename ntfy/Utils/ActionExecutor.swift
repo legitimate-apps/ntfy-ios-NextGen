@@ -32,6 +32,7 @@ struct ActionExecutor {
         notificationId: String? = nil,
         baseUrl: String? = nil,
         credentialStore: CredentialStoring = KeychainCredentialStore.shared,
+        openURL: ((URL) -> Void)? = nil,
         completion: @escaping () -> Void = {}
     ) -> Progress {
         let execution = Progress(totalUnitCount: 1)
@@ -50,7 +51,7 @@ struct ActionExecutor {
         switch action.action {
         case "view":
             if let url = URL(string: action.url ?? "") {
-                open(url: url)
+                if let openURL { openURL(url) } else { open(url: url) }
             } else {
                 Log.w(tag, "Unable to parse action URL", action)
             }
