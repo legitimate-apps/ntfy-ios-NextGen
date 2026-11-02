@@ -224,7 +224,7 @@ final class ShortcutsPublishTests: XCTestCase {
         XCTAssertTrue(try SubscribedTopicQuery.topics(store: Store(inMemory: true)).isEmpty)
         XCTAssertFalse(SendMessageIntent.openAppWhenRun)
         XCTAssertEqual(SendMessageIntent.authenticationPolicy, .alwaysAllowed)
-        XCTAssertEqual(MessageAppShortcuts.appShortcuts.count, 1)
+        XCTAssertEqual(MessageAppShortcuts.appShortcuts.count, 2)
     }
 }
 

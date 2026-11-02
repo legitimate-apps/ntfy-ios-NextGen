@@ -201,6 +201,8 @@
 		4FC3A3F2D420A9D16E198363 /* FencedCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0838035913A3CB558627FE; };
 		A5B03076345C11A40DCAF272 /* InAppBrowserTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 2D910590ECBC89F840C457B8; };
 		C12315620000000000000001 /* PollFallbackSoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12315620000000000000002 /* PollFallbackSoundTests.swift */; };
+		C12400000000000000000001 /* ReadMessagesIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12400000000000000000011; };
+		C12400000000000000000002 /* ShortcutsReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12400000000000000000012; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -396,6 +398,8 @@
 		EF0838035913A3CB558627FE /* FencedCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/FencedCodeTests.swift"; sourceTree = SOURCE_ROOT; };
 		2D910590ECBC89F840C457B8 /* InAppBrowserTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/InAppBrowserTests.swift"; sourceTree = SOURCE_ROOT; };
 		C12315620000000000000002 /* PollFallbackSoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollFallbackSoundTests.swift; sourceTree = "<group>"; };
+		C12400000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfy/Intents/ReadMessagesIntent.swift; sourceTree = SOURCE_ROOT; };
+		C12400000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfyTests/ShortcutsReadTests.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -634,6 +638,7 @@
 				B41DCA4C2F0F12323B64C2F2 /* ComposeModel.swift */,
                 C12200000000000000000011 /* TopicPublisher.swift */,
                 C12200000000000000000012 /* SendMessageIntent.swift */,
+                C12400000000000000000011 /* ReadMessagesIntent.swift */,
                 C12200000000000000000014 /* AppShortcuts.strings */,
 				D8A525327394C98DA833E141 /* ShareItemLoader.swift */,
 			);
@@ -669,6 +674,7 @@
 				8447874A56896964DD5EA0BF /* DiagnosticFixtures */,
 				C12100000000000000000002 /* ComposeTests.swift */,
                 C12200000000000000000013 /* ShortcutsPublishTests.swift */,
+                C12400000000000000000012 /* ShortcutsReadTests.swift */,
 				DE1190000000000000000013 /* LocalizationTests.swift */,
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				CE0D7AE636FF4807D4E3659F,
@@ -964,6 +970,7 @@
 				B4D772720755F4FCFBBA8FF4 /* ComposeModel.swift in Sources */,
                 C12200000000000000000001 /* TopicPublisher.swift in Sources */,
                 C12200000000000000000003 /* SendMessageIntent.swift in Sources */,
+                C12400000000000000000001 /* ReadMessagesIntent.swift in Sources */,
 				DD0F22698F581086E7B82B31 /* ShareItemLoader.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -1065,6 +1072,7 @@
 				BA1180000000000000000012 /* ServerContractTests.swift in Sources */,
 				C12100000000000000000001 /* ComposeTests.swift in Sources */,
                 C12200000000000000000004 /* ShortcutsPublishTests.swift in Sources */,
+                C12400000000000000000002 /* ShortcutsReadTests.swift in Sources */,
 				A18000010000000000000001 /* RetentionTests.swift in Sources */,
 				F11900000000000000000004 /* TopicMuteTests.swift in Sources */,
 				F11900000000000000000005 /* NotificationService.swift in Sources */,
