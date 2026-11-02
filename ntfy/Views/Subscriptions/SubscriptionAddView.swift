@@ -108,7 +108,10 @@ struct SubscriptionAddView: View {
                     .fixedSize(horizontal: false, vertical: true)) {
                     Toggle(String(localized: "Use another server"), isOn: $useAnother)
                     if useAnother {
-                        TextField(String(localized: "Service URL, e.g. https://ntfy.home.io"), text: $baseUrl)
+                        TextField(SubscriptionAddServer.placeholder(defaultBaseUrl: store.getDefaultBaseUrl()), text: $baseUrl)
+                            .accessibilityLabel(String(localized: "Server URL"))
+                            .accessibilityIdentifier("subscription-server-url")
+                            .accessibilityHint(SubscriptionAddServer.placeholder(defaultBaseUrl: store.getDefaultBaseUrl()))
                             .disableAutocapitalization()
                             .disableAutocorrection(true)
                     }
@@ -368,7 +371,7 @@ struct SubscriptionAddView: View {
         if let server = (scannedLink ?? topicLink)?.server, selectedBaseUrl == server {
             return String(localized: "This link uses \(shortUrl(url: server)). Review the topic above, then tap Subscribe to add it.")
         }
-        return Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother)
+        return Config.subscriptionServerFooter(baseUrl: selectedBaseUrl, useAnother: useAnother && !baseUrl.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
     }
 
     /// Routes a scanned code exactly as a Universal Link: a topic already subscribed opens, a new one
@@ -390,7 +393,7 @@ struct SubscriptionAddView: View {
     }
 
     private var selectedBaseUrl: String {
-        return normalizeBaseUrl((useAnother) ? baseUrl : store.getDefaultBaseUrl())
+        return SubscriptionAddServer.selectedBaseUrl(useAnother: useAnother, input: baseUrl, defaultBaseUrl: store.getDefaultBaseUrl())
     }
     
     private func resetAndHide(openingTopicUrl url: String? = nil) {
@@ -474,5 +477,17 @@ struct SubscriptionAddView_Previews: PreviewProvider {
         SubscriptionAddView(isShowing: $isShowing)
             .environmentObject(store)
             .environmentObject(AppDelegate())
+    }
+}
+
+// Resolves the same address for validation, authentication and subscription creation.
+enum SubscriptionAddServer {
+    static func selectedBaseUrl(useAnother: Bool, input: String, defaultBaseUrl: String) -> String {
+        let alternate = input.trimmingCharacters(in: .whitespacesAndNewlines)
+        return normalizeBaseUrl(useAnother && !alternate.isEmpty ? alternate : defaultBaseUrl)
+    }
+
+    static func placeholder(defaultBaseUrl: String) -> String {
+        String(localized: "Blank uses \(normalizeBaseUrl(defaultBaseUrl))")
     }
 }
