@@ -198,6 +198,7 @@
 		CA1230000000000000000101 /* NetworkCatchUpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000001; };
 		CA1230000000000000000102 /* RecoveryPollingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000002; };
 		CA1230000000000000000104 /* NetworkCatchUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000004; };
+		4FC3A3F2D420A9D16E198363 /* FencedCodeTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = EF0838035913A3CB558627FE; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -390,6 +391,7 @@
 		CA1230000000000000000001 /* NetworkCatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/NetworkCatchUpTests.swift"; sourceTree = SOURCE_ROOT; };
 		CA1230000000000000000002 /* RecoveryPollingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/RecoveryPollingTests.swift"; sourceTree = SOURCE_ROOT; };
 		CA1230000000000000000004 /* NetworkCatchUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/App/NetworkCatchUp.swift"; sourceTree = SOURCE_ROOT; };
+		EF0838035913A3CB558627FE /* FencedCodeTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/FencedCodeTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -1040,6 +1042,7 @@
 			files = (
 				CA1230000000000000000102 /* RecoveryPollingTests.swift in Sources */,
 				CA1230000000000000000101 /* NetworkCatchUpTests.swift in Sources */,
+				4FC3A3F2D420A9D16E198363 /* FencedCodeTests.swift in Sources */,
 				36F3897CDC503084F420B8E4,
 				1E89EB0639BDDB580553BA66,
 				BF604363E097B7921ABBA131,

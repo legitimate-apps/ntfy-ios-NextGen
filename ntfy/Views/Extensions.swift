@@ -20,7 +20,49 @@ extension Notification {
 /// failures fall back to the linkified plain text so a malformed body never
 /// renders empty.
 func renderMessageBody(_ source: String, contentType: String?) -> AttributedString {
-    if #available(iOS 15.0, *), contentType == "text/markdown" {
+    guard contentType == "text/markdown" else { return linkify(source) }
+    var result = AttributedString()
+    for segment in markdownSegments(source) {
+        guard segment.isCode else { result.append(renderInlineMarkdown(segment.text)); continue }
+        let paragraph = NSMutableParagraphStyle()
+        paragraph.firstLineHeadIndent = 8; paragraph.headIndent = 8; paragraph.tailIndent = -8
+        paragraph.paragraphSpacingBefore = 6; paragraph.paragraphSpacing = 6
+        var code = AttributedString(NSAttributedString(string: segment.text, attributes: [
+            .backgroundColor: UIColor.secondarySystemBackground, .paragraphStyle: paragraph]))
+        code.inlinePresentationIntent = .code
+        result.append(code)
+    }
+    return result
+}
+
+struct MarkdownSegment: Equatable { let text: String; let isCode: Bool }
+
+func markdownSegments(_ source: String) -> [MarkdownSegment] {
+    let lines = source.components(separatedBy: "\n")
+    var segments: [MarkdownSegment] = [], text = "", fence = "", count = 0
+    func flush() {
+        if !text.isEmpty { segments.append(MarkdownSegment(text: text, isCode: !fence.isEmpty)); text = "" }
+    }
+    for (index, line) in lines.enumerated() {
+        let trimmed = line.drop(while: { $0 == " " })
+        let marker = trimmed.first.map(String.init) ?? ""
+        let length = trimmed.prefix(while: { String($0) == marker }).count
+        let suffix = trimmed.dropFirst(length).trimmingCharacters(in: .whitespacesAndNewlines)
+        if line.count - trimmed.count <= 3, ["`", "~"].contains(marker), length >= 3 {
+            if fence.isEmpty, marker != "`" || !suffix.contains("`") {
+                flush(); fence = marker; count = length; continue
+            } else if marker == fence, length >= count, suffix.isEmpty {
+                flush(); fence = ""; continue
+            }
+        }
+        text += line + (index < lines.count - 1 ? "\n" : "")
+    }
+    flush()
+    return segments
+}
+
+private func renderInlineMarkdown(_ source: String) -> AttributedString {
+    if #available(iOS 15.0, *) {
         if var attributed = try? AttributedString(
             markdown: source,
             options: AttributedString.MarkdownParsingOptions(
@@ -170,6 +212,7 @@ func makeMessageNSAttributedString(
             }
             if intent.contains(.code) {
                 descriptor = descriptor.withDesign(.monospaced) ?? descriptor
+                traits.insert(.traitMonoSpace)
             }
         }
         descriptor = descriptor.withSymbolicTraits(traits) ?? descriptor
@@ -270,7 +313,7 @@ func applyMessageWrapping(to attributed: NSAttributedString, availableWidth: CGF
         let style = (existing?.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
         style.lineBreakMode = messageLineBreakMode(
             widestTokenWidth: widestTokenWidth(in: paragraph),
-            availableWidth: availableWidth
+            availableWidth: max(0, availableWidth - max(style.headIndent, style.firstLineHeadIndent) + min(0, style.tailIndent))
         )
         style.hyphenationFactor = 0
         if #available(iOS 15.0, *) {
