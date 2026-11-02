@@ -626,6 +626,7 @@ struct TopicDetailsView: View {
                 Section {
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(localized: "Topic URL"))
+                            .font(.footnote)
                         Text(subscription.urlString())
                             .foregroundColor(.primary)
                             .textSelection(.enabled)
@@ -633,9 +634,10 @@ struct TopicDetailsView: View {
                     .accessibilityElement(children: .combine)
                     VStack(alignment: .leading, spacing: 4) {
                         Text(String(localized: "Subscribed"))
+                            .font(.footnote)
                         Group {
                             if let date = subscription.subscribedAt {
-                                Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute().second())
+                                Text(date, format: .dateTime.year().month(.abbreviated).day().hour().minute())
                             } else {
                                 Text(String(localized: "Subscription date unknown", defaultValue: "Unknown"))
                             }
