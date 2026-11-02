@@ -166,8 +166,11 @@ struct SubscriptionManager {
     }
 
     /// Completion includes saves and all outcomes, rather than only enqueueing the requests.
-    func pollAll(_ subscriptions: [Subscription], manual: Bool, completion: @escaping () -> Void) {
+    func pollAll(_ subscriptions: [Subscription], manual: Bool, recovering: Bool = false, completion: @escaping () -> Void) {
         let launch = {
+            let subscriptions = recovering ? subscriptions.filter {
+                DeliveryHealthMonitor.shared.topics[$0.objectID.uriRepresentation().absoluteString]?.failure == .unreachable
+            } : subscriptions
             guard !subscriptions.isEmpty else { completion(); return }
             // Round robin across servers so a large dead server cannot hold healthy ones behind it.
             var groups = Dictionary(grouping: subscriptions, by: { normalizeBaseUrl($0.baseUrl ?? "") })
@@ -195,7 +198,7 @@ struct SubscriptionManager {
                     if remaining == 0 { completion() } else { startNext() }
                     return
                 }
-                pollWithOutcome(subscription, manual: manual, automaticList: !manual) { outcome in
+                pollWithOutcome(subscription, manual: manual, automaticList: !manual && !recovering) { outcome in
                     DispatchQueue.main.async {
                         if outcome.failure == .unreachable { failedServers.insert(server) }
                         remaining -= 1

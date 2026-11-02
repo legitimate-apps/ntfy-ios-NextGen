@@ -195,6 +195,9 @@
         C12200000000000000000003 /* SendMessageIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000012; };
         C12200000000000000000004 /* ShortcutsPublishTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000013; };
         C12200000000000000000005 /* AppShortcuts.strings in Resources */ = {isa = PBXBuildFile; fileRef = C12200000000000000000014; };
+		CA1230000000000000000101 /* NetworkCatchUpTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000001; };
+		CA1230000000000000000102 /* RecoveryPollingTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000002; };
+		CA1230000000000000000104 /* NetworkCatchUp.swift in Sources */ = {isa = PBXBuildFile; fileRef = CA1230000000000000000004; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -384,6 +387,9 @@
         C12200000000000000000024 /* pl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = pl; path = ntfy/Intents/pl.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
         C12200000000000000000025 /* nl */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = nl; path = ntfy/Intents/nl.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
         C12200000000000000000026 /* fr */ = {isa = PBXFileReference; lastKnownFileType = text.plist.strings; name = fr; path = ntfy/Intents/fr.lproj/AppShortcuts.strings; sourceTree = SOURCE_ROOT; };
+		CA1230000000000000000001 /* NetworkCatchUpTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/NetworkCatchUpTests.swift"; sourceTree = SOURCE_ROOT; };
+		CA1230000000000000000002 /* RecoveryPollingTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/RecoveryPollingTests.swift"; sourceTree = SOURCE_ROOT; };
+		CA1230000000000000000004 /* NetworkCatchUp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/App/NetworkCatchUp.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -587,6 +593,7 @@
 		9474F20D2833264F00CDE4DD /* App */ = {
 			isa = PBXGroup;
 			children = (
+				CA1230000000000000000004 /* NetworkCatchUp.swift */,
 				9474F1D1282F2D2C00CDE4DD /* AppDelegate.swift */,
 				9474F1C0282F2AA700CDE4DD /* AppMain.swift */,
 				118B00010000000000000001 /* TopicLink.swift */,
@@ -649,6 +656,8 @@
 		BCDAB7772E43C161501373ED /* ntfyTests */ = {
 			isa = PBXGroup;
 			children = (
+				CA1230000000000000000001 /* NetworkCatchUpTests.swift */,
+				CA1230000000000000000002 /* RecoveryPollingTests.swift */,
 				D8AE12640A793214BC049657 /* DiagnosticReportTests.swift */,
 				8447874A56896964DD5EA0BF /* DiagnosticFixtures */,
 				C12100000000000000000002 /* ComposeTests.swift */,
@@ -924,6 +933,7 @@
 				2E1C0B022FF0000100A52946 /* NotificationResponseRelay.swift in Sources */,
 				9474F1FF28316ACE00CDE4DD /* Subscription.swift in Sources */,
 				94CD196A283E666900973B93 /* EmojiManager.swift in Sources */,
+				CA1230000000000000000104 /* NetworkCatchUp.swift in Sources */,
 				9474F1C1282F2AA700CDE4DD /* AppMain.swift in Sources */,
 				118B00010000000000000002 /* TopicLink.swift in Sources */,
 				94867143283EC9960093C7A4 /* Actions.swift in Sources */,
@@ -1028,6 +1038,8 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				CA1230000000000000000102 /* RecoveryPollingTests.swift in Sources */,
+				CA1230000000000000000101 /* NetworkCatchUpTests.swift in Sources */,
 				36F3897CDC503084F420B8E4,
 				1E89EB0639BDDB580553BA66,
 				BF604363E097B7921ABBA131,
