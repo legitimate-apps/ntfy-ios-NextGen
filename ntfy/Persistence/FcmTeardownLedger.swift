@@ -70,7 +70,8 @@ final class FcmTeardownLedger {
                 // reinterpret or discard retry intents belonging to an incompatible writer.
                 let backup = Self.key + ".preserved." + UUID().uuidString
                 defaults.set(raw, forKey: backup)
-                guard defaults.synchronize() else { return state }
+                guard let saved = defaults.object(forKey: backup) as? NSObject,
+                      saved.isEqual(raw) else { return state }
                 defaults.removeObject(forKey: Self.key)
                 report("Unrecognized FCM teardown journal preserved at \(backup)")
             }
@@ -88,7 +89,6 @@ final class FcmTeardownLedger {
             }
             if write(state) {
                 defaults.removeObject(forKey: key)
-                defaults.synchronize()
             }
         }
         return state
@@ -97,7 +97,9 @@ final class FcmTeardownLedger {
     @discardableResult private func write(_ state: State) -> Bool {
         guard let data = try? JSONEncoder().encode(state) else { return false }
         defaults.set(data, forKey: Self.key)
-        return defaults.synchronize()
+        // synchronize() is unnecessary and can return false for an accepted app-group write.
+        // Verify acceptance before allowing row deletion; persistence remains managed by defaults.
+        return defaults.data(forKey: Self.key) == data
     }
 
     var entries: [Entry] {
