@@ -24933,7 +24933,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toca un sonido para seleccionarlo y escucharlo. Los temas silenciados siguen en silencio. Las alertas críticas usan el sonido crítico del sistema."
+            "value": "Toca un sonido para seleccionarlo y escucharlo. Los tópicos silenciados siguen en silencio. Las alertas críticas usan el sonido crítico del sistema."
           }
         },
         "it": {
@@ -25680,7 +25680,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envía un mensaje a un tema suscrito con su inicio de sesión y cifrado guardados."
+            "value": "Envía un mensaje a un tópico suscrito con su inicio de sesión y cifrado guardados."
           }
         },
         "it": {
@@ -25727,7 +25727,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un tema al que te suscribes en NTFY me."
+            "value": "Un tópico al que te suscribes en NTFY me."
           }
         },
         "it": {
@@ -25915,7 +25915,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudieron leer los temas. Desbloquea el teléfono, abre NTFY me y vuelve a intentarlo."
+            "value": "No se pudieron leer los tópicos. Desbloquea el teléfono, abre NTFY me y vuelve a intentarlo."
           }
         },
         "it": {
@@ -26056,7 +26056,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ya no estás suscrito a este tema. Elige otro o vuelve a suscribirte en NTFY me. No se envió nada."
+            "value": "Ya no estás suscrito a este tópico. Elige otro o vuelve a suscribirte en NTFY me. No se envió nada."
           }
         },
         "it": {
@@ -26518,7 +26518,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tema está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este teléfono no recibe mensajes, por ejemplo, cuando está sin conexión."
+            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tópico está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este teléfono no recibe mensajes, por ejemplo, cuando está sin conexión."
           }
         },
         "it": {
@@ -26751,7 +26751,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los temas con el mismo nombre siempre muestran sus direcciones."
+            "value": "Los tópicos con el mismo nombre siempre muestran sus direcciones."
           }
         },
         "it": {
@@ -27033,7 +27033,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Temas permitidos"
+            "value": "Tópicos permitidos"
           }
         },
         "it": {
@@ -27080,7 +27080,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes se conservan en el historial y en el Centro de notificaciones sin sonido, banners ni encender la pantalla. Silenciar un tema siempre tiene prioridad."
+            "value": "Los mensajes se conservan en el historial y en el Centro de notificaciones sin sonido, banners ni encender la pantalla. Silenciar un tópico siempre tiene prioridad."
           }
         },
         "it": {
@@ -27174,7 +27174,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes permitidos usan el sonido y la urgencia habituales del tema. Se siguen aplicando los ajustes de notificaciones y concentración de iOS."
+            "value": "Los mensajes permitidos usan el sonido y la urgencia habituales del tópico. Se siguen aplicando los ajustes de notificaciones y concentración de iOS."
           }
         },
         "it": {
