@@ -73,9 +73,13 @@ extension Store {
         let baseUrl = userInfo["base_url"] as? String
         if userInfo["event"] as? String == "poll_request",
            let target = findSubscriptionMatch(forPollRequestTopic: topic, preferredBaseUrl: baseUrl) {
-            return isTopicMuted(baseUrl: target.baseUrl, topic: target.topic, now: now)
+            var resolved = userInfo
+            resolved["base_url"] = target.baseUrl; resolved["topic"] = target.topic
+            return QuietHours.load().isQuiet(userInfo: resolved, now: now)
+                || isTopicMuted(baseUrl: target.baseUrl, topic: target.topic, now: now)
         }
-        return isTopicMuted(baseUrl: baseUrl ?? Config.appBaseUrl, topic: topic, now: now)
+        return QuietHours.load().isQuiet(userInfo: userInfo, now: now)
+            || isTopicMuted(baseUrl: baseUrl ?? Config.appBaseUrl, topic: topic, now: now)
     }
 
     func setTopicMute(until: Date?, subscription: Subscription) throws {
@@ -99,7 +103,9 @@ extension UNMutableNotificationContent {
     /// Applied after priority mapping and again at the final delivery boundary. Badge and
     /// message content remain intact. Passive notifications stay in Notification Center.
     func applyTopicMute(baseUrl: String, topic: String, store: Store = .shared, now: Date = Date()) {
-        guard store.isTopicMuted(baseUrl: baseUrl, topic: topic, now: now) else { return }
+        var resolved = userInfo
+        resolved["base_url"] = baseUrl; resolved["topic"] = topic
+        guard store.isNotificationMuted(userInfo: resolved, now: now) else { return }
         silenceTopicAlert()
     }
 

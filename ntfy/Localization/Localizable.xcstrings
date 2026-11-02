@@ -26638,6 +26638,429 @@
           }
         }
       }
+    },
+    "Quiet hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quiet hours"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhezeiten"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Horario de silencio"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Orari silenziosi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godziny ciszy"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stille uren"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heures calmes"
+          }
+        }
+      }
+    },
+    "Enable quiet hours": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enable quiet hours"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ruhezeiten aktivieren"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activar horario de silencio"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Attiva orari silenziosi"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Włącz godziny ciszy"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stille uren inschakelen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Activer les heures calmes"
+          }
+        }
+      }
+    },
+    "Start time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Start time"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Startzeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora de inicio"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora di inizio"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godzina rozpoczęcia"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Begintijd"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heure de début"
+          }
+        }
+      }
+    },
+    "End time": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "End time"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Endzeit"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hora de fin"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ora di fine"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Godzina zakończenia"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Eindtijd"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Heure de fin"
+          }
+        }
+      }
+    },
+    "Allow priority 5": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow priority 5"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Priorität 5 zulassen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permitir prioridad 5"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consenti priorità 5"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwalaj na priorytet 5"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Prioriteit 5 toestaan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autoriser la priorité 5"
+          }
+        }
+      }
+    },
+    "Allowed topics": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed topics"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugelassene Themen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temas permitidos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argomenti consentiti"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dozwolone tematy"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toegestane onderwerpen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sujets autorisés"
+          }
+        }
+      }
+    },
+    "Messages stay in history and Notification Center without sound, banners or waking the screen. Topic mute always takes precedence.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages stay in history and Notification Center without sound, banners or waking the screen. Topic mute always takes precedence."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nachrichten bleiben im Verlauf und in der Mitteilungszentrale, ohne Ton, Banner oder Aktivierung des Bildschirms. Stummgeschaltete Themen bleiben immer stumm."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes se conservan en el historial y en el Centro de notificaciones sin sonido, banners ni encender la pantalla. Silenciar un tema siempre tiene prioridad."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi restano nella cronologia e nel Centro Notifiche senza suoni, banner o attivazione dello schermo. Il silenziamento di un argomento ha sempre la precedenza."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości pozostają w historii i centrum powiadomień bez dźwięku, banerów ani wybudzania ekranu. Wyciszenie tematu ma zawsze pierwszeństwo."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichten blijven in de geschiedenis en het berichtencentrum zonder geluid, stroken of het scherm te activeren. Een gedempt onderwerp blijft altijd stil."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages restent dans l’historique et le centre de notifications sans son, bannière ni allumage de l’écran. Un sujet en sourdine reste toujours silencieux."
+          }
+        }
+      }
+    },
+    "Uses your current time zone. Days select when quiet hours start. Matching start and end times silence the whole selected day.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Uses your current time zone. Days select when quiet hours start. Matching start and end times silence the whole selected day."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Es gilt die aktuelle Zeitzone. Die Tage bestimmen den Beginn der Ruhezeit. Gleiche Start- und Endzeiten schalten den gesamten ausgewählten Tag stumm."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa tu zona horaria actual. Los días indican cuándo comienza el silencio. Si el inicio y el fin coinciden, se silencia todo el día seleccionado."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa il fuso orario attuale. I giorni indicano quando inizia il periodo silenzioso. Se inizio e fine coincidono, viene silenziato l’intero giorno selezionato."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Używa bieżącej strefy czasowej. Dni określają początek godzin ciszy. Takie same godziny rozpoczęcia i zakończenia wyciszają cały wybrany dzień."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruikt je huidige tijdzone. De dagen bepalen wanneer de stille uren beginnen. Dezelfde begin- en eindtijd dempt de hele geselecteerde dag."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilise votre fuseau horaire actuel. Les jours indiquent le début des heures calmes. Des heures de début et de fin identiques rendent toute la journée sélectionnée silencieuse."
+          }
+        }
+      }
+    },
+    "Allowed messages use their usual topic sound and urgency. iOS notification and Focus settings still apply.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allowed messages use their usual topic sound and urgency. iOS notification and Focus settings still apply."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zugelassene Nachrichten verwenden den gewohnten Thementon und die übliche Dringlichkeit. Die Mitteilungs- und Fokuseinstellungen von iOS gelten weiterhin."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes permitidos usan el sonido y la urgencia habituales del tema. Se siguen aplicando los ajustes de notificaciones y concentración de iOS."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi consentiti usano il suono e l’urgenza abituali dell’argomento. Restano valide le impostazioni delle notifiche e di Full immersion di iOS."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dozwolone wiadomości używają zwykłego dźwięku i pilności tematu. Ustawienia powiadomień i trybu skupienia iOS nadal obowiązują."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Toegestane berichten gebruiken het normale geluid en de urgentie van het onderwerp. De iOS-instellingen voor meldingen en Focus blijven van toepassing."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages autorisés utilisent le son et l’urgence habituels du sujet. Les réglages de notifications et de concentration d’iOS s’appliquent toujours."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

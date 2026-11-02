@@ -143,6 +143,9 @@ extension UNMutableNotificationContent {
         
         configureInterruption(message: message, soundName: soundName)
 
+        self.userInfo = message.toUserInfo()
+        self.userInfo["base_url"] = baseUrl
+
         applyTopicMute(baseUrl: baseUrl, topic: message.topic)
 
         // Carry the unread total on the badge (ntfy#1462). Both delivery paths — the notification
@@ -152,10 +155,6 @@ extension UNMutableNotificationContent {
         // down from `AppDelegate.startBadgeSync` as soon as the user reads anything.
         self.badge = NSNumber(value: Store.shared.totalUnreadCount())
 
-        // Make sure the userInfo matches, so that when the notification is tapped, the AppDelegate
-        // can properly navigate to the right topic and re-assemble the message.
-        self.userInfo = message.toUserInfo()
-        self.userInfo["base_url"] = baseUrl
     }
 
     func configureInterruption(message: Message, soundName: String? = nil,
