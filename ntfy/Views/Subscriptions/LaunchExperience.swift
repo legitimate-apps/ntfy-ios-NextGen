@@ -11,6 +11,14 @@ struct ReleaseNotes: Identifiable, Equatable {
     /// The App Store "What's New" text per release (CHANGELOG.md, drafts/whats-new-*.md). Add the new
     /// version's entry when cutting a release; a version without an entry shows no card.
     static let shipped: [ReleaseNotes] = [
+        ReleaseNotes(version: "1.23.0", bullets: [
+            String(localized: "Schedule Quiet hours, with exceptions for priority 5 and chosen topics."),
+            String(localized: "Run HTTP notification buttons without opening the app. Unlocking is still required."),
+            String(localized: "Send messages from Shortcuts and Siri."),
+            String(localized: "Use Alert if quiet to be notified when a topic receives no messages."),
+            String(localized: "Read code blocks in monospace and choose to open web links in app."),
+            String(localized: "Fix silent fallback notifications when a message cannot be fetched.")
+        ]),
         ReleaseNotes(version: "1.22.0", bullets: [
             String(localized: "Choose a notification sound for each topic, or import one from Files."),
             String(localized: "Removed topics stop sending notifications, even if the first unsubscribe attempt fails."),
