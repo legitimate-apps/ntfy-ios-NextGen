@@ -1,11 +1,13 @@
 import Foundation
 import SwiftUI
 import StoreKit
+import SafariServices
 
 struct SettingsView: View {
     @EnvironmentObject private var store: Store
     @EnvironmentObject private var delegate: AppDelegate
     @AppStorage(TopicServerAddressPolicy.preferenceKey) private var showServerAddresses = TopicServerAddressPolicy.defaultValue
+    @AppStorage(InAppBrowser.preferenceKey) private var openWebLinksInApp = false
     @State private var userDialog: UserDialog?
     
     var body: some View {
@@ -18,6 +20,7 @@ struct SettingsView: View {
                         Text(String(localized: "Topics with matching names always show their addresses."))
                     }
                 ) {
+                    Toggle(String(localized: "Open web links in app"), isOn: $openWebLinksInApp)
                     DefaultServerView()
                     TopicSortOrderView()
                     Toggle(String(localized: "Show server addresses"), isOn: $showServerAddresses)
@@ -83,5 +86,28 @@ struct SettingsView_Previews: PreviewProvider {
             .environment(\.managedObjectContext, store.context)
             .environmentObject(store)
             .environmentObject(AppDelegate())
+    }
+}
+
+struct InAppBrowser: UIViewControllerRepresentable {
+    static let preferenceKey = "openWebLinksInApp"
+    static func shouldOpen(_ url: URL, enabled: Bool) -> Bool {
+        enabled && ["http", "https"].contains(url.scheme?.lowercased() ?? "") && url.host?.isEmpty == false
+    }
+    @Binding var url: URL?
+    final class Coordinator: NSObject, SFSafariViewControllerDelegate {
+        func safariViewControllerDidFinish(_ controller: SFSafariViewController) { controller.dismiss(animated: true) }
+    }
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    func makeUIViewController(context: Context) -> UIViewController { UIViewController() }
+    func updateUIViewController(_ controller: UIViewController, context: Context) {
+        guard let url else { return }
+        DispatchQueue.main.async {
+            guard controller.view.window != nil, controller.presentedViewController == nil else { return }
+            let safari = SFSafariViewController(url: url)
+            safari.delegate = context.coordinator
+            controller.present(safari, animated: true)
+            self.url = nil
+        }
     }
 }
