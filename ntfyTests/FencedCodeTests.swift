@@ -45,9 +45,10 @@ final class FencedCodeTests: XCTestCase {
         let source = "```sh\n  " + String(repeating: "token", count: 40) + "\n```"
         XCTAssertEqual(String(renderMessageBody(source, contentType: nil).characters), source)
         let rendered = makeMessageNSAttributedString(renderMessageBody(source, contentType: "text/markdown"), style: .body)
-        let wrapped = applyMessageWrapping(to: rendered, availableWidth: 160)
+        let wrapped = applyMessageWrapping(to: rendered)
         let style = try XCTUnwrap(wrapped.attribute(.paragraphStyle, at: 2, effectiveRange: nil) as? NSParagraphStyle)
-        XCTAssertEqual(style.lineBreakMode, .byCharWrapping)
+        XCTAssertEqual(style.lineBreakMode, .byWordWrapping)
+        XCTAssertEqual(style.headIndent, 8)
         XCTAssertEqual(wrapped.string, "  " + String(repeating: "token", count: 40) + "\n")
     }
 }
