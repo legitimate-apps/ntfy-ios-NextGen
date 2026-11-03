@@ -28236,6 +28236,52 @@
           }
         }
       }
+    },
+    "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Zugriff wurde blockiert (HTTP 403), aber dies ist keine ntfy-Fehlerantwort. Ein Reverse-Proxy oder eine Sicherheitsprüfung könnte die Ursache sein. Prüfe die Konfiguration oder verwende Einstellungen > Eigene HTTP-Header, falls zusätzliche Zugangsdaten erforderlich sind."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha bloqueado el acceso (HTTP 403), pero esta no es una respuesta de error de ntfy. Puede deberse a un proxy inverso o a una comprobación de seguridad. Revisa su configuración o, si requiere credenciales adicionales, usa Ajustes > Cabeceras HTTP personalizadas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso è stato bloccato (HTTP 403), ma questa non è una risposta di errore di ntfy. La causa potrebbe essere un proxy inverso o un controllo di sicurezza. Controlla la configurazione oppure, se servono credenziali aggiuntive, usa Impostazioni > Intestazioni HTTP personalizzate."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp został zablokowany (HTTP 403), ale to nie jest odpowiedź błędu ntfy. Przyczyną może być odwrotny serwer proxy lub kontrola bezpieczeństwa. Sprawdź konfigurację lub, jeśli wymagane są dodatkowe dane logowania, użyj opcji Ustawienia > Własne nagłówki HTTP."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De toegang is geblokkeerd (HTTP 403), maar dit is geen foutmelding van ntfy. Een reverseproxy of beveiligingscontrole kan de oorzaak zijn. Controleer de configuratie of gebruik Instellingen > Aangepaste HTTP-headers als extra inloggegevens nodig zijn."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accès a été bloqué (HTTP 403), mais cette réponse d’erreur ne vient pas de ntfy. Un proxy inverse ou un contrôle de sécurité peut en être la cause. Vérifiez sa configuration ou, si des identifiants supplémentaires sont requis, utilisez Réglages > En-têtes HTTP personnalisés."
+          }
+        }
+      }
     }
   },
   "version": "1.0"

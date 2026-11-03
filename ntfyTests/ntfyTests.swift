@@ -2598,6 +2598,37 @@ final class ntfyTests: XCTestCase {
     // Controls — these pass BOTH before and after the fix. They pin the exact axis under test
     // (handler-always-fires) and prove the change didn't alter normal auth outcomes.
 
+    // ntfy #1323: an intermediary's refusal must not accuse the ntfy password.
+    func testCheckAuthExplainsUnrecognizedForbiddenResponses() {
+        let bodies = ["<html>Cloudflare challenge</html>", "", "Forbidden", #"{"error":"access denied"}"#,
+                      #"{"code":40300,"http":401,"error":"forbidden"}"#,
+                      #"{"code":"40300","http":403,"error":"forbidden"}"#]
+        for body in bodies {
+            let result = checkAuthResult(baseUrl: "https://proxy.invalid",
+                session: StubURLProtocol.session(status: 403, body: Data(body.utf8)))
+            guard case .Error(let message) = result else {
+                XCTFail("Unrecognized 403 must explain a possible proxy, got \(String(describing: result)) for \(body)")
+                continue
+            }
+            XCTAssertTrue(message.contains("403"))
+            XCTAssertTrue(message.contains("Custom HTTP headers"))
+            XCTAssertFalse(message.contains("Invalid login"))
+        }
+    }
+
+    func testCheckAuthKeepsNtfyAuthorizationRefusals() {
+        for status in [401, 403] {
+            let body = #"{"code":\#(status * 100),"http":\#(status),"error":"refused","link":"https://docs.ntfy.sh"}"#
+            let result = checkAuthResult(baseUrl: "https://ntfy.invalid",
+                session: StubURLProtocol.session(status: status, body: Data(body.utf8),
+                    headers: ["Content-Type": "application/json; charset=utf-8"]))
+            guard case .Unauthorized = result else {
+                XCTFail("Real ntfy HTTP \(status) must keep the existing sign-in message")
+                continue
+            }
+        }
+    }
+
     func testCheckAuthUnauthorizedControl() {
         let result = checkAuthResult(baseUrl: "https://ntfy.sh",
                                      session: StubURLProtocol.session(status: 401, body: Data()))

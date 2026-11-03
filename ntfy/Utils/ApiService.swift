@@ -331,7 +331,14 @@ class ApiService {
                 completionHandler(.Error(error.localizedDescription))
             } else if let httpResponse = response as? HTTPURLResponse, httpResponse.statusCode != 200 {
                 if httpResponse.statusCode == 401 || httpResponse.statusCode == 403 {
-                    completionHandler(.Unauthorized)
+                    // ntfy's errHTTP envelope distinguishes its own refusal from an HTML,
+                    // empty or unrelated JSON response returned by a proxy/security service.
+                    let refusal = data.flatMap { try? JSONDecoder().decode(AuthErrorResponse.self, from: $0) }
+                    if httpResponse.statusCode == 403 && !(refusal?.isNtfyForbidden ?? false) {
+                        completionHandler(.Error(String(localized: "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers.")))
+                    } else {
+                        completionHandler(.Unauthorized)
+                    }
                 } else {
                     completionHandler(.Error(String(localized: "Unexpected response from server: \(httpResponse.statusCode)")))
                 }
@@ -356,6 +363,14 @@ class ApiService {
                 completionHandler(.Error(String(localized: "Unexpected response from server")))
             }
         }
+    }
+
+    private struct AuthErrorResponse: Decodable {
+        let code: Int
+        let http: Int
+        let error: String
+
+        var isNtfyForbidden: Bool { http == 403 && code / 100 == 403 && !error.isEmpty }
     }
 
     private func fetchJsonData<T: Decodable>(urlString: String, baseUrl: String, user: ServerCredential?, timeout: TimeInterval = 30, completionHandler: @escaping ([T]?, Error?) -> ()) {
