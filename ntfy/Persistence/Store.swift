@@ -1884,6 +1884,9 @@ class Store: ObservableObject {
     /// Apply the ordered server stream transactionally. Controls are metadata, never message rows.
     /// Seen event ids and tombstones survive row deletion, preventing overlapping polls from reviving
     /// a deleted version. States belong to the subscription and are cascaded on unsubscribe.
+    /// Only a poll moves the cursor: APNs drops pushes for an offline phone, so a pushed id says nothing
+    /// of the messages before it (ntfy #868). A pushed state can therefore sit beyond the cursor, and
+    /// asking from the current cursor orders an answer only after states from an earlier second.
     @discardableResult
     private func saveNotifications(_ ingested: [IngestedMessage], withSubscription subscription: Subscription, polledSince: String? = nil, isPush: Bool = false, applyingRetention: Bool = false) throws -> [Message] {
         if isPush { deferredPushID = nil }
@@ -1900,6 +1903,7 @@ class Store: ObservableObject {
             if let sequence = state.value(forKey: "sequenceID") as? String { states[sequence] = state }
         }
         let initialCursor = subscription.lastNotificationId
+        let initialCursorTime = subscription.lastEventTime
         let positions = Dictionary(ingested.enumerated().map { ($0.element.message.id, $0.offset) }, uniquingKeysWith: { _, last in last })
         if !isPush { subscription.sequenceReconcile = false }
         let retention = applyingRetention ? notificationRetention() : .forever
@@ -1927,7 +1931,7 @@ class Store: ObservableObject {
             let lastTime = state?.value(forKey: "time") as? Int64 ?? row?.time ?? 0
             let lastEvent = state?.value(forKey: "event") as? String
             let orderedAfterState = lastID.map { $0 == polledSince || traversed.contains($0) } == true
-                || (!isPush && polledSince != nil && polledSince == initialCursor)
+                || (!isPush && polledSince != nil && polledSince == initialCursor && lastTime < initialCursorTime)
             traversed.insert(message.id)
             guard message.id != lastID, message.time >= lastTime else { continue }
             if seen.contains(message.id) && !orderedAfterState { continue }
@@ -1985,9 +1989,9 @@ class Store: ObservableObject {
                 presentations.append(message)
             }
         }
-        if !subscription.sequenceReconcile, let last = ingested.last(where: { $0.message.topic == subscription.topic && ($0.message.event == "message" || $0.message.isControl) })?.message {
+        if !isPush, !subscription.sequenceReconcile, let last = ingested.last(where: { $0.message.topic == subscription.topic && ($0.message.event == "message" || $0.message.isControl) })?.message {
             var orderedSince = polledSince
-            if !isPush, let current = subscription.lastNotificationId,
+            if let current = subscription.lastNotificationId,
                let currentPosition = positions[current], let lastPosition = positions[last.id], lastPosition > currentPosition {
                 orderedSince = current
             }
@@ -2046,9 +2050,10 @@ class Store: ObservableObject {
     }
 
 
-    /// Moves the poll cursor (`since=`) to `candidate`, but never backward. Polls and pushes can
-    /// land out of order (a slow poll started earlier lands after a push the extension stored), and a
-    /// late response ends on an older message; adopting it re-fetches a window the app already has.
+    /// Moves the poll cursor (`since=`) to `candidate`, but never backward. Only polls call this (a
+    /// push can follow lost ones; see `saveNotifications`). Polls can land out of order (a slow poll
+    /// started earlier lands after a newer one), and a late response ends on an older message;
+    /// adopting it re-fetches a window the app already has.
     ///
     /// A strictly older candidate is always refused, even from a poll that asked `since=` the
     /// current cursor, because ntfy answers an unknown `since` id with its cached history. Message
