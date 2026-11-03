@@ -184,7 +184,7 @@ struct RelayCheckContentView: View {
             Section(header: Text(String(localized: "Self-hosted wake-ups"))) {
                 Text(topicName).fixedSize(horizontal: false, vertical: true)
                 Text(baseUrl).font(.footnote).foregroundColor(.secondary)
-                Text(String(localized: "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone."))
+                Text(String(localized: "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your device."))
                     .fixedSize(horizontal: false, vertical: true)
                 if state != .consent {
                     Button(String(localized: "Check relay support")) {
@@ -210,7 +210,7 @@ struct RelayCheckContentView: View {
                 }
             }
             Section(header: Text(String(localized: "Server setup"))) {
-                Text(String(localized: "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report phone delivery."))
+                Text(String(localized: "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report device delivery."))
                     .font(.footnote).foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }

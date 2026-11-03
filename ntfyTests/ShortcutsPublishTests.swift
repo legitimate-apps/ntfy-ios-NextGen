@@ -83,7 +83,7 @@ final class ShortcutsPublishTests: XCTestCase {
         for status: OSStatus? in [nil, errSecInteractionNotAllowed] {
             (store.topicSecrets as! InMemoryTopicSecretStore).failReads = status
             let error = await failure { try await self.intent(topic).send(store: store, api: api) }
-            XCTAssertEqual(error, String(localized: "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent."))
+            XCTAssertEqual(error, String(localized: "The encryption password is unavailable. Unlock your device or set the topic password again. Nothing was sent."))
         }
         XCTAssertTrue(server.requests.isEmpty)
     }
@@ -94,7 +94,7 @@ final class ShortcutsPublishTests: XCTestCase {
         try store.context.save()
         let credentials = store.credentialStore as! InMemoryCredentialStore
         credentials.setPasswordReadsFail(true)
-        let expected = String(localized: "The server sign-in is unavailable. Unlock your phone or sign in again in Settings. Nothing was sent.")
+        let expected = String(localized: "The server sign-in is unavailable. Unlock your device or sign in again in Settings. Nothing was sent.")
         let actual = await failure { try await self.intent(topic).send(store: store, api: api) }
         XCTAssertEqual(actual, expected)
         store.context.delete(user); try store.context.save()

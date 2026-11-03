@@ -53,7 +53,7 @@ struct SubscribedTopicQuery: EntityStringQuery {
         do {
             topics = try context.fetch(Subscription.fetchRequest()).map(SubscribedTopic.init)
         } catch {
-            throw TopicPublisher.Failure(message: String(localized: "Topics could not be read. Unlock your phone and open NTFY me, then try again."))
+            throw TopicPublisher.Failure(message: String(localized: "Topics could not be read. Unlock your device and open NTFY me, then try again."))
         }
         if let identifiers {
             let byID = Dictionary(topics.map { ($0.id, $0) }, uniquingKeysWith: { first, _ in first })
@@ -121,7 +121,7 @@ struct SendMessageIntent: AppIntent {
         } catch let failure as TopicPublisher.Failure {
             throw failure
         } catch {
-            throw TopicPublisher.Failure(message: String(localized: "Topics could not be read. Unlock your phone and open NTFY me, then try again."))
+            throw TopicPublisher.Failure(message: String(localized: "Topics could not be read. Unlock your device and open NTFY me, then try again."))
         }
         try await withCheckedThrowingContinuation { (continuation: CheckedContinuation<Void, Error>) in
             TopicPublisher.send(subscription: subscription, store: store, message: message,

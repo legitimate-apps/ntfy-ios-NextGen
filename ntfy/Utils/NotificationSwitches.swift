@@ -78,7 +78,7 @@ enum NotificationWarning: String, Equatable {
         switch self {
         case .alertsHidden: return String(localized: "Banners, Lock Screen and Notification Center are all off, so new messages won't show on screen. Tap Open Settings, then turn one of them on.")
         case .bannersOff: return String(localized: "New messages won't pop up on screen. Tap Open Settings, then turn on Banners.")
-        case .lockScreenOff: return String(localized: "New messages won't show while your phone is locked. Tap Open Settings, then turn on Lock Screen.")
+        case .lockScreenOff: return String(localized: "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen.")
         case .notificationCenterOff: return String(localized: "Messages you miss won't stay in Notification Center. Tap Open Settings, then turn on Notification Center.")
         case .soundsOff: return String(localized: "New messages arrive without a sound. Tap Open Settings, then turn on Sounds.")
         case .scheduledSummary: return String(localized: "Regular alerts are held and shown together at set times, not right away. Tap Open Settings, then choose Immediate Delivery.")

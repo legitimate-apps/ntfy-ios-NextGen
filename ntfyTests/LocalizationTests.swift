@@ -55,6 +55,85 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    /// These six immutable bullets describe builds already shipped or in review through 1.24.
+    /// Keep the exemption exact so newly added copy cannot silently inherit it.
+    func testCurrentCatalogCopyUsesDeviceNeutralWordingInEveryLanguage() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let historicalBullets: Set<String> = [
+            "For self-hosted HTTPS topics, Settings → Notification status can check whether ntfy-me.com receives forwarded wake-ups. It asks before sending one visible test message. This checks forwarding, not delivery to your phone.",
+            "If notifications are turned off for the app, or a topic can't refresh, the app now says why and how to fix it. Settings → Notification status checks that this phone is set up for push and can repair it.",
+            "Settings → Notification history sets how long notifications are kept on this phone. Until you choose a limit, everything is kept. Long topics open on their newest messages, and you can search a topic's whole history.",
+            "The app and its notifications now follow your phone's language when it is German.",
+            "The app and its notifications now support Spanish, Italian, Polish, Dutch and French, following your phone's language.",
+            "View and share diagnostic reports from Settings > About. Reports stay on your phone.",
+        ]
+        XCTAssertTrue(historicalBullets.isSubset(of: Set(strings.keys)))
+        // No current sentence is device-specific by design. Include inflected phone nouns
+        // in the six translations, and traverse plural/device variations as well as plain units.
+        let phone = try NSRegularExpression(pattern: #"(?i)\b(?:i?phones?|tel[eé]fo+n\w*|téléphon\w*)\b"#)
+        for noun in ["phone", "iPhone", "Telefon", "teléfono", "telefono", "telefonie", "telefoon", "téléphone"] {
+            XCTAssertNotNil(phone.firstMatch(in: noun, range: NSRange(noun.startIndex..., in: noun)), noun)
+        }
+        for (key, entry) in strings where !historicalBullets.contains(key) {
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+            for (language, value) in localizations {
+                for unit in stringUnits(value) {
+                    let text = try XCTUnwrap(unit["value"] as? String)
+                    XCTAssertNil(phone.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+                                 "\(language): device-specific phone wording in \(key): \(text)")
+                }
+            }
+        }
+    }
+
+    func testDeviceNeutralCopyCompilesIntoAppAndNotificationExtension() throws {
+        let keys = [
+            "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your device.",
+            "Critical alerts, which play sound even when your device is silenced, need special approval from Apple and aren't offered in this app.",
+            "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your device, set the password again or remove it.",
+            "Device registration",
+            "The encryption password is unavailable. Unlock your device or set the topic password again. Nothing was sent.",
+            "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your device, or set the password again.",
+            "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new device needs it entered again. Senders need the same password; see \"How to send encrypted messages\".",
+            "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report device delivery.",
+            "ntfy-me.com received a wake-up for this topic at %@, and FCM accepted it. This does not prove your device received it or that this test caused the wake-up.",
+            "The server sign-in is unavailable. Unlock your device or sign in again in Settings. Nothing was sent.",
+            "Topics could not be read. Unlock your device and open NTFY me, then try again.",
+            "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline.",
+            "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen.",
+        ]
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let plugIns = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
+        let extensionURL = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: plugIns, includingPropertiesForKeys: nil)
+            .first { $0.pathExtension == "appex" })
+        let extensionBundle = try XCTUnwrap(Bundle(url: extensionURL))
+        for key in keys {
+            let entry = try XCTUnwrap(strings[key], "Missing device-neutral catalog key: \(key)")
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+            for (language, value) in localizations {
+                let expected = try XCTUnwrap(stringUnits(value).first?["value"] as? String)
+                for target in [Bundle.main, extensionBundle] {
+                    let bundle = try XCTUnwrap(target.path(forResource: language, ofType: "lproj").flatMap(Bundle.init(path:)))
+                    XCTAssertEqual(bundle.localizedString(forKey: key, value: "__missing_device_copy__", table: nil), expected,
+                                   "\(target.bundleURL.lastPathComponent): \(language): \(key)")
+                }
+            }
+        }
+    }
+
+    func testDeviceRegistrationAndLockScreenCopyReachTheApp() {
+        XCTAssertEqual(DeliveryHealthCopy.phoneRegistration, String(localized: "Device registration"))
+        XCTAssertNotEqual(DeliveryHealthCopy.phoneRegistration, DeliveryHealthCopy.pushRegistration)
+        XCTAssertEqual(NotificationWarning.lockScreenOff.detail,
+                       String(localized: "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen."))
+    }
+
     func testSpanishTopicTerminologyDoesNotUseTema() throws {
         let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
             .appendingPathComponent("Localization/Localizable.xcstrings"))

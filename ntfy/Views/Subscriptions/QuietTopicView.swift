@@ -23,7 +23,7 @@ struct QuietTopicView: View {
     var body: some View {
         NavigationView {
             Form {
-                Section(header: Text(subscription.shortDisplayName()), footer: Text(String(localized: "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this phone isn't receiving messages, including when it is offline."))) {
+                Section(header: Text(subscription.shortDisplayName()), footer: Text(String(localized: "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline."))) {
                     choice(0, title: String(localized: "Off"))
                     ForEach(QuietTopicAlerts.intervals, id: \.self) { interval in
                         choice(interval, title: QuietTopicAlerts.intervalTitle(interval))

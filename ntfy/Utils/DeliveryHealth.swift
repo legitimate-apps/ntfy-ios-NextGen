@@ -16,7 +16,7 @@ enum DeliveryHealthCopy {
     static let permissionNeeded = String(localized: "Allow notifications to receive alerts.")
     static let status = String(localized: "Notification status")
     static let permission = String(localized: "Permission")
-    static let phoneRegistration = String(localized: "Phone registration")
+    static let phoneRegistration = String(localized: "Device registration")
     static let pushRegistration = String(localized: "Push registration")
     static let registered = String(localized: "Registered")
     static let waiting = String(localized: "Not registered yet")

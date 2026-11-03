@@ -7379,7 +7379,7 @@ final class UrgentAlertsStateTests: XCTestCase {
         XCTAssertEqual(state.status, .on)
         XCTAssertFalse(state.showsSettingsButton)
         XCTAssertFalse(state.showsCriticalToggle)
-        XCTAssertEqual(state.criticalText, String(localized: "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app."))
+        XCTAssertEqual(state.criticalText, String(localized: "Critical alerts, which play sound even when your device is silenced, need special approval from Apple and aren't offered in this app."))
     }
 
     func testDisabledOrUnsupportedTimeSensitiveShowsOffAndRecovery() {

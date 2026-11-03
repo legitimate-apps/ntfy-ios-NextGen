@@ -14,14 +14,14 @@ enum TopicPublisher {
                      completion: @escaping (Result<Void, Failure>) -> Void) {
         let keyState = store.topicKeyState(for: subscription)
         guard keyState != .unavailable else {
-            completion(.failure(Failure(message: String(localized: "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent."))))
+            completion(.failure(Failure(message: String(localized: "The encryption password is unavailable. Unlock your device or set the topic password again. Nothing was sent."))))
             return
         }
         let baseURL = subscription.baseUrl ?? ""
         let credential = store.getBasicUser(baseUrl: baseURL)
         guard store.getUser(baseUrl: baseURL) == nil || credential != nil,
               case .success = store.credentialStore.readHTTPHeaders(baseUrl: baseURL) else {
-            completion(.failure(Failure(message: String(localized: "The server sign-in is unavailable. Unlock your phone or sign in again in Settings. Nothing was sent."))))
+            completion(.failure(Failure(message: String(localized: "The server sign-in is unavailable. Unlock your device or sign in again in Settings. Nothing was sent."))))
             return
         }
         api.publish(subscription: subscription, user: credential, message: message, title: title,

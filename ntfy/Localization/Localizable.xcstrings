@@ -3186,49 +3186,49 @@
         }
       }
     },
-    "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone.": {
+    "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your device.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your phone."
+            "value": "Check whether ntfy-me.com receives forwarded wake-ups for this topic. This cannot prove delivery to your device."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Prüfe, ob ntfy-me.com weitergeleitete Wecksignale für dieses Thema erhält. Das bestätigt keine Zustellung an dein Telefon."
+            "value": "Prüfe, ob ntfy-me.com weitergeleitete Wecksignale für dieses Thema erhält. Das bestätigt keine Zustellung an dein Gerät."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Comprueba si ntfy-me.com recibe avisos reenviados de este tópico. Esto no demuestra la entrega al teléfono."
+            "value": "Comprueba si ntfy-me.com recibe avisos reenviados de este tópico. Esto no demuestra la entrega al dispositivo."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verifica se ntfy-me.com riceve i segnali di risveglio inoltrati per questo argomento. Non prova la consegna al telefono."
+            "value": "Verifica se ntfy-me.com riceve i segnali di risveglio inoltrati per questo argomento. Non prova la consegna al dispositivo."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Sprawdź, czy ntfy-me.com odbiera przekazane sygnały wybudzenia dla tego tematu. Nie potwierdza to dostarczenia na telefon."
+            "value": "Sprawdź, czy ntfy-me.com odbiera przekazane sygnały wybudzenia dla tego tematu. Nie potwierdza to dostarczenia na urządzenie."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Controleer of ntfy-me.com doorgestuurde activeringssignalen voor dit onderwerp ontvangt. Dit bewijst geen bezorging op je telefoon."
+            "value": "Controleer of ntfy-me.com doorgestuurde activeringssignalen voor dit onderwerp ontvangt. Dit bewijst geen bezorging op je apparaat."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Vérifiez si ntfy-me.com reçoit les demandes de réveil relayées pour ce sujet. Cela ne prouve pas leur réception sur votre téléphone."
+            "value": "Vérifiez si ntfy-me.com reçoit les demandes de réveil relayées pour ce sujet. Cela ne prouve pas leur réception sur votre appareil."
           }
         }
       }
@@ -4643,25 +4643,25 @@
         }
       }
     },
-    "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app.": {
+    "Critical alerts, which play sound even when your device is silenced, need special approval from Apple and aren't offered in this app.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Critical alerts, which play sound even when your phone is silenced, need special approval from Apple and aren't offered in this app."
+            "value": "Critical alerts, which play sound even when your device is silenced, need special approval from Apple and aren't offered in this app."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kritische Hinweise geben auch bei stummem Telefon einen Ton wieder. Sie erfordern eine besondere Genehmigung von Apple und sind in dieser App nicht verfügbar."
+            "value": "Kritische Hinweise geben auch bei stummem Gerät einen Ton wieder. Sie erfordern eine besondere Genehmigung von Apple und sind in dieser App nicht verfügbar."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Las alertas críticas suenan incluso con el teléfono en silencio. Requieren autorización especial de Apple y no se ofrecen en esta app."
+            "value": "Las alertas críticas suenan incluso con el dispositivo en silencio. Requieren autorización especial de Apple y no se ofrecen en esta app."
           }
         },
         "it": {
@@ -4673,13 +4673,13 @@
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Alerty krytyczne odtwarzają dźwięk nawet przy wyciszonym telefonie. Wymagają specjalnej zgody Apple i nie są dostępne w tej aplikacji."
+            "value": "Alerty krytyczne odtwarzają dźwięk nawet przy wyciszonym urządzeniu. Wymagają specjalnej zgody Apple i nie są dostępne w tej aplikacji."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Kritieke meldingen spelen ook geluid af als je telefoon op stil staat. Hiervoor is speciale toestemming van Apple nodig; deze app biedt ze niet aan."
+            "value": "Kritieke meldingen spelen ook geluid af als je apparaat op stil staat. Hiervoor is speciale toestemming van Apple nodig; deze app biedt ze niet aan."
           }
         },
         "fr": {
@@ -6497,49 +6497,49 @@
         }
       }
     },
-    "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your phone, set the password again or remove it.": {
+    "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your device, set the password again or remove it.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your phone, set the password again or remove it."
+            "value": "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your device, set the password again or remove it."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Verschlüsselte Nachrichten bleiben gesperrt. Unverschlüsselte werden als „Nicht verschlüsselt“ markiert. Bleibt das nach dem Entsperren deines Telefons so, setze das Passwort erneut oder entferne es."
+            "value": "Verschlüsselte Nachrichten bleiben gesperrt. Unverschlüsselte werden als „Nicht verschlüsselt“ markiert. Bleibt das nach dem Entsperren deines Geräts so, setze das Passwort erneut oder entferne es."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes cifrados siguen bloqueados y los demás se marcan como «Sin cifrar». Si esto continúa tras desbloquear el teléfono, vuelve a configurar la contraseña o elimínala."
+            "value": "Los mensajes cifrados siguen bloqueados y los demás se marcan como «Sin cifrar». Si esto continúa tras desbloquear el dispositivo, vuelve a configurar la contraseña o elimínala."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "I messaggi cifrati restano bloccati e quelli in chiaro sono contrassegnati 'Non cifrato'. Se succede ancora dopo aver sbloccato il telefono, imposta di nuovo la password o rimuovila."
+            "value": "I messaggi cifrati restano bloccati e quelli in chiaro sono contrassegnati 'Non cifrato'. Se succede ancora dopo aver sbloccato il dispositivo, imposta di nuovo la password o rimuovila."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Zaszyfrowane wiadomości pozostają zablokowane, a zwykłe są oznaczone jako „Niezaszyfrowane”. Jeśli po odblokowaniu telefonu nadal tak jest, ustaw hasło ponownie lub je usuń."
+            "value": "Zaszyfrowane wiadomości pozostają zablokowane, a zwykłe są oznaczone jako „Niezaszyfrowane”. Jeśli po odblokowaniu urządzenia nadal tak jest, ustaw hasło ponownie lub je usuń."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Versleutelde berichten blijven vergrendeld; gewone berichten krijgen het label 'Niet versleuteld'. Blijft dit zo na het ontgrendelen van je telefoon, stel het wachtwoord dan opnieuw in of verwijder het."
+            "value": "Versleutelde berichten blijven vergrendeld; gewone berichten krijgen het label 'Niet versleuteld'. Blijft dit zo na het ontgrendelen van je apparaat, stel het wachtwoord dan opnieuw in of verwijder het."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les messages chiffrés restent verrouillés et ceux en clair portent la mention « Non chiffré ». Si cela persiste après avoir déverrouillé votre téléphone, saisissez à nouveau le mot de passe ou supprimez-le."
+            "value": "Les messages chiffrés restent verrouillés et ceux en clair portent la mention « Non chiffré ». Si cela persiste après avoir déverrouillé votre appareil, saisissez à nouveau le mot de passe ou supprimez-le."
           }
         }
       }
@@ -12487,49 +12487,49 @@
         }
       }
     },
-    "Phone registration": {
+    "Device registration": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Phone registration"
+            "value": "Device registration"
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Telefonregistrierung"
+            "value": "Geräteregistrierung"
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registro del teléfono"
+            "value": "Registro del dispositivo"
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Registrazione telefono"
+            "value": "Registrazione dispositivo"
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Rejestracja telefonu"
+            "value": "Rejestracja urządzenia"
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Telefoonregistratie"
+            "value": "Apparaatregistratie"
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Enregistrement du téléphone"
+            "value": "Enregistrement de l’appareil"
           }
         }
       }
@@ -17000,49 +17000,49 @@
         }
       }
     },
-    "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent.": {
+    "The encryption password is unavailable. Unlock your device or set the topic password again. Nothing was sent.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The encryption password is unavailable. Unlock your phone or set the topic password again. Nothing was sent."
+            "value": "The encryption password is unavailable. Unlock your device or set the topic password again. Nothing was sent."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Das Verschlüsselungspasswort ist nicht verfügbar. Entsperre dein Telefon oder lege das Themenpasswort erneut fest. Es wurde nichts gesendet."
+            "value": "Das Verschlüsselungspasswort ist nicht verfügbar. Entsperre dein Gerät oder lege das Themenpasswort erneut fest. Es wurde nichts gesendet."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La contraseña de cifrado no está disponible. Desbloquea el teléfono o configura de nuevo la contraseña del tópico. No se envió nada."
+            "value": "La contraseña de cifrado no está disponible. Desbloquea el dispositivo o configura de nuevo la contraseña del tópico. No se envió nada."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "La password di cifratura non è disponibile. Sblocca il telefono o imposta di nuovo la password dell'argomento. Non è stato inviato nulla."
+            "value": "La password di cifratura non è disponibile. Sblocca il dispositivo o imposta di nuovo la password dell'argomento. Non è stato inviato nulla."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Hasło szyfrowania jest niedostępne. Odblokuj telefon lub ponownie ustaw hasło tematu. Nic nie wysłano."
+            "value": "Hasło szyfrowania jest niedostępne. Odblokuj urządzenie lub ponownie ustaw hasło tematu. Nic nie wysłano."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Het versleutelingswachtwoord is niet beschikbaar. Ontgrendel je telefoon of stel het onderwerpwachtwoord opnieuw in. Er is niets verstuurd."
+            "value": "Het versleutelingswachtwoord is niet beschikbaar. Ontgrendel je apparaat of stel het onderwerpwachtwoord opnieuw in. Er is niets verstuurd."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le mot de passe de chiffrement est indisponible. Déverrouillez votre téléphone ou définissez à nouveau le mot de passe du sujet. Rien n’a été envoyé."
+            "value": "Le mot de passe de chiffrement est indisponible. Déverrouillez votre appareil ou définissez à nouveau le mot de passe du sujet. Rien n’a été envoyé."
           }
         }
       }
@@ -19276,49 +19276,49 @@
         }
       }
     },
-    "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your phone, or set the password again.": {
+    "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your device, or set the password again.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your phone, or set the password again."
+            "value": "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your device, or set the password again."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dieses Thema ist Ende-zu-Ende-verschlüsselt, aber das Passwort ist gerade nicht lesbar. Die Testnachricht wäre unverschlüsselt. Entsperre dein Telefon und versuche es erneut oder setze das Passwort erneut."
+            "value": "Dieses Thema ist Ende-zu-Ende-verschlüsselt, aber das Passwort ist gerade nicht lesbar. Die Testnachricht wäre unverschlüsselt. Entsperre dein Gerät und versuche es erneut oder setze das Passwort erneut."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este tópico tiene cifrado de extremo a extremo, pero su contraseña no se puede leer ahora. La prueba se enviaría sin cifrar. Inténtalo tras desbloquear el teléfono o vuelve a configurar la contraseña."
+            "value": "Este tópico tiene cifrado de extremo a extremo, pero su contraseña no se puede leer ahora. La prueba se enviaría sin cifrar. Inténtalo tras desbloquear el dispositivo o vuelve a configurar la contraseña."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo argomento è cifrato end-to-end, ma la password non è leggibile ora. La notifica di prova verrebbe quindi inviata in chiaro. Riprova dopo aver sbloccato il telefono o imposta di nuovo la password."
+            "value": "Questo argomento è cifrato end-to-end, ma la password non è leggibile ora. La notifica di prova verrebbe quindi inviata in chiaro. Riprova dopo aver sbloccato il dispositivo o imposta di nuovo la password."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ten temat ma szyfrowanie end-to-end, ale jego hasło jest teraz niedostępne, więc wiadomość testowa zostałaby wysłana bez szyfrowania. Spróbuj po odblokowaniu telefonu lub ustaw hasło ponownie."
+            "value": "Ten temat ma szyfrowanie end-to-end, ale jego hasło jest teraz niedostępne, więc wiadomość testowa zostałaby wysłana bez szyfrowania. Spróbuj po odblokowaniu urządzenia lub ustaw hasło ponownie."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dit onderwerp is end-to-end versleuteld, maar het wachtwoord is nu niet leesbaar. Het testbericht zou dus onversleuteld worden verstuurd. Probeer het opnieuw nadat je de telefoon hebt ontgrendeld of stel het wachtwoord opnieuw in."
+            "value": "Dit onderwerp is end-to-end versleuteld, maar het wachtwoord is nu niet leesbaar. Het testbericht zou dus onversleuteld worden verstuurd. Probeer het opnieuw nadat je het apparaat hebt ontgrendeld of stel het wachtwoord opnieuw in."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ce sujet est chiffré de bout en bout, mais son mot de passe est actuellement illisible. Le message de test serait donc envoyé en clair. Réessayez après avoir déverrouillé votre téléphone ou définissez à nouveau le mot de passe."
+            "value": "Ce sujet est chiffré de bout en bout, mais son mot de passe est actuellement illisible. Le message de test serait donc envoyé en clair. Réessayez après avoir déverrouillé votre appareil ou définissez à nouveau le mot de passe."
           }
         }
       }
@@ -21518,7 +21518,7 @@
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wenn aktiviert, können Nachrichten mit Priorität 5 auch bei stummem Telefon einen Ton wiedergeben."
+            "value": "Wenn aktiviert, können Nachrichten mit Priorität 5 auch bei stummem Gerät einen Ton wiedergeben."
           }
         },
         "es": {
@@ -21542,7 +21542,7 @@
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Als dit aanstaat, kunnen berichten met prioriteit 5 ook geluid afspelen als je telefoon op stil staat."
+            "value": "Als dit aanstaat, kunnen berichten met prioriteit 5 ook geluid afspelen als je apparaat op stil staat."
           }
         },
         "fr": {
@@ -21647,49 +21647,49 @@
         }
       }
     },
-    "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new phone needs it entered again. Senders need the same password; see \"How to send encrypted messages\".": {
+    "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new device needs it entered again. Senders need the same password; see \"How to send encrypted messages\".": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new phone needs it entered again. Senders need the same password; see \"How to send encrypted messages\"."
+            "value": "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new device needs it entered again. Senders need the same password; see \"How to send encrypted messages\"."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Mit einem Passwort verschlüsselt der Sender die Nachrichten. Bei der Übertragung und auf dem Server sehen der Server, Google und Apple nur verschlüsselte Daten. Empfangene Nachrichten werden auf diesem Gerät lesbar gespeichert. Das Passwort bleibt nur auf diesem Gerät und wird nicht gesichert. Auf einem neuen oder wiederhergestellten Telefon musst du es erneut eingeben. Sender benötigen dasselbe Passwort. Siehe „Verschlüsselte Nachrichten senden“."
+            "value": "Mit einem Passwort verschlüsselt der Sender die Nachrichten. Bei der Übertragung und auf dem Server sehen der Server, Google und Apple nur verschlüsselte Daten. Empfangene Nachrichten werden auf diesem Gerät lesbar gespeichert. Das Passwort bleibt nur auf diesem Gerät und wird nicht gesichert. Auf einem neuen oder wiederhergestellten Gerät musst du es erneut eingeben. Sender benötigen dasselbe Passwort. Siehe „Verschlüsselte Nachrichten senden“."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Con una contraseña, quien envía cifra los mensajes, que permanecen cifrados en tránsito y en el servidor: el servidor, Google y Apple solo ven datos cifrados. Al llegar, se guardan legibles en este dispositivo. La contraseña solo permanece aquí y no se incluye en copias de seguridad: debes introducirla de nuevo al restaurar o cambiar de teléfono. Quien envía necesita la misma contraseña; consulta «Cómo enviar mensajes cifrados»."
+            "value": "Con una contraseña, quien envía cifra los mensajes, que permanecen cifrados en tránsito y en el servidor: el servidor, Google y Apple solo ven datos cifrados. Al llegar, se guardan legibles en este dispositivo. La contraseña solo permanece aquí y no se incluye en copias de seguridad: debes introducirla de nuevo al restaurar o cambiar de dispositivo. Quien envía necesita la misma contraseña; consulta «Cómo enviar mensajes cifrados»."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Con una password, i messaggi vengono cifrati dal mittente, durante il transito e sul server: il server, Google e Apple vedono solo testo cifrato. All'arrivo vengono conservati in forma leggibile su questo dispositivo. La password resta solo qui e non viene salvata nei backup: va reinserita su un telefono nuovo o ripristinato. I mittenti devono usare la stessa password; vedi 'Come inviare messaggi cifrati'."
+            "value": "Con una password, i messaggi vengono cifrati dal mittente, durante il transito e sul server: il server, Google e Apple vedono solo testo cifrato. All'arrivo vengono conservati in forma leggibile su questo dispositivo. La password resta solo qui e non viene salvata nei backup: va reinserita su un dispositivo nuovo o ripristinato. I mittenti devono usare la stessa password; vedi 'Come inviare messaggi cifrati'."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Gdy ustawisz hasło, nadawca szyfruje wiadomości przed wysłaniem, więc podczas przesyłania i na serwerze są zaszyfrowane. Serwer, Google i Apple widzą tylko szyfrogram. Po odebraniu są zapisywane na tym urządzeniu w czytelnej postaci. Hasło pozostaje tylko na tym urządzeniu i nie jest archiwizowane, więc na przywróconym lub nowym telefonie trzeba je podać ponownie. Nadawcy potrzebują tego samego hasła. Zobacz „Jak wysyłać zaszyfrowane wiadomości”."
+            "value": "Gdy ustawisz hasło, nadawca szyfruje wiadomości przed wysłaniem, więc podczas przesyłania i na serwerze są zaszyfrowane. Serwer, Google i Apple widzą tylko szyfrogram. Po odebraniu są zapisywane na tym urządzeniu w czytelnej postaci. Hasło pozostaje tylko na tym urządzeniu i nie jest archiwizowane, więc na przywróconym lub nowym urządzeniu trzeba je podać ponownie. Nadawcy potrzebują tego samego hasła. Zobacz „Jak wysyłać zaszyfrowane wiadomości”."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Met een wachtwoord versleutelt de afzender berichten, zodat ze onderweg en op de server versleuteld zijn: de server, Google en Apple zien alleen versleutelde tekst. Na ontvangst worden ze leesbaar op dit apparaat bewaard. Het wachtwoord blijft alleen op dit apparaat en wordt niet geback-upt. Voer het dus opnieuw in op een nieuwe of herstelde telefoon. Afzenders hebben hetzelfde wachtwoord nodig; zie 'Versleutelde berichten sturen'."
+            "value": "Met een wachtwoord versleutelt de afzender berichten, zodat ze onderweg en op de server versleuteld zijn: de server, Google en Apple zien alleen versleutelde tekst. Na ontvangst worden ze leesbaar op dit apparaat bewaard. Het wachtwoord blijft alleen op dit apparaat en wordt niet geback-upt. Voer het dus opnieuw in op een nieuw of hersteld apparaat. Afzenders hebben hetzelfde wachtwoord nodig; zie 'Versleutelde berichten sturen'."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Avec un mot de passe, l’expéditeur chiffre les messages, qui restent chiffrés pendant le transfert et sur le serveur : le serveur, Google et Apple ne voient que le texte chiffré. À l’arrivée, ils sont conservés en clair sur cet appareil. Le mot de passe reste uniquement sur cet appareil et n’est pas sauvegardé : vous devrez le saisir à nouveau sur un téléphone restauré ou neuf. Les expéditeurs ont besoin du même mot de passe ; voir « Envoyer des messages chiffrés »."
+            "value": "Avec un mot de passe, l’expéditeur chiffre les messages, qui restent chiffrés pendant le transfert et sur le serveur : le serveur, Google et Apple ne voient que le texte chiffré. À l’arrivée, ils sont conservés en clair sur cet appareil. Le mot de passe reste uniquement sur cet appareil et n’est pas sauvegardé : vous devrez le saisir à nouveau sur un appareil restauré ou neuf. Les expéditeurs ont besoin du même mot de passe ; voir « Envoyer des messages chiffrés »."
           }
         }
       }
@@ -21835,49 +21835,49 @@
         }
       }
     },
-    "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report phone delivery.": {
+    "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report device delivery.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report phone delivery."
+            "value": "Your server's upstream-base-url must be https://ntfy-me.com. Its configured base-url must exactly match the server address used for this subscription, including scheme, port, path and spelling. The relay keeps only recent acceptance times (up to 2 minutes); it does not report device delivery."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die upstream-base-url deines Servers muss https://ntfy-me.com sein. Seine konfigurierte base-url muss exakt der Serveradresse dieses Abos entsprechen, einschließlich Schema, Port, Pfad und Schreibweise. Der Relay-Server speichert nur die letzten Annahmezeiten (bis zu 2 Minuten). Er meldet keine Zustellung an das Telefon."
+            "value": "Die upstream-base-url deines Servers muss https://ntfy-me.com sein. Seine konfigurierte base-url muss exakt der Serveradresse dieses Abos entsprechen, einschließlich Schema, Port, Pfad und Schreibweise. Der Relay-Server speichert nur die letzten Annahmezeiten (bis zu 2 Minuten). Er meldet keine Zustellung an das Gerät."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El upstream-base-url del servidor debe ser https://ntfy-me.com. Su base-url debe coincidir exactamente con la dirección usada en esta suscripción, incluido esquema, puerto, ruta y escritura. El relay solo conserva horas de aceptación recientes (hasta 2 minutos); no informa de la entrega al teléfono."
+            "value": "El upstream-base-url del servidor debe ser https://ntfy-me.com. Su base-url debe coincidir exactamente con la dirección usada en esta suscripción, incluido esquema, puerto, ruta y escritura. El relay solo conserva horas de aceptación recientes (hasta 2 minutos); no informa de la entrega al dispositivo."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L'upstream-base-url del tuo server deve essere https://ntfy-me.com. Il base-url configurato deve corrispondere esattamente all'indirizzo del server usato per l'iscrizione, inclusi protocollo, porta, percorso e grafia. Il relay conserva solo gli orari di accettazione recenti (fino a 2 minuti) e non segnala la consegna al telefono."
+            "value": "L'upstream-base-url del tuo server deve essere https://ntfy-me.com. Il base-url configurato deve corrispondere esattamente all'indirizzo del server usato per l'iscrizione, inclusi protocollo, porta, percorso e grafia. Il relay conserva solo gli orari di accettazione recenti (fino a 2 minuti) e non segnala la consegna al dispositivo."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Wartość upstream-base-url Twojego serwera musi wynosić https://ntfy-me.com. Skonfigurowany base-url musi dokładnie odpowiadać adresowi serwera użytemu w tej subskrypcji, łącznie ze schematem, portem, ścieżką i pisownią. Serwer pośredniczący zachowuje tylko ostatnie czasy przyjęcia (do 2 minut). Nie potwierdza dostarczenia na telefon."
+            "value": "Wartość upstream-base-url Twojego serwera musi wynosić https://ntfy-me.com. Skonfigurowany base-url musi dokładnie odpowiadać adresowi serwera użytemu w tej subskrypcji, łącznie ze schematem, portem, ścieżką i pisownią. Serwer pośredniczący zachowuje tylko ostatnie czasy przyjęcia (do 2 minut). Nie potwierdza dostarczenia na urządzenie."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "De upstream-base-url van je server moet https://ntfy-me.com zijn. De ingestelde base-url moet exact overeenkomen met het serveradres van dit abonnement, inclusief protocol, poort, pad en spelling. De relay bewaart alleen recente acceptatietijden (maximaal 2 minuten) en meldt geen bezorging op je telefoon."
+            "value": "De upstream-base-url van je server moet https://ntfy-me.com zijn. De ingestelde base-url moet exact overeenkomen met het serveradres van dit abonnement, inclusief protocol, poort, pad en spelling. De relay bewaart alleen recente acceptatietijden (maximaal 2 minuten) en meldt geen bezorging op je apparaat."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "La valeur upstream-base-url de votre serveur doit être https://ntfy-me.com. Sa valeur base-url doit correspondre exactement à l’adresse de serveur de cet abonnement : protocole, port, chemin et orthographe compris. Le relais ne conserve que les heures de prise en charge récentes (jusqu’à 2 minutes) ; il ne confirme pas la réception sur le téléphone."
+            "value": "La valeur upstream-base-url de votre serveur doit être https://ntfy-me.com. Sa valeur base-url doit correspondre exactement à l’adresse de serveur de cet abonnement : protocole, port, chemin et orthographe compris. Le relais ne conserve que les heures de prise en charge récentes (jusqu’à 2 minutes) ; il ne confirme pas la réception sur l’appareil."
           }
         }
       }
@@ -22655,49 +22655,49 @@
         }
       }
     },
-    "ntfy-me.com received a wake-up for this topic at %@, and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up.": {
+    "ntfy-me.com received a wake-up for this topic at %@, and FCM accepted it. This does not prove your device received it or that this test caused the wake-up.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com received a wake-up for this topic at %@, and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up."
+            "value": "ntfy-me.com received a wake-up for this topic at %@, and FCM accepted it. This does not prove your device received it or that this test caused the wake-up."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com hat um %@ ein Wecksignal für dieses Thema erhalten und FCM hat es angenommen. Das bestätigt weder den Empfang auf deinem Telefon noch, dass dieser Test das Wecksignal ausgelöst hat."
+            "value": "ntfy-me.com hat um %@ ein Wecksignal für dieses Thema erhalten und FCM hat es angenommen. Das bestätigt weder den Empfang auf deinem Gerät noch, dass dieser Test das Wecksignal ausgelöst hat."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com recibió un aviso para este tópico a las %@ y FCM lo aceptó. Esto no demuestra que tu teléfono lo recibiera ni que esta prueba lo causara."
+            "value": "ntfy-me.com recibió un aviso para este tópico a las %@ y FCM lo aceptó. Esto no demuestra que tu dispositivo lo recibiera ni que esta prueba lo causara."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com ha ricevuto un segnale di risveglio per questo argomento alle %@ e FCM lo ha accettato. Questo non prova che il telefono l'abbia ricevuto o che il segnale sia stato causato da questa prova."
+            "value": "ntfy-me.com ha ricevuto un segnale di risveglio per questo argomento alle %@ e FCM lo ha accettato. Questo non prova che il dispositivo l'abbia ricevuto o che il segnale sia stato causato da questa prova."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com odebrał sygnał wybudzenia dla tego tematu o %@, a FCM go przyjął. Nie dowodzi to odebrania przez telefon ani tego, że sygnał wywołał ten test."
+            "value": "ntfy-me.com odebrał sygnał wybudzenia dla tego tematu o %@, a FCM go przyjął. Nie dowodzi to odebrania przez urządzenie ani tego, że sygnał wywołał ten test."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com heeft om %@ een activeringssignaal voor dit onderwerp ontvangen en FCM heeft het geaccepteerd. Dit bewijst niet dat je telefoon het ontving of dat deze test het signaal veroorzaakte."
+            "value": "ntfy-me.com heeft om %@ een activeringssignaal voor dit onderwerp ontvangen en FCM heeft het geaccepteerd. Dit bewijst niet dat je apparaat het ontving of dat deze test het signaal veroorzaakte."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "ntfy-me.com a reçu une demande de réveil pour ce sujet à %@, et FCM l’a acceptée. Cela ne prouve ni sa réception sur votre téléphone ni que ce test l’a déclenchée."
+            "value": "ntfy-me.com a reçu une demande de réveil pour ce sujet à %@, et FCM l’a acceptée. Cela ne prouve ni sa réception sur votre appareil ni que ce test l’a déclenchée."
           }
         }
       }
@@ -25850,96 +25850,96 @@
         }
       }
     },
-    "The server sign-in is unavailable. Unlock your phone or sign in again in Settings. Nothing was sent.": {
+    "The server sign-in is unavailable. Unlock your device or sign in again in Settings. Nothing was sent.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "The server sign-in is unavailable. Unlock your phone or sign in again in Settings. Nothing was sent."
+            "value": "The server sign-in is unavailable. Unlock your device or sign in again in Settings. Nothing was sent."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Serveranmeldung ist nicht verfügbar. Entsperre dein Telefon oder melde dich in den Einstellungen erneut an. Es wurde nichts gesendet."
+            "value": "Die Serveranmeldung ist nicht verfügbar. Entsperre dein Gerät oder melde dich in den Einstellungen erneut an. Es wurde nichts gesendet."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El inicio de sesión del servidor no está disponible. Desbloquea el teléfono o vuelve a iniciar sesión en Ajustes. No se envió nada."
+            "value": "El inicio de sesión del servidor no está disponible. Desbloquea el dispositivo o vuelve a iniciar sesión en Ajustes. No se envió nada."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’accesso al server non è disponibile. Sblocca il telefono o accedi di nuovo nelle Impostazioni. Non è stato inviato nulla."
+            "value": "L’accesso al server non è disponibile. Sblocca il dispositivo o accedi di nuovo nelle Impostazioni. Non è stato inviato nulla."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Dane logowania do serwera są niedostępne. Odblokuj telefon lub zaloguj się ponownie w Ustawieniach. Nic nie wysłano."
+            "value": "Dane logowania do serwera są niedostępne. Odblokuj urządzenie lub zaloguj się ponownie w Ustawieniach. Nic nie wysłano."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "De serveraanmelding is niet beschikbaar. Ontgrendel je telefoon of meld je opnieuw aan in Instellingen. Er is niets verstuurd."
+            "value": "De serveraanmelding is niet beschikbaar. Ontgrendel je apparaat of meld je opnieuw aan in Instellingen. Er is niets verstuurd."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "La connexion au serveur est indisponible. Déverrouillez votre téléphone ou reconnectez-vous dans Réglages. Rien n’a été envoyé."
+            "value": "La connexion au serveur est indisponible. Déverrouillez votre appareil ou reconnectez-vous dans Réglages. Rien n’a été envoyé."
           }
         }
       }
     },
-    "Topics could not be read. Unlock your phone and open NTFY me, then try again.": {
+    "Topics could not be read. Unlock your device and open NTFY me, then try again.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Topics could not be read. Unlock your phone and open NTFY me, then try again."
+            "value": "Topics could not be read. Unlock your device and open NTFY me, then try again."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Themen konnten nicht gelesen werden. Entsperre dein Telefon, öffne NTFY me und versuche es erneut."
+            "value": "Die Themen konnten nicht gelesen werden. Entsperre dein Gerät, öffne NTFY me und versuche es erneut."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudieron leer los tópicos. Desbloquea el teléfono, abre NTFY me y vuelve a intentarlo."
+            "value": "No se pudieron leer los tópicos. Desbloquea el dispositivo, abre NTFY me y vuelve a intentarlo."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossibile leggere gli argomenti. Sblocca il telefono e apri NTFY me, poi riprova."
+            "value": "Impossibile leggere gli argomenti. Sblocca il dispositivo e apri NTFY me, poi riprova."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nie można odczytać tematów. Odblokuj telefon i otwórz NTFY me, a następnie spróbuj ponownie."
+            "value": "Nie można odczytać tematów. Odblokuj urządzenie i otwórz NTFY me, a następnie spróbuj ponownie."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "De onderwerpen konden niet worden gelezen. Ontgrendel je telefoon, open NTFY me en probeer het opnieuw."
+            "value": "De onderwerpen konden niet worden gelezen. Ontgrendel je apparaat, open NTFY me en probeer het opnieuw."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Impossible de lire les sujets. Déverrouillez votre téléphone et ouvrez NTFY me, puis réessayez."
+            "value": "Impossible de lire les sujets. Déverrouillez votre appareil et ouvrez NTFY me, puis réessayez."
           }
         }
       }
@@ -26501,48 +26501,48 @@
         }
       }
     },
-    "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this phone isn't receiving messages, including when it is offline.": {
+    "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this phone isn't receiving messages, including when it is offline."
+            "value": "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Erhalte eine einmalige Benachrichtigung, wenn innerhalb der gewählten Zeit keine Nachricht eintrifft, auch bei stummgeschaltetem Thema. Eine neue Nachricht startet den Timer erneut. Die Benachrichtigung kann auch bedeuten, dass dieses Telefon keine Nachrichten empfängt, etwa weil es offline ist."
+            "value": "Erhalte eine einmalige Benachrichtigung, wenn innerhalb der gewählten Zeit keine Nachricht eintrifft, auch bei stummgeschaltetem Thema. Eine neue Nachricht startet den Timer erneut. Die Benachrichtigung kann auch bedeuten, dass dieses Gerät keine Nachrichten empfängt, etwa weil es offline ist."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tópico está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este teléfono no recibe mensajes, por ejemplo, cuando está sin conexión."
+            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tópico está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este dispositivo no recibe mensajes, por ejemplo, cuando está sin conexión."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ricevi un solo avviso se non arriva alcun messaggio nel tempo scelto, anche se il canale è silenziato. Un nuovo messaggio riavvia il timer. L’avviso può anche indicare che questo telefono non riceve messaggi, ad esempio quando è offline."
+            "value": "Ricevi un solo avviso se non arriva alcun messaggio nel tempo scelto, anche se il canale è silenziato. Un nuovo messaggio riavvia il timer. L’avviso può anche indicare che questo dispositivo non riceve messaggi, ad esempio quando è offline."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Otrzymasz jedno powiadomienie, gdy w wybranym czasie nie nadejdzie żadna wiadomość, nawet jeśli temat jest wyciszony. Nowa wiadomość uruchamia licznik ponownie. Powiadomienie może też oznaczać, że telefon nie odbiera wiadomości, na przykład gdy jest offline."
+            "value": "Otrzymasz jedno powiadomienie, gdy w wybranym czasie nie nadejdzie żadna wiadomość, nawet jeśli temat jest wyciszony. Nowa wiadomość uruchamia licznik ponownie. Powiadomienie może też oznaczać, że urządzenie nie odbiera wiadomości, na przykład gdy jest offline."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ontvang één melding als er binnen de gekozen tijd geen bericht aankomt, ook als het onderwerp is gedempt. Een nieuw bericht start de timer opnieuw. De melding kan ook betekenen dat deze telefoon geen berichten ontvangt, bijvoorbeeld wanneer hij offline is."
+            "value": "Ontvang één melding als er binnen de gekozen tijd geen bericht aankomt, ook als het onderwerp is gedempt. Een nieuw bericht start de timer opnieuw. De melding kan ook betekenen dat dit apparaat geen berichten ontvangt, bijvoorbeeld wanneer het offline is."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recevez une seule alerte si aucun message n’arrive dans le délai choisi, même si ce sujet est en sourdine. Un nouveau message relance le minuteur. L’alerte peut aussi signifier que ce téléphone ne reçoit pas de messages, notamment lorsqu’il est hors ligne."
+            "value": "Recevez une seule alerte si aucun message n’arrive dans le délai choisi, même si ce sujet est en sourdine. Un nouveau message relance le minuteur. L’alerte peut aussi signifier que cet appareil ne reçoit pas de messages, notamment lorsqu’il est hors ligne."
           }
         }
       }
@@ -29024,49 +29024,49 @@
         }
       }
     },
-    "New messages won't show while your phone is locked. Tap Open Settings, then turn on Lock Screen.": {
+    "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "New messages won't show while your phone is locked. Tap Open Settings, then turn on Lock Screen."
+            "value": "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Neue Nachrichten erscheinen nicht, solange dein Telefon gesperrt ist. Tippe auf „Einstellungen öffnen“ und aktiviere „Sperrbildschirm“."
+            "value": "Neue Nachrichten erscheinen nicht, solange dein Gerät gesperrt ist. Tippe auf „Einstellungen öffnen“ und aktiviere „Sperrbildschirm“."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes nuevos no se mostrarán con el teléfono bloqueado. Pulsa «Abrir Ajustes» y activa «Pantalla de bloqueo»."
+            "value": "Los mensajes nuevos no se mostrarán con el dispositivo bloqueado. Pulsa «Abrir Ajustes» y activa «Pantalla de bloqueo»."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "I nuovi messaggi non compaiono quando il telefono è bloccato. Tocca 'Apri Impostazioni' e attiva 'Schermata di blocco'."
+            "value": "I nuovi messaggi non compaiono quando il dispositivo è bloccato. Tocca 'Apri Impostazioni' e attiva 'Schermata di blocco'."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nowe wiadomości nie pojawią się, gdy telefon jest zablokowany. Stuknij „Otwórz Ustawienia” i włącz „Ekran blokady”."
+            "value": "Nowe wiadomości nie pojawią się, gdy urządzenie jest zablokowane. Stuknij „Otwórz Ustawienia” i włącz „Ekran blokady”."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Nieuwe berichten verschijnen niet terwijl je telefoon is vergrendeld. Tik op 'Instellingen openen' en zet 'Toegangsscherm' aan."
+            "value": "Nieuwe berichten verschijnen niet terwijl je apparaat is vergrendeld. Tik op 'Instellingen openen' en zet 'Toegangsscherm' aan."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Les nouveaux messages ne s’afficheront pas quand le téléphone est verrouillé. Touchez « Ouvrir Réglages », puis activez « Écran verrouillé »."
+            "value": "Les nouveaux messages ne s’afficheront pas quand l’appareil est verrouillé. Touchez « Ouvrir Réglages », puis activez « Écran verrouillé »."
           }
         }
       }
