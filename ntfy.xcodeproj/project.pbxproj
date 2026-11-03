@@ -204,6 +204,8 @@
 		C12315620000000000000001 /* PollFallbackSoundTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12315620000000000000002 /* PollFallbackSoundTests.swift */; };
 		C12400000000000000000001 /* ReadMessagesIntent.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12400000000000000000011; };
 		C12400000000000000000002 /* ShortcutsReadTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = C12400000000000000000012; };
+		A12940000000000000000003 = {isa = PBXBuildFile; fileRef = A12940000000000000000001; };
+		A12940000000000000000004 = {isa = PBXBuildFile; fileRef = A12940000000000000000002; };
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
@@ -403,6 +405,8 @@
 		C12315620000000000000002 /* PollFallbackSoundTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PollFallbackSoundTests.swift; sourceTree = "<group>"; };
 		C12400000000000000000011 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfy/Intents/ReadMessagesIntent.swift; sourceTree = SOURCE_ROOT; };
 		C12400000000000000000012 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ntfyTests/ShortcutsReadTests.swift; sourceTree = SOURCE_ROOT; };
+		A12940000000000000000001 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Utils/AccountTopics.swift"; sourceTree = SOURCE_ROOT; };
+		A12940000000000000000002 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/AccountTopicsTests.swift"; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -469,6 +473,7 @@
 			isa = PBXGroup;
 			children = (
 				29E841982FB417E400F927E4 /* SubscriptionAddView.swift */,
+				A12940000000000000000001,
 				118B00010000000000000005 /* TopicQRCode.swift */,
 				117A00022FD0000100F927E4 /* LaunchExperience.swift */,
 				29E841992FB417E400F927E4 /* SubscriptionListView.swift */,
@@ -683,6 +688,7 @@
 				FFB072E4CE7885C446A0546C /* ntfyTests.swift */,
 				CE0D7AE636FF4807D4E3659F,
 				D55080135EC8D994F3DC44DB,
+				A12940000000000000000002,
 				A12300000000000000000002 /* BackgroundHTTPActionTests.swift */,
 				10E74BB28FBB4650A30BBAEC /* FcmTeardownLedgerTests.swift */,
 				B64119000000000000000002 /* base64-binary.json */,
@@ -937,6 +943,7 @@
 				117A00012FD0000100F927E4 /* LaunchExperience.swift in Sources */,
 				29E8419B2FB417E400F927E4 /* SubscriptionListView.swift in Sources */,
 				29E8419C2FB417E400F927E4 /* SubscriptionAddView.swift in Sources */,
+				A12940000000000000000003,
 				118B00010000000000000006 /* TopicQRCode.swift in Sources */,
 				94A3F7CA28386B2100C48E79 /* Config.swift in Sources */,
 				9474F1C3282F2AA700CDE4DD /* ContentView.swift in Sources */,
@@ -1065,6 +1072,7 @@
 				1E89EB0639BDDB580553BA66,
 				BF604363E097B7921ABBA131,
 				BA7FAEB5727645FB9699BDF1,
+				A12940000000000000000004,
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
                 A124DA7E0000000000000004 /* SubscriptionDateTests.swift in Sources */,

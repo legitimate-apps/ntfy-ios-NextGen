@@ -14,12 +14,14 @@ struct SubscriptionAddView: View {
     @State private var baseUrl: String = ""
     
     @State private var showLogin: Bool = false
+    @State private var showAccountTopics = false
     @State private var login = ServerLoginInput()
     
     @State private var loading = false
     @State private var addError: String?
     @State private var loginError: String?
     /// The topic URL just subscribed to, while the notification-permission explanation is showing.
+    @State private var primingTopicCount = 1
     @State private var primingTopicUrl: String?
     @State private var showScanner = false
     /// The topic address read from a QR code, filling the sheet the same way a Universal Link does.
@@ -114,6 +116,18 @@ struct SubscriptionAddView: View {
                             .accessibilityHint(SubscriptionAddServer.placeholder(defaultBaseUrl: store.getDefaultBaseUrl()))
                             .disableAutocapitalization()
                             .disableAutocorrection(true)
+                    }
+                }
+                if let user = store.getBasicUser(baseUrl: selectedBaseUrl) {
+                    Section {
+                        NavigationLink(isActive: $showAccountTopics) {
+                            AccountTopicsView(baseURL: selectedBaseUrl, user: user, store: store) { urls in
+                                if isShowing { finishSubscribing(topicURLs: urls) }
+                            }
+                            .id(selectedBaseUrl)
+                        } label: {
+                            Label(String(localized: "Topics saved in account"), systemImage: "person.crop.circle")
+                        }
                     }
                 }
                 Section {
@@ -300,8 +314,12 @@ struct SubscriptionAddView: View {
     /// After a successful subscribe: explain notifications first if iOS is about to ask for the
     /// first time, then close the sheet and open the new topic, whose empty state shows the
     /// ready-to-copy publish commands. "loading" is reset by resetAndHide() once the sheet is gone.
-    private func finishSubscribing() {
-        let url = topicUrl(baseUrl: selectedBaseUrl, topic: sanitizedTopic)
+    private func finishSubscribing(topicURLs: [String]? = nil) {
+        let urls = topicURLs ?? [topicUrl(baseUrl: selectedBaseUrl, topic: sanitizedTopic)]
+        guard let url = urls.first else { return }
+        // Pop the account picker before replacing the root with the permission primer.
+        showAccountTopics = false
+        primingTopicCount = urls.count
         delegate.notificationAuthorizationStatus { status in
             if NotificationPermissionPolicy.shouldPrime(status: status) {
                 NotificationPermissionPolicy.recordPrimerOffered()
@@ -330,8 +348,7 @@ struct SubscriptionAddView: View {
                 Text(String(localized: "Get notified"))
                     .font(.title2.bold())
                     .multilineTextAlignment(.center)
-                Text(Config.ntfyShDeliveryHint(baseUrl: selectedBaseUrl)
-                     ?? String(localized: "Allow notifications so each message sent to \(shortUrl(url: url)) shows up on your lock screen, even when the app is closed. iOS will ask you next."))
+                Text(SubscriptionPermissionCopy.message(baseUrl: selectedBaseUrl, topicURL: url, topicCount: primingTopicCount))
                     .multilineTextAlignment(.center)
                     .foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -414,7 +431,9 @@ struct SubscriptionAddView: View {
             topic = ""
             useAnother = false
             primingTopicUrl = nil
+            primingTopicCount = 1
             scannedLink = nil
+            showAccountTopics = false
         }
     }
 }
@@ -489,5 +508,16 @@ enum SubscriptionAddServer {
 
     static func placeholder(defaultBaseUrl: String) -> String {
         String(localized: "Blank uses \(normalizeBaseUrl(defaultBaseUrl))")
+    }
+}
+
+/// Shared by single-topic subscribe and account imports; server-specific delivery guidance wins.
+enum SubscriptionPermissionCopy {
+    static func message(baseUrl: String, topicURL: String, topicCount: Int) -> String {
+        if let hint = Config.ntfyShDeliveryHint(baseUrl: baseUrl) { return hint }
+        if topicCount > 1 {
+            return String(localized: "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. iOS will ask you next.")
+        }
+        return String(localized: "Allow notifications so each message sent to \(shortUrl(url: topicURL)) shows up on your lock screen, even when the app is closed. iOS will ask you next.")
     }
 }
