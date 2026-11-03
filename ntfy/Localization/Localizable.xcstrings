@@ -24933,7 +24933,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Toca un sonido para seleccionarlo y escucharlo. Los temas silenciados siguen en silencio. Las alertas críticas usan el sonido crítico del sistema."
+            "value": "Toca un sonido para seleccionarlo y escucharlo. Los tópicos silenciados siguen en silencio. Las alertas críticas usan el sonido crítico del sistema."
           }
         },
         "it": {
@@ -25680,7 +25680,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Envía un mensaje a un tema suscrito con su inicio de sesión y cifrado guardados."
+            "value": "Envía un mensaje a un tópico suscrito con su inicio de sesión y cifrado guardados."
           }
         },
         "it": {
@@ -25727,7 +25727,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Un tema al que te suscribes en NTFY me."
+            "value": "Un tópico al que te suscribes en NTFY me."
           }
         },
         "it": {
@@ -25915,7 +25915,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "No se pudieron leer los temas. Desbloquea el teléfono, abre NTFY me y vuelve a intentarlo."
+            "value": "No se pudieron leer los tópicos. Desbloquea el teléfono, abre NTFY me y vuelve a intentarlo."
           }
         },
         "it": {
@@ -26056,7 +26056,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ya no estás suscrito a este tema. Elige otro o vuelve a suscribirte en NTFY me. No se envió nada."
+            "value": "Ya no estás suscrito a este tópico. Elige otro o vuelve a suscribirte en NTFY me. No se envió nada."
           }
         },
         "it": {
@@ -26518,7 +26518,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tema está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este teléfono no recibe mensajes, por ejemplo, cuando está sin conexión."
+            "value": "Recibe un único aviso si no llega ningún mensaje en el tiempo elegido, incluso si el tópico está silenciado. Un nuevo mensaje reinicia el temporizador. El aviso también puede indicar que este teléfono no recibe mensajes, por ejemplo, cuando está sin conexión."
           }
         },
         "it": {
@@ -26751,7 +26751,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los temas con el mismo nombre siempre muestran sus direcciones."
+            "value": "Los tópicos con el mismo nombre siempre muestran sus direcciones."
           }
         },
         "it": {
@@ -27033,7 +27033,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Temas permitidos"
+            "value": "Tópicos permitidos"
           }
         },
         "it": {
@@ -27080,7 +27080,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes se conservan en el historial y en el Centro de notificaciones sin sonido, banners ni encender la pantalla. Silenciar un tema siempre tiene prioridad."
+            "value": "Los mensajes se conservan en el historial y en el Centro de notificaciones sin sonido, banners ni encender la pantalla. Silenciar un tópico siempre tiene prioridad."
           }
         },
         "it": {
@@ -27174,7 +27174,7 @@
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Los mensajes permitidos usan el sonido y la urgencia habituales del tema. Se siguen aplicando los ajustes de notificaciones y concentración de iOS."
+            "value": "Los mensajes permitidos usan el sonido y la urgencia habituales del tópico. Se siguen aplicando los ajustes de notificaciones y concentración de iOS."
           }
         },
         "it": {
@@ -27950,6 +27950,289 @@
           "stringUnit": {
             "state": "translated",
             "value": "Heure"
+          }
+        }
+      }
+    },
+    "Topic details": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topic details"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Themendetails"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Detalles del tópico"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Détails du sujet"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dettagli dell’argomento"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderwerpdetails"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Szczegóły tematu"
+          }
+        }
+      }
+    },
+    "Topic URL": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topic URL"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Themen-URL"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL del tópico"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL du sujet"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "URL dell’argomento"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderwerp-URL"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Adres URL tematu"
+          }
+        }
+      }
+    },
+    "Subscribed": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Subscribed"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonniert am"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Fecha de suscripción"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Date d’abonnement"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data di iscrizione"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geabonneerd op"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data subskrypcji"
+          }
+        }
+      }
+    },
+    "The subscription date was not recorded for this topic.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The subscription date was not recorded for this topic."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Das Abonnementdatum wurde für dieses Thema nicht erfasst."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se registró la fecha de suscripción a este tópico."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La date d’abonnement à ce sujet n’a pas été enregistrée."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La data di iscrizione a questo argomento non è stata registrata."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De abonnementsdatum is niet vastgelegd voor dit onderwerp."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Data subskrypcji tego tematu nie została zapisana."
+          }
+        }
+      }
+    },
+    "About this topic": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "About this topic"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Über dieses Thema"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Acerca de este tópico"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "À propos de ce sujet"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informazioni su questo argomento"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Over dit onderwerp"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Informacje o tym temacie"
+          }
+        }
+      }
+    },
+    "Subscription date unknown": {
+      "extractionState": "manual",
+      "comment": "Unknown date in Topic details. The value refers to the subscription date.",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unknown"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Unbekannt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Desconocida"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inconnue"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sconosciuta"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onbekend"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieznana"
           }
         }
       }

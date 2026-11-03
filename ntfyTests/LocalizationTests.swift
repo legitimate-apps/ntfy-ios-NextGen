@@ -55,6 +55,25 @@ final class LocalizationTests: XCTestCase {
         }
     }
 
+    func testSpanishTopicTerminologyDoesNotUseTema() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        XCTAssertFalse(strings.isEmpty)
+        let expression = try NSRegularExpression(pattern: #"\btemas?\b"#, options: .caseInsensitive)
+        let offendingKeys = strings.compactMap { key, entry -> String? in
+            guard let spanish = (entry["localizations"] as? [String: Any])?["es"] else { return nil }
+            let hasTema = stringUnits(spanish).contains { unit in
+                guard let text = unit["value"] as? String else { return false }
+                return expression.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)) != nil
+            }
+            return hasTema ? key : nil
+        }.sorted()
+        XCTAssertTrue(offendingKeys.isEmpty,
+                      "Spanish translations must use tópico/tópicos instead of tema/temas. Offending keys: \(offendingKeys.joined(separator: ", "))")
+    }
+
     func testLicenseDetailKeepsCanonicalNoticesInGerman() {
         for component in OpenSourceLicenses.components {
             XCTAssertEqual(component.localizedFullText, component.fullText, component.name)

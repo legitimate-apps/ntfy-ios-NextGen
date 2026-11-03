@@ -458,4 +458,59 @@ final class FcmTeardownLedgerTests: XCTestCase {
         r.reconcile(reason: "APNs token")
         XCTAssertEqual(fake.unsubscribes.count, 1)
     }
+
+    /// Matches the iPad: set/read/relaunch work while app-group synchronize returns false.
+    private final class UnsynchronizedDefaults: UserDefaults {
+        var dropJournalWrites = false
+        override func synchronize() -> Bool { false }
+        override func set(_ value: Any?, forKey key: String) {
+            if dropJournalWrites && key.hasPrefix(FcmTeardownLedger.key) { return }
+            super.set(value, forKey: key)
+        }
+    }
+
+    func testFalseSynchronizeDoesNotRejectAnAcceptedJournalWrite() throws {
+        defaults = UnsynchronizedDefaults(suiteName: suite)!
+        let entry = try XCTUnwrap(ledger().record("device-condition"))
+        XCTAssertEqual(ledger().entries.first?.id, entry.id)
+        XCTAssertNotNil(UserDefaults(suiteName: suite)?.data(forKey: FcmTeardownLedger.key))
+    }
+
+    func testUnsubscribeDeletesBeforeDispatchWhenSynchronizeReportsFalse() {
+        defaults = UnsynchronizedDefaults(suiteName: suite)!
+        let fake = Subscriber()
+        let r = reconciler(fake)
+        let row = live()
+        var manager = SubscriptionManager(store: store)
+        manager.reconciler = r
+        manager.unsubscribe(row)
+        drain()
+        XCTAssertNil(store.getSubscription(baseUrl: Config.appBaseUrl, topic: "alerts"))
+        XCTAssertEqual(fake.unsubscribes.count, 1)
+    }
+
+    func testUnknownFormatIsPreservedWhenSynchronizeReportsFalse() throws {
+        defaults = UnsynchronizedDefaults(suiteName: suite)!
+        let raw = Data("{\"version\":2,\"entries\":{}}".utf8)
+        defaults.set(raw, forKey: FcmTeardownLedger.key)
+        XCTAssertNotNil(ledger().record("new"))
+        let backups = defaults.dictionaryRepresentation().filter { $0.key.hasPrefix(FcmTeardownLedger.key + ".preserved.") }
+        XCTAssertEqual(backups.count, 1)
+        XCTAssertEqual(backups.first?.value as? Data, raw)
+    }
+
+    func testRejectedJournalWriteKeepsSubscriptionAndDoesNotDispatch() {
+        let rejected = UnsynchronizedDefaults(suiteName: suite)!
+        defaults = rejected
+        rejected.dropJournalWrites = true
+        let fake = Subscriber()
+        let r = reconciler(fake)
+        let row = live()
+        var manager = SubscriptionManager(store: store)
+        manager.reconciler = r
+        manager.unsubscribe(row)
+        drain()
+        XCTAssertNotNil(store.getSubscription(baseUrl: Config.appBaseUrl, topic: "alerts"))
+        XCTAssertTrue(fake.unsubscribes.isEmpty)
+    }
 }

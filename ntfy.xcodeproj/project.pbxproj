@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+        A124DA7E0000000000000004 /* SubscriptionDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A124DA7E0000000000000005; };
 		36F3897CDC503084F420B8E4 = {isa = PBXBuildFile; fileRef = 00430C4D44D528D53F5950F8; };
 		729248E8E1BB5BEEC70AAFF9 = {isa = PBXBuildFile; fileRef = E025341946943C384D6CD042; };
 		AB972269B58CFCF67743BFD8 = {isa = PBXBuildFile; fileRef = C34B0B1308D16855C0A4108A; };
@@ -245,6 +246,7 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+        A124DA7E0000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/SubscriptionDateTests.swift"; sourceTree = SOURCE_ROOT; };
 		00430C4D44D528D53F5950F8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietHoursStorageTests.swift"; sourceTree = SOURCE_ROOT; };
 		E025341946943C384D6CD042 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Settings/QuietHoursView.swift"; sourceTree = SOURCE_ROOT; };
 		C34B0B1308D16855C0A4108A = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Persistence/QuietHours.swift"; sourceTree = SOURCE_ROOT; };
@@ -260,6 +262,7 @@
 		E35B6F3CB1D3DA3B27C97E66 /* DiagnosticReports.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DiagnosticReports.swift; sourceTree = "<group>"; };
 		10E74BB28FBB4650A30BBAEC /* FcmTeardownLedgerTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FcmTeardownLedgerTests.swift; sourceTree = "<group>"; };
 		300924C0CFF04C96AC031DE6 /* FcmTeardownLedger.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FcmTeardownLedger.swift; sourceTree = "<group>"; };
+        A124DA7E0000000000000001 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 10.xcdatamodel"; sourceTree = "<group>"; };
         A121A1E90000000000000001 = {isa = PBXFileReference; lastKnownFileType = wrapper.xcdatamodel; path = "Model 9.xcdatamodel"; sourceTree = "<group>"; };
 		02024E5F283D7CBB0064224A /* Extensions.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = Extensions.swift; sourceTree = "<group>"; };
 		117A00022FD0000100F927E4 /* LaunchExperience.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LaunchExperience.swift; sourceTree = "<group>"; };
@@ -495,6 +498,7 @@
 				546000000000000000000001,
 				546000000000000000000002,
 				546000000000000000000003,
+                A124DA7E0000000000000005 /* SubscriptionDateTests.swift */,
 
 				DE1190000000000000000011 /* Localizable.xcstrings */,
 				DE1190000000000000000012 /* InfoPlist.xcstrings */,
@@ -1063,6 +1067,7 @@
 				BA7FAEB5727645FB9699BDF1,
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
+                A124DA7E0000000000000004 /* SubscriptionDateTests.swift in Sources */,
 				547100000000000000000303,
 				547100000000000000000304,
 				DE1190000000000000000004 /* LocalizationTests.swift in Sources */,
@@ -1545,8 +1550,9 @@
                 A18000130000000000000001 /* Model 7.xcdatamodel */,
                 F11900000000000000000014 /* Model 8.xcdatamodel */,
                 A121A1E90000000000000001 /* Model 9.xcdatamodel */,
+                A124DA7E0000000000000001 /* Model 10.xcdatamodel */,
 			);
-			currentVersion = A121A1E90000000000000001 /* Model 9.xcdatamodel */;
+			currentVersion = A124DA7E0000000000000001 /* Model 10.xcdatamodel */;
 			path = ntfy.xcdatamodeld;
 			sourceTree = "<group>";
 			versionGroupType = wrapper.xcdatamodel;
