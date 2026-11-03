@@ -36,6 +36,7 @@ struct NotificationStatusView: View {
             statusRow(DeliveryHealthCopy.pushRegistration,
                       delegate.hasPushRegistration ? DeliveryHealthCopy.registered : DeliveryHealthCopy.waiting)
             statusRow(DeliveryHealthCopy.pendingTopics, String(pendingCount))
+            ForEach(delegate.notificationSwitches.warnings(), id: \.self, content: warningRow)
             if delegate.notificationAuthorizationStatus == .notDetermined {
                 Button(DeliveryHealthCopy.allowNotifications) {
                     delegate.requestStandardNotificationAuthorization { result = nil }
@@ -67,6 +68,9 @@ struct NotificationStatusView: View {
                 delegate.refreshNotificationSettings()
             }
         }
+        // Low Power Mode and Background App Refresh can change from Control Center or Settings while this screen is open.
+        .onReceive(NotificationCenter.default.publisher(for: .NSProcessInfoPowerStateDidChange)) { _ in delegate.refreshNotificationSettings() }
+        .onReceive(NotificationCenter.default.publisher(for: UIApplication.backgroundRefreshStatusDidChangeNotification)) { _ in delegate.refreshNotificationSettings() }
     }
 
     private var selfHostedSubscriptions: [Subscription] {
@@ -88,6 +92,19 @@ struct NotificationStatusView: View {
             Text(value).font(.subheadline).foregroundColor(.secondary)
         }
         .accessibilityElement(children: .combine)
+    }
+
+    private func warningRow(_ warning: NotificationWarning) -> some View {
+        HStack(alignment: .top, spacing: 10) {
+            Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange).accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 3) {
+                Text(warning.title)
+                Text(warning.detail).font(.subheadline).foregroundColor(.secondary)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+        .accessibilityElement(children: .combine)
+        .accessibilityIdentifier("status-warning-\(warning.rawValue)")
     }
 
     private func repair() {

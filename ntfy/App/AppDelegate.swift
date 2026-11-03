@@ -48,6 +48,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
     @Published var selectedBaseUrl: String? = nil
     @Published private(set) var notificationAuthorizationStatus: UNAuthorizationStatus = .notDetermined
     @Published private(set) var timeSensitiveSetting: UNNotificationSetting = .notSupported
+    @Published private(set) var notificationSwitches = NotificationSwitches()
     @Published private(set) var hasPhoneRegistration = false
     @Published private(set) var hasPushRegistration = false
     @Published private(set) var criticalAlertSetting: UNNotificationSetting = .notSupported
@@ -210,7 +211,10 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
         UNUserNotificationCenter.current().getNotificationSettings { settings in
             let isAuthorized = settings.criticalAlertSetting == .enabled
             DispatchQueue.main.async {
-                self.notificationAuthorizationStatus = settings.authorizationStatus
+                let switches = NotificationSwitches(settings: settings, backgroundRefresh: UIApplication.shared.backgroundRefreshStatus,
+                                                   lowPowerMode: ProcessInfo.processInfo.isLowPowerModeEnabled).applyingDebugOverride()
+                self.notificationSwitches = switches
+                self.notificationAuthorizationStatus = switches.authorization
                 if FirebaseApp.app() != nil {
                     self.hasPhoneRegistration = Messaging.messaging().apnsToken != nil
                     // Keep token mode: FID registration opts out of tokens used by the reconciler.
