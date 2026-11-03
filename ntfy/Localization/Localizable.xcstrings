@@ -28236,6 +28236,852 @@
           }
         }
       }
+    },
+    "Alerts are hidden": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerts are hidden"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinweise sind verborgen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los avisos están ocultos"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli avvisi sono nascosti"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerty są ukryte"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen blijven verborgen"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les alertes sont masquées"
+          }
+        }
+      }
+    },
+    "Banners, Lock Screen and Notification Center are all off, so new messages won't show on screen. Tap Open Settings, then turn one of them on.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banners, Lock Screen and Notification Center are all off, so new messages won't show on screen. Tap Open Settings, then turn one of them on."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banner, Sperrbildschirm und Mitteilungen sind alle deaktiviert, daher erscheinen neue Nachrichten nicht auf dem Bildschirm. Tippe auf „Einstellungen öffnen“ und aktiviere einen davon."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las tiras, la pantalla de bloqueo y el Centro de notificaciones están desactivados, así que los mensajes nuevos no aparecerán en pantalla. Pulsa «Abrir Ajustes» y activa alguno de ellos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banner, schermata di blocco e Centro Notifiche sono tutti disattivati, quindi i nuovi messaggi non compaiono sullo schermo. Tocca 'Apri Impostazioni' e attivane uno."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banery, ekran blokady i Centrum powiadomień są wyłączone, więc nowe wiadomości nie pojawią się na ekranie. Stuknij „Otwórz Ustawienia” i włącz jedno z nich."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stroken, het toegangsscherm en het meldingencentrum staan allemaal uit, dus nieuwe berichten verschijnen niet op het scherm. Tik op 'Instellingen openen' en zet er een aan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les bannières, l’écran verrouillé et le centre de notifications sont tous désactivés : les nouveaux messages ne s’afficheront pas à l’écran. Touchez « Ouvrir Réglages », puis activez l’un d’eux."
+          }
+        }
+      }
+    },
+    "Banners are off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banners are off"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banner sind deaktiviert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Las tiras están desactivadas"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I banner sono disattivati"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Banery są wyłączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stroken staan uit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les bannières sont désactivées"
+          }
+        }
+      }
+    },
+    "New messages won't pop up on screen. Tap Open Settings, then turn on Banners.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New messages won't pop up on screen. Tap Open Settings, then turn on Banners."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Nachrichten erscheinen nicht als Banner auf dem Bildschirm. Tippe auf „Einstellungen öffnen“ und aktiviere „Banner“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes nuevos no aparecerán en pantalla. Pulsa «Abrir Ajustes» y activa «Tiras»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I nuovi messaggi non compaiono sullo schermo. Tocca 'Apri Impostazioni' e attiva 'Banner'."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe wiadomości nie pojawią się na ekranie. Stuknij „Otwórz Ustawienia” i włącz „Banery”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe berichten verschijnen niet bovenaan het scherm. Tik op 'Instellingen openen' en zet 'Stroken' aan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les nouveaux messages ne s’afficheront pas à l’écran. Touchez « Ouvrir Réglages », puis activez « Bannières »."
+          }
+        }
+      }
+    },
+    "Lock Screen alerts are off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lock Screen alerts are off"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hinweise auf dem Sperrbildschirm sind aus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los avisos en la pantalla de bloqueo están desactivados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli avvisi nella schermata di blocco sono disattivati"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Alerty na ekranie blokady są wyłączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingen op het toegangsscherm staan uit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les alertes sur l’écran verrouillé sont désactivées"
+          }
+        }
+      }
+    },
+    "New messages won't show while your phone is locked. Tap Open Settings, then turn on Lock Screen.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New messages won't show while your phone is locked. Tap Open Settings, then turn on Lock Screen."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Nachrichten erscheinen nicht, solange dein Telefon gesperrt ist. Tippe auf „Einstellungen öffnen“ und aktiviere „Sperrbildschirm“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes nuevos no se mostrarán con el teléfono bloqueado. Pulsa «Abrir Ajustes» y activa «Pantalla de bloqueo»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I nuovi messaggi non compaiono quando il telefono è bloccato. Tocca 'Apri Impostazioni' e attiva 'Schermata di blocco'."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe wiadomości nie pojawią się, gdy telefon jest zablokowany. Stuknij „Otwórz Ustawienia” i włącz „Ekran blokady”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe berichten verschijnen niet terwijl je telefoon is vergrendeld. Tik op 'Instellingen openen' en zet 'Toegangsscherm' aan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les nouveaux messages ne s’afficheront pas quand le téléphone est verrouillé. Touchez « Ouvrir Réglages », puis activez « Écran verrouillé »."
+          }
+        }
+      }
+    },
+    "Notification Center is off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification Center is off"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Mitteilungszentrale ist deaktiviert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El Centro de notificaciones está desactivado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il Centro Notifiche è disattivato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Centrum powiadomień jest wyłączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Het meldingencentrum staat uit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le centre de notifications est désactivé"
+          }
+        }
+      }
+    },
+    "Messages you miss won't stay in Notification Center. Tap Open Settings, then turn on Notification Center.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Messages you miss won't stay in Notification Center. Tap Open Settings, then turn on Notification Center."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Verpasste Nachrichten bleiben nicht in der Mitteilungszentrale. Tippe auf „Einstellungen öffnen“ und aktiviere „Mitteilungen“ unter „Hinweise“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes que te pierdas no quedarán en el Centro de notificaciones. Pulsa «Abrir Ajustes» y activa «Centro de notificaciones»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi che ti perdi non restano nel Centro Notifiche. Tocca 'Apri Impostazioni' e attiva 'Centro Notifiche'."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości, które przegapisz, nie zostaną w Centrum powiadomień. Stuknij „Otwórz Ustawienia” i włącz „Centrum powiadomień”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichten die je mist, blijven niet in het meldingencentrum staan. Tik op 'Instellingen openen' en zet 'Meldingencentrum' aan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages manqués ne resteront pas dans le centre de notifications. Touchez « Ouvrir Réglages », puis activez « Centre de notifications »."
+          }
+        }
+      }
+    },
+    "Sounds are off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sounds are off"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Töne sind deaktiviert"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los sonidos están desactivados"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I suoni sono disattivati"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dźwięki są wyłączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geluiden staan uit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les sons sont désactivés"
+          }
+        }
+      }
+    },
+    "New messages arrive without a sound. Tap Open Settings, then turn on Sounds.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "New messages arrive without a sound. Tap Open Settings, then turn on Sounds."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Neue Nachrichten kommen ohne Ton an. Tippe auf „Einstellungen öffnen“ und aktiviere „Töne“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes nuevos llegan sin sonido. Pulsa «Abrir Ajustes» y activa «Sonidos»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I nuovi messaggi arrivano senza suono. Tocca 'Apri Impostazioni' e attiva 'Suoni'."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nowe wiadomości przychodzą bez dźwięku. Stuknij „Otwórz Ustawienia” i włącz „Dźwięki”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nieuwe berichten komen zonder geluid binnen. Tik op 'Instellingen openen' en zet 'Geluiden' aan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les nouveaux messages arrivent sans son. Touchez « Ouvrir Réglages », puis activez « Sons »."
+          }
+        }
+      }
+    },
+    "Scheduled Summary is on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scheduled Summary is on"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Geplante Übersicht ist aktiv"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El resumen programado está activado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il riepilogo programmato è attivo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Planowe podsumowania są włączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gepland overzicht staat aan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le résumé programmé est activé"
+          }
+        }
+      }
+    },
+    "Regular alerts are held and shown together at set times, not right away. Tap Open Settings, then choose Immediate Delivery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Regular alerts are held and shown together at set times, not right away. Tap Open Settings, then choose Immediate Delivery."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Normale Hinweise werden gesammelt und zu festen Zeiten gemeinsam angezeigt, nicht sofort. Tippe auf „Einstellungen öffnen“ und wähle „Sofortige Zustellung“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los avisos normales se retienen y se muestran juntos a ciertas horas, no al instante. Pulsa «Abrir Ajustes» y elige «Entrega inmediata»."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gli avvisi normali vengono trattenuti e mostrati insieme a orari prestabiliti, non subito. Tocca 'Apri Impostazioni' e scegli 'Recapito immediato'."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zwykłe alerty są wstrzymywane i pokazywane razem o ustalonych porach, a nie od razu. Stuknij „Otwórz Ustawienia” i wybierz „Natychmiast”."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gewone meldingen worden bewaard en op vaste tijden samen getoond, niet meteen. Tik op 'Instellingen openen' en kies 'Onmiddellijke aflevering'."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les alertes ordinaires sont mises de côté et affichées ensemble à des heures fixes, pas tout de suite. Touchez « Ouvrir Réglages », puis choisissez « Distribution immédiate »."
+          }
+        }
+      }
+    },
+    "Background App Refresh is off": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background App Refresh is off"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundaktualisierung ist aus"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La actualización en segundo plano está desactivada"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna app in background è disattivato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odświeżanie aplikacji w tle jest wyłączone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ververs op achtergrond staat uit"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’actualisation en arrière-plan est désactivée"
+          }
+        }
+      }
+    },
+    "iOS won't let the app update in the background, so messages can arrive late or only when you open it. Turn it on in Settings → General → Background App Refresh.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS won't let the app update in the background, so messages can arrive late or only when you open it. Turn it on in Settings → General → Background App Refresh."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS erlaubt der App keine Aktualisierung im Hintergrund, daher können Nachrichten verspätet oder erst beim Öffnen der App eintreffen. Aktiviere sie unter Einstellungen → Allgemein → Hintergrundaktualisierung."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS no permite que la app se actualice en segundo plano, así que los mensajes pueden llegar tarde o solo al abrirla. Actívala en Ajustes → General → Actualización en segundo plano."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS non consente all'app di aggiornarsi in background, quindi i messaggi possono arrivare in ritardo o solo quando la apri. Attivala in Impostazioni → Generali → Aggiorna app in background."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS nie pozwala aplikacji odświeżać się w tle, więc wiadomości mogą docierać z opóźnieniem lub dopiero po otwarciu aplikacji. Włącz to w Ustawieniach → Ogólne → Odświeżanie aplikacji w tle."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS laat de app niet op de achtergrond bijwerken, dus berichten kunnen te laat of pas bij het openen van de app binnenkomen. Zet dit aan via Instellingen → Algemeen → Ververs op achtergrond."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS n’autorise pas l’app à s’actualiser en arrière-plan : les messages peuvent arriver en retard ou seulement à l’ouverture de l’app. Activez cette option dans Réglages → Général → Actualiser en arrière-plan."
+          }
+        }
+      }
+    },
+    "Background App Refresh is restricted": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Background App Refresh is restricted"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hintergrundaktualisierung ist eingeschränkt"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "La actualización en segundo plano está restringida"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aggiorna app in background è limitato"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Odświeżanie aplikacji w tle jest ograniczone"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ververs op achtergrond is beperkt"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’actualisation en arrière-plan est restreinte"
+          }
+        }
+      }
+    },
+    "Screen Time or device management blocks background updates, so messages can arrive late. Only whoever set the restriction can change it.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Screen Time or device management blocks background updates, so messages can arrive late. Only whoever set the restriction can change it."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Bildschirmzeit oder die Geräteverwaltung blockiert Hintergrundaktualisierungen, daher können Nachrichten verspätet eintreffen. Nur wer die Einschränkung eingerichtet hat, kann sie ändern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tiempo en pantalla o la administración del dispositivo bloquean las actualizaciones en segundo plano, así que los mensajes pueden llegar tarde. Solo quien definió la restricción puede cambiarla."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tempo di utilizzo o la gestione del dispositivo bloccano gli aggiornamenti in background, quindi i messaggi possono arrivare in ritardo. Solo chi ha impostato la restrizione può modificarla."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Czas przed ekranem lub zarządzanie urządzeniem blokuje odświeżanie w tle, więc wiadomości mogą docierać z opóźnieniem. Ograniczenie może zmienić tylko osoba, która je ustawiła."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Schermtijd of apparaatbeheer blokkeert achtergrondupdates, dus berichten kunnen te laat binnenkomen. Alleen wie de beperking heeft ingesteld, kan dit wijzigen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Temps d’écran ou la gestion de l’appareil bloquent les actualisations en arrière-plan : les messages peuvent arriver en retard. Seule la personne qui a défini la restriction peut la modifier."
+          }
+        }
+      }
+    },
+    "Low Power Mode is on": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Low Power Mode is on"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stromsparmodus ist aktiv"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "El modo de bajo consumo está activado"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Il risparmio energetico è attivo"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tryb niskiego zużycia energii jest włączony"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Energiebesparingsmodus staat aan"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Le mode économie d’énergie est activé"
+          }
+        }
+      }
+    },
+    "iOS pauses background updates to save battery, so messages can arrive late. Turn it off in Settings → Battery.": {
+      "extractionState": "manual",
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS pauses background updates to save battery, so messages can arrive late. Turn it off in Settings → Battery."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS pausiert Hintergrundaktualisierungen, um Akku zu sparen, daher können Nachrichten verspätet eintreffen. Deaktiviere ihn unter Einstellungen → Batterie."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS pausa las actualizaciones en segundo plano para ahorrar batería, así que los mensajes pueden llegar tarde. Desactívalo en Ajustes → Batería."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS sospende gli aggiornamenti in background per risparmiare batteria, quindi i messaggi possono arrivare in ritardo. Disattivalo in Impostazioni → Batteria."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS wstrzymuje odświeżanie w tle, aby oszczędzać baterię, więc wiadomości mogą docierać z opóźnieniem. Wyłącz go w Ustawieniach → Bateria."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS pauzeert achtergrondupdates om batterij te sparen, dus berichten kunnen te laat binnenkomen. Zet de modus uit via Instellingen → Batterij."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "iOS met en pause les actualisations en arrière-plan pour économiser la batterie : les messages peuvent arriver en retard. Désactivez ce mode dans Réglages → Batterie."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
