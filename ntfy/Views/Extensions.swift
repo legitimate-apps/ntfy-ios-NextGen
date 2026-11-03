@@ -213,7 +213,8 @@ func renderMessageTitle(_ source: String) -> AttributedString {
 /// Markdown presentation intents, so resolve those intents into real fonts.
 func makeMessageNSAttributedString(
     _ attributed: AttributedString,
-    style: MessageTextStyle
+    style: MessageTextStyle,
+    compatibleWith traitCollection: UITraitCollection? = nil
 ) -> NSAttributedString {
     let bridged = NSAttributedString(attributed)
     let output = NSMutableAttributedString(
@@ -239,7 +240,9 @@ func makeMessageNSAttributedString(
         let upper = plainText.index(plainText.startIndex, offsetBy: upperOffset)
         let range = NSRange(lower..<upper, in: plainText)
 
-        var descriptor = UIFontDescriptor.preferredFontDescriptor(withTextStyle: style.uiTextStyle)
+        var descriptor = UIFontDescriptor.preferredFontDescriptor(
+            withTextStyle: style.uiTextStyle, compatibleWith: traitCollection
+        )
         var traits = descriptor.symbolicTraits.union(style.baseTraits)
         if let intent = run.inlinePresentationIntent {
             if intent.contains(.stronglyEmphasized) {
@@ -331,6 +334,23 @@ func applyMessageWrapping(to attributed: NSAttributedString) -> NSAttributedStri
 final class MessageTextView: UITextView {
     private var lastLaidOutWidth: CGFloat = 0
     private var messageText: NSAttributedString?
+    private var messageSource: AttributedString?
+    private var messageStyle: MessageTextStyle = .body
+
+    func setMessageText(_ source: AttributedString, style: MessageTextStyle) {
+        messageSource = source
+        messageStyle = style
+        setMessageText(makeMessageNSAttributedString(source, style: style, compatibleWith: traitCollection))
+    }
+
+    override func traitCollectionDidChange(_ previousTraitCollection: UITraitCollection?) {
+        super.traitCollectionDidChange(previousTraitCollection)
+        guard previousTraitCollection?.preferredContentSizeCategory != traitCollection.preferredContentSizeCategory,
+              let source = messageSource else { return }
+        // UIKit adjusts preferred fonts automatically, but derived monospaced
+        // Markdown fonts need to be resolved again for the new category.
+        setMessageText(source, style: messageStyle)
+    }
 
     func setMessageText(_ next: NSAttributedString) {
         guard messageText?.isEqual(to: next) != true else {
