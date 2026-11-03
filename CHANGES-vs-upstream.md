@@ -48,8 +48,8 @@ Later rows use this repository's own PR numbers.
 | 2026-10-10 | Add an update sheet listing recent release changes and request an App Store rating only after sustained real use, with push-delivered messages and install age as eligibility conditions | feat | — | #21 | a555900 | 1.17.0 |
 | 2026-10-10 | Rewrite the README and Pages landing page with a quick start, App Store link, ntfy relationship and common questions | docs | — | #22 | 51ed6a0 | — |
 | 2026-10-18 | Add Time Sensitive notification capability for priority 4 and 5 alerts and replace the unsupported Critical Alerts switch with status and honest guidance | feat | [#1235](https://github.com/binwiederhier/ntfy/issues/1235) | #23 | 5ae2d3e | 1.17.0 |
-| 2026-10-18 | Deliver copy actions on iOS and show clipboard confirmation when the action includes text | fix | — | #13 | d52b9c2 | 1.17.0 |
-| 2026-10-18 | Add per-message Mark read and Mark unread swipe actions and accessible menu items using the existing Store read-state operation | feat | — | #26 | a3d236c | 1.17.0 |
+| 2026-10-18 | Deliver copy actions on iOS and show clipboard confirmation when the action includes text (by @harshitethic) | fix | — | #13 | d52b9c2 | 1.17.0 |
+| 2026-10-18 | Add per-message Mark read and Mark unread swipe actions and accessible menu items using the existing Store read-state operation (by @harshitethic) | feat | — | #26 | a3d236c | 1.17.0 |
 | 2026-10-18 | Pace server clear requests when marking a topic read, limit each action to 10 newest distinct messages, queue at most 30, and pause only that server's queue for its Retry-After after a 429 | fix | — | #27 | 5112533 | 1.17.0 |
 | 2026-10-18 | Ask for an App Store rating from the topic list after push-delivered messages on at least two days and a three-day install, only when notifications are enabled and topics are healthy | feat | — | #28 | 8aaf329 | 1.17.0 |
 | 2026-10-18 | Add topic long-press actions and a Pin/Unpin menu item, label the trailing swipe Unsubscribe, and place the Random topic button on its own line at accessibility sizes | feat | — | #29 | ead3513 | 1.17.0 |

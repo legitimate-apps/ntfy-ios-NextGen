@@ -60,6 +60,8 @@ The app builds and its full test suite runs on the simulator with no Apple or Fi
 
 Originally developed by [@Copephobia](https://github.com/Copephobia), who did the bulk of the initial work. The app was previously maintained by [Philipp C. Heckel](https://heckel.io). This fork is maintained independently from both.
 
+Contributors: [@harshitethic](https://github.com/harshitethic) fixed copy actions, added per-message Mark read and Mark unread, and first proposed the base64 message decoding and the VoiceOver labels.
+
 Upstream: [binwiederhier/ntfy-ios](https://github.com/binwiederhier/ntfy-ios). Server, Android app, and docs: [binwiederhier/ntfy](https://github.com/binwiederhier/ntfy), [ntfy.sh/docs](https://ntfy.sh/docs).
 
 ## Support the project
