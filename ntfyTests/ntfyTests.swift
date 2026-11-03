@@ -2598,6 +2598,37 @@ final class ntfyTests: XCTestCase {
     // Controls — these pass BOTH before and after the fix. They pin the exact axis under test
     // (handler-always-fires) and prove the change didn't alter normal auth outcomes.
 
+    // ntfy #1323: an intermediary's refusal must not accuse the ntfy password.
+    func testCheckAuthExplainsUnrecognizedForbiddenResponses() {
+        let bodies = ["<html>Cloudflare challenge</html>", "", "Forbidden", #"{"error":"access denied"}"#,
+                      #"{"code":40300,"http":401,"error":"forbidden"}"#,
+                      #"{"code":"40300","http":403,"error":"forbidden"}"#]
+        for body in bodies {
+            let result = checkAuthResult(baseUrl: "https://proxy.invalid",
+                session: StubURLProtocol.session(status: 403, body: Data(body.utf8)))
+            guard case .Error(let message) = result else {
+                XCTFail("Unrecognized 403 must explain a possible proxy, got \(String(describing: result)) for \(body)")
+                continue
+            }
+            XCTAssertTrue(message.contains("403"))
+            XCTAssertTrue(message.contains("Custom HTTP headers"))
+            XCTAssertFalse(message.contains("Invalid login"))
+        }
+    }
+
+    func testCheckAuthKeepsNtfyAuthorizationRefusals() {
+        for status in [401, 403] {
+            let body = #"{"code":\#(status * 100),"http":\#(status),"error":"refused","link":"https://docs.ntfy.sh"}"#
+            let result = checkAuthResult(baseUrl: "https://ntfy.invalid",
+                session: StubURLProtocol.session(status: status, body: Data(body.utf8),
+                    headers: ["Content-Type": "application/json; charset=utf-8"]))
+            guard case .Unauthorized = result else {
+                XCTFail("Real ntfy HTTP \(status) must keep the existing sign-in message")
+                continue
+            }
+        }
+    }
+
     func testCheckAuthUnauthorizedControl() {
         let result = checkAuthResult(baseUrl: "https://ntfy.sh",
                                      session: StubURLProtocol.session(status: 401, body: Data()))
@@ -9607,6 +9638,180 @@ final class TopicSignInNoticeTests: XCTestCase {
             let visible = try renderedText()
             XCTAssertFalse(visible.contains("server refused"))
             XCTAssertTrue(visible.contains("no messages yet"), "Other failures retain the existing empty state")
+        }
+    }
+}
+
+
+/// Native hosted-view tests run on the simulator with the real SwiftUI Save button and fields.
+/// They require no new production API, so the same tests run on the unchanged base revision.
+@MainActor
+final class AuthPapercutsEditorTests: XCTestCase {
+    private func withEditor(_ url: String, existing: Bool = false, editing: Bool = false,
+                            check: (UIWindow, () -> String?) throws -> Void) throws {
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
+        if existing || editing { XCTAssertTrue(store.saveUser(baseUrl: "https://editor.invalid/ntfy", username: "old", password: "old-secret")) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        var savedURL: String?
+        let root = UserEditorView(selectedUser: editing ? store.getUser(baseUrl: "https://editor.invalid/ntfy") : nil, defaultBaseUrl: url,
+            onSave: { base, _, _ in savedURL = base; return true }, onDelete: { _ in true }, onCancel: {})
+            .environmentObject(store).environment(\.managedObjectContext, store.context)
+            .environment(\.colorScheme, .light).environment(\.sizeCategory, .large)
+        window.rootViewController = UIHostingController(rootView: root)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        settle(window)
+        try check(window, { savedURL })
+    }
+
+    private func settle(_ window: UIWindow) {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        window.layoutIfNeeded()
+    }
+
+    private func descendants(_ view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap(descendants)
+    }
+
+    private func enterCredentials(_ window: UIWindow) throws {
+        let fields = descendants(window).compactMap { $0 as? UITextField }
+        let username = try XCTUnwrap(fields.first { $0.textContentType == .username })
+        let password = try XCTUnwrap(fields.first { $0.isSecureTextEntry })
+        for (field, value) in [(username, "new-user"), (password, "test-secret")] {
+            field.text = value
+            field.sendActions(for: .editingChanged)
+        }
+        settle(window)
+    }
+
+    private func saveItem(_ window: UIWindow) throws -> UIBarButtonItem {
+        func controllers(_ vc: UIViewController) -> [UIViewController] {
+            [vc] + vc.children.flatMap(controllers)
+        }
+        let navigationItems = controllers(try XCTUnwrap(window.rootViewController)).map(\.navigationItem)
+            + descendants(window).compactMap { $0 as? UINavigationBar }.flatMap { $0.items ?? [] }
+        let items = navigationItems.flatMap { item -> [UIBarButtonItem] in
+            if #available(iOS 16.0, *) {
+                return (item.rightBarButtonItems ?? []) + item.trailingItemGroups.flatMap(\.barButtonItems)
+            }
+            return item.rightBarButtonItems ?? []
+        }
+        return try XCTUnwrap(items.first { $0.title == "Save" })
+    }
+
+    private func renderedText(_ window: UIWindow) throws -> String {
+        settle(window)
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "Add user validation"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let request = VNRecognizeTextRequest()
+        request.recognitionLanguages = ["en-US"]
+        request.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage)).perform([request])
+        return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
+    }
+
+    // Owner review: a blank Add user form is quiet, but Save still requires valid input.
+    // Exercise the mounted form as it becomes partial and is cleared again.
+    func testUntouchedNewUserIsQuietAndPartialInputExplainsFirstMissingItem() throws {
+        try withEditor("") { window, _ in
+            let fields = descendants(window).compactMap { $0 as? UITextField }
+            let username = try XCTUnwrap(fields.first { $0.textContentType == .username })
+            let password = try XCTUnwrap(fields.first { $0.isSecureTextEntry })
+            let url = try XCTUnwrap(fields.first { $0 !== username && $0 !== password })
+            @MainActor func enter(_ field: UITextField, _ text: String) {
+                field.text = text
+                field.sendActions(for: .editingChanged)
+                settle(window)
+            }
+            @MainActor func assertReason(_ expected: String?, file: StaticString = #filePath, line: UInt = #line) throws {
+                XCTAssertFalse(try saveItem(window).isEnabled, file: file, line: line)
+                let visible = try renderedText(window)
+                if let expected {
+                    XCTAssertTrue(visible.contains(expected), "Missing expected reason: \(visible)", file: file, line: line)
+                } else {
+                    XCTAssertFalse(visible.contains("Enter a "), "A blank form must not show a validation hint: \(visible)", file: file, line: line)
+                }
+            }
+            try assertReason(nil)
+            enter(username, "new-user")
+            try assertReason("Enter a valid server URL")
+            enter(username, "")
+            enter(password, "test-secret")
+            try assertReason("Enter a valid server URL")
+            enter(password, "")
+            enter(url, "https://editor.invalid")
+            try assertReason("Enter a username.")
+            enter(username, "new-user")
+            try assertReason("Enter a password.")
+            enter(url, "")
+            enter(username, "")
+            try assertReason(nil)
+        }
+    }
+
+    func testEditingExistingLoginKeepsBlankSecretAndValidationBehavior() throws {
+        try withEditor("", editing: true) { window, _ in
+            XCTAssertTrue(try saveItem(window).isEnabled, "Blank secret preserves the existing login")
+            let visible = try renderedText(window)
+            XCTAssertFalse(visible.contains("Enter a username."))
+            XCTAssertFalse(visible.contains("Enter a password."))
+            let username = try XCTUnwrap(descendants(window).compactMap { $0 as? UITextField }.first {
+                $0.textContentType == .username
+            })
+            username.text = ""
+            username.sendActions(for: .editingChanged)
+            settle(window)
+            XCTAssertFalse(try saveItem(window).isEnabled)
+            XCTAssertTrue(try renderedText(window).contains("Enter a username."))
+        }
+    }
+
+    func testPastedWhitespaceAndUppercaseSchemeEnableSaveAndSaveNormalizedURL() throws {
+        for input in ["https://editor.invalid/ntfy", " https://editor.invalid/ntfy ", "\nhttps://editor.invalid/ntfy\n", "HTTPS://editor.invalid/ntfy", " HtTpS://editor.invalid/ntfy/\n"] {
+            try withEditor(input) { window, saved in
+                try enterCredentials(window)
+                let save = try saveItem(window)
+                XCTAssertTrue(save.isEnabled, "Valid pasted URL should enable Save: \(input.debugDescription)")
+                _ = try renderedText(window)
+                if save.isEnabled {
+                    let action = try XCTUnwrap(save.action, "Save must expose its native target/action")
+                    UIApplication.shared.sendAction(action, to: save.target, from: save, for: nil)
+                    settle(window)
+                    XCTAssertEqual(saved(), "https://editor.invalid/ntfy", "Save must receive the same normalized URL used for validation")
+                }
+            }
+        }
+    }
+
+    func testDisabledSaveExplainsInvalidURLAndMissingCredentials() throws {
+        for invalid in ["ftp://editor.invalid", "https://bad host.invalid"] {
+            try withEditor(invalid) { window, _ in
+                try enterCredentials(window)
+                XCTAssertFalse(try saveItem(window).isEnabled, "Malformed server URLs must not be saved: \(invalid)")
+                XCTAssertTrue(try renderedText(window).contains("Enter a valid server URL starting with http:// or https://."))
+            }
+        }
+        try withEditor("https://editor.invalid") { window, _ in
+            XCTAssertFalse(try saveItem(window).isEnabled)
+            XCTAssertTrue(try renderedText(window).contains("Enter a username."))
+        }
+    }
+
+    func testDuplicateServerExplainsEditingExistingLogin() throws {
+        for input in ["https://editor.invalid/ntfy", " HTTPS://editor.invalid/ntfy/\n"] {
+            try withEditor(input, existing: true) { window, _ in
+                try enterCredentials(window)
+                XCTAssertFalse(try saveItem(window).isEnabled)
+                XCTAssertTrue(try renderedText(window).contains("This server already has a login. Go back and edit its existing login."))
+            }
         }
     }
 }

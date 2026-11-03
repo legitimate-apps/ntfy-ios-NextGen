@@ -59,8 +59,12 @@ struct UserEditorView: View {
                     ServerLoginFields(input: $login)
                 }
                 if (!login.username.isEmpty || !login.secret.isEmpty || !isNewUser),
-                   let notice = UrlSecurityNotice.message(for: baseUrl, isAccessToken: login.method == .token) {
+                   let notice = UrlSecurityNotice.message(for: normalizedBaseUrl, isAccessToken: login.method == .token) {
                     Text(notice).font(.footnote).foregroundColor(.secondary)
+                }
+                if let message = validationMessage, !isBlankNewUser {
+                    Text(message).font(.footnote).foregroundColor(.secondary)
+                        .accessibilityIdentifier("user-validation-error")
                 }
                 if editor.saveFailed {
                     Text(HardeningCopy.saveLoginFailed).foregroundColor(.secondary)
@@ -100,7 +104,7 @@ struct UserEditorView: View {
                     Button(action: saveAction) {
                         Text(String(localized: "Save"))
                     }
-                    .disabled(!isValid())
+                    .disabled(validationMessage != nil)
                 }
             }
         }
@@ -111,6 +115,7 @@ struct UserEditorView: View {
     }
     
     private func saveAction() {
+        let baseUrl = normalizedBaseUrl
         let enteredSecret = passwordForUserEdit(
             enteredPassword: login.secret, storedPassword: nil, isNewUser: isNewUser
         )
@@ -126,17 +131,36 @@ struct UserEditorView: View {
         return onDelete(selectedUser)
     }
     
-    private func isValid() -> Bool {
+    private var isBlankNewUser: Bool {
+        isNewUser && baseUrl.isEmpty && login.username.isEmpty && login.secret.isEmpty
+    }
+
+    private var normalizedBaseUrl: String {
+        var url = normalizeBaseUrl(baseUrl)
+        if let scheme = url.range(of: "^https?://", options: [.regularExpression, .caseInsensitive]) {
+            url.replaceSubrange(scheme, with: url[scheme].lowercased())
+        }
+        return url
+    }
+
+    private var validationMessage: String? {
         if isNewUser {
-            if baseUrl.range(of: "^https?://.+", options: .regularExpression, range: nil, locale: nil) == nil {
-                return false
-            } else if !login.isValid {
-                return false
-            } else if store.getUser(baseUrl: baseUrl) != nil {
-                return false
+            guard let url = URLComponents(string: normalizedBaseUrl),
+                  ["http", "https"].contains(url.scheme ?? ""),
+                  let host = url.host, !host.isEmpty, url.url != nil else {
+                return String(localized: "Enter a valid server URL starting with http:// or https://.")
+            }
+            if store.getUser(baseUrl: normalizedBaseUrl) != nil {
+                return String(localized: "This server already has a login. Go back and edit its existing login.")
             }
         }
-        return login.canSave(isEditing: !isNewUser, originalMethod: originalMethod)
+        guard login.canSave(isEditing: !isNewUser, originalMethod: originalMethod) else {
+            if login.method == .token {
+                return String(localized: "Enter a valid access token starting with tk_.")
+            }
+            return login.username.isEmpty ? String(localized: "Enter a username.") : String(localized: "Enter a password.")
+        }
+        return nil
     }
 }
 
