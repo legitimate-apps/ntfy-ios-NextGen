@@ -3146,6 +3146,243 @@ final class ntfyTests: XCTestCase {
         XCTAssertEqual(rows, 0, "the late response must not be stored")
     }
 
+    // MARK: A push stores its message but never moves the poll cursor (ntfy #868)
+    //
+    // APNs keeps only the newest push for an offline phone and drops others under load. While a push
+    // moved `lastNotificationId`, the next poll asked `since=<pushed id>` and the server never sent the
+    // messages in between, so any delivery gap became permanent loss. Only a poll proves the history
+    // before an id is complete. The next poll re-covers pushed messages; these tests pin that it fetches
+    // the gap without duplicating, re-alerting or reviving anything, in one process or two.
+
+    private func gapStore(_ url: URL? = nil) -> Store {
+        let store = Store(inMemory: true, storeURL: url, credentialStore: InMemoryCredentialStore())
+        store.notificationRemover = { _ in }
+        store.notificationBatchRemover = { _ in }
+        return store
+    }
+
+    private func gapMessage(_ id: String, _ time: Int64, _ topic: String, event: String = "message", sequence: String? = nil) -> Message {
+        Message(id: id, time: time, event: event, topic: topic, message: event == "message" ? "body-\(id)" : nil, sequenceID: sequence)
+    }
+
+    /// ntfy's `?poll=1&since=<id>`: the cached messages after that id, oldest first. An absent or
+    /// unknown id returns the whole cache.
+    private func gapServer(_ cache: [Message], since: String?) -> [Message] {
+        guard let since, let index = cache.firstIndex(where: { $0.id == since }) else { return cache }
+        return Array(cache[(index + 1)...])
+    }
+
+    private func gapRows(_ store: Store, _ subscription: Subscription) -> [ntfy.Notification] {
+        var rows: [ntfy.Notification] = []
+        store.context.performAndWait {
+            let request = ntfy.Notification.fetchRequest()
+            request.predicate = NSPredicate(format: "subscription == %@", subscription)
+            rows = ((try? store.context.fetch(request)) ?? []).sorted { ($0.id ?? "") < ($1.id ?? "") }
+        }
+        return rows
+    }
+
+    private func gapIDs(_ store: Store, _ subscription: Subscription) -> [String] {
+        gapRows(store, subscription).compactMap(\.id)
+    }
+
+    /// Recent enough that no retention policy drops it.
+    private var gapNow: Int64 { Int64(Date().timeIntervalSince1970) - 600 }
+
+    /// m1 arrived by poll; m2..m4 were lost while the phone was offline; only m5's push arrived.
+    private func gapAfterLostPushes(_ store: Store, topic: String) throws -> (Subscription, [Message]) {
+        let base = "https://ntfy.sh"
+        let sub = store.saveSubscription(baseUrl: base, topic: topic)
+        let t = gapNow
+        let cache = (1...5).map { gapMessage("\(topic)-m\($0)", t + Int64($0 * 10), topic) }
+        let first = try XCTUnwrap(store.pollRequest(for: sub))
+        XCTAssertNil(first.since, "premise: a new subscription polls since=all")
+        XCTAssertEqual(store.save(notificationsFromMessages: [cache[0]], polledWith: first)?.map(\.id), [cache[0].id])
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[0].id, "premise: a poll moves the cursor")
+        guard case .stored(_) = store.ingest(pushedMessage: cache[4], baseUrl: base, topic: topic) else {
+            XCTFail("premise: m5's push was not stored")
+            return (sub, cache)
+        }
+        return (sub, cache)
+    }
+
+    func testAPushDoesNotMoveThePollCursorPastMessagesThePhoneNeverReceived() throws {
+        let store = gapStore()
+        let (sub, cache) = try gapAfterLostPushes(store, topic: "gap868")
+        XCTAssertEqual(gapIDs(store, sub), [cache[0].id, cache[4].id])
+        let request = try XCTUnwrap(store.pollRequest(for: sub))
+        XCTAssertEqual(request.since, cache[0].id, "the push must leave the cursor at the last polled message")
+        let inserted = store.save(notificationsFromMessages: gapServer(cache, since: request.since), polledWith: request)
+        XCTAssertEqual(inserted?.map(\.id), cache[1...3].map(\.id), "the poll fetches the gap and skips the pushed message")
+        XCTAssertEqual(gapIDs(store, sub), cache.map(\.id), "one row each, no duplicate of the pushed message")
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[4].id, "the poll then moves the cursor past the pushed message")
+        XCTAssertEqual(store.save(notificationsFromMessages: gapServer(cache, since: cache[4].id), polledWith: try XCTUnwrap(store.pollRequest(for: sub)))?.count, 0)
+    }
+
+    func testAPollThatReCoversAPresentedPushDoesNotAlertItAgain() throws {
+        let store = gapStore()
+        let (sub, cache) = try gapAfterLostPushes(store, topic: "gap868-alert")
+        // The NSE records its presentation before handing the banner to iOS.
+        store.recordPresentation(message: cache[4], baseUrl: sub.baseUrl!)
+        XCTAssertTrue(store.wasAlerted(message: cache[4], baseUrl: sub.baseUrl!), "premise")
+        let request = try XCTUnwrap(store.pollRequest(for: sub))
+        let answer = gapServer(cache, since: request.since)
+        XCTAssertEqual(answer.map(\.id), cache[1...4].map(\.id), "premise: the poll re-covers the pushed message")
+        XCTAssertEqual(store.save(notificationsFromMessages: answer, polledWith: request)?.map(\.id), cache[1...3].map(\.id))
+        XCTAssertEqual(store.alertCandidates(from: answer, baseUrl: sub.baseUrl!).map(\.id), cache[1...3].map(\.id),
+                       "a presenting poll alerts the recovered gap, never the pushed message again")
+        let pushed = try XCTUnwrap(gapRows(store, sub).first { $0.id == cache[4].id })
+        XCTAssertTrue(pushed.alerted)
+        XCTAssertTrue(pushed.presented)
+    }
+
+    func testAPollThatReCoversADeletedPushDoesNotReviveIt() throws {
+        let store = gapStore()
+        let (sub, cache) = try gapAfterLostPushes(store, topic: "gap868-deleted")
+        store.delete(notification: try XCTUnwrap(gapRows(store, sub).first { $0.id == cache[4].id }))
+        XCTAssertEqual(gapIDs(store, sub), [cache[0].id], "premise: the user deleted the pushed message")
+        let request = try XCTUnwrap(store.pollRequest(for: sub))
+        XCTAssertEqual(request.since, cache[0].id)
+        let inserted = store.save(notificationsFromMessages: gapServer(cache, since: request.since), polledWith: request)
+        XCTAssertEqual(inserted?.map(\.id), cache[1...3].map(\.id))
+        XCTAssertEqual(gapIDs(store, sub), cache[0...3].map(\.id), "the deleted pushed message stays deleted")
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[4].id)
+    }
+
+    func testAPollThatReCoversAPushedDeleteOrClearDoesNotUndoIt() throws {
+        for event in ["message_delete", "message_clear"] {
+            for sameSecond in [false, true] {
+                let store = gapStore()
+                let topic = "gap868-\(event)-\(sameSecond)"
+                let sub = store.saveSubscription(baseUrl: "https://ntfy.sh", topic: topic)
+                let t = gapNow
+                let original = gapMessage("c1", t, topic, sequence: "job")
+                let update = gapMessage("c2", t + 10, topic, sequence: "job")   // lost
+                let control = gapMessage("c3", sameSecond ? t + 10 : t + 20, topic, event: event, sequence: "job")
+                let cache = [original, update, control]
+                XCTAssertEqual(store.save(notificationsFromMessages: [original], polledWith: try XCTUnwrap(store.pollRequest(for: sub)))?.count, 1)
+                _ = store.ingest(pushedMessage: control, baseUrl: sub.baseUrl!, topic: topic)
+                let expectedIDs = event == "message_delete" ? [String]() : [original.id]
+                XCTAssertEqual(gapIDs(store, sub), expectedIDs, "premise: the pushed \(event) applied (same second: \(sameSecond))")
+                let request = try XCTUnwrap(store.pollRequest(for: sub))
+                XCTAssertEqual(request.since, original.id, "\(event) same second: \(sameSecond)")
+                let inserted = store.save(notificationsFromMessages: gapServer(cache, since: request.since), polledWith: request)
+                XCTAssertEqual(inserted?.count, 0, "the older update must not revive the sequence (\(event), same second: \(sameSecond))")
+                XCTAssertEqual(gapIDs(store, sub), expectedIDs, "\(event) same second: \(sameSecond)")
+                if event == "message_clear" { XCTAssertEqual(gapRows(store, sub).first?.read, true, "the clear stays applied") }
+                XCTAssertEqual(store.pollRequest(for: sub)?.since, control.id, "\(event) same second: \(sameSecond)")
+            }
+        }
+    }
+
+    func testAPollStartedBeforeANewerPushCannotReplaceOrReviveItsSequence() throws {
+        // The poll asked since=x before b (or a delete d) was published; its answer holds only the
+        // same-second event a that precedes it. The pushed event is beyond the cursor, so "asked from the
+        // current cursor" no longer orders the answer after it: resolve once in server order instead.
+        for pushedEvent in ["message", "message_delete"] {
+            let store = gapStore()
+            let topic = "gap868-race-\(pushedEvent)"
+            let sub = store.saveSubscription(baseUrl: "https://ntfy.sh", topic: topic)
+            let t = gapNow
+            let s0 = gapMessage("s0", t - 50, topic, sequence: "job")
+            let x = gapMessage("x", t, topic)
+            let a = gapMessage("a", t + 100, topic, sequence: "job")
+            let pushed = gapMessage("b", t + 100, topic, event: pushedEvent, sequence: "job")
+            let cache = [s0, x, a, pushed]
+            XCTAssertEqual(store.save(notificationsFromMessages: [s0, x], polledWith: try XCTUnwrap(store.pollRequest(for: sub)))?.count, 2)
+            let racing = try XCTUnwrap(store.pollRequest(for: sub))
+            XCTAssertEqual(racing.since, x.id, "premise")
+            _ = store.ingest(pushedMessage: pushed, baseUrl: sub.baseUrl!, topic: topic)
+            let latest = pushedEvent == "message" ? [pushed.id, x.id] : [x.id]
+            XCTAssertEqual(gapIDs(store, sub), latest, "premise: the push applied (\(pushedEvent))")
+            XCTAssertEqual(store.save(notificationsFromMessages: [a], polledWith: racing)?.count, 0,
+                           "an older same-second version must not replace or revive the pushed \(pushedEvent)")
+            XCTAssertEqual(gapIDs(store, sub), latest, pushedEvent)
+            let ordered = try XCTUnwrap(store.pollRequest(for: sub))
+            XCTAssertNil(ordered.since, "an unordered same-second answer resolves once in server order (\(pushedEvent))")
+            XCTAssertEqual(store.save(notificationsFromMessages: gapServer(cache, since: ordered.since), polledWith: ordered)?.count, 0)
+            XCTAssertEqual(gapIDs(store, sub), latest, pushedEvent)
+            XCTAssertEqual(store.pollRequest(for: sub)?.since, pushed.id, pushedEvent)
+        }
+    }
+
+    func testAPushInTheCursorsSecondKeepsTheSameSecondCursorRule() throws {
+        let store = gapStore()
+        let topic = "gap868-same-second"
+        let sub = store.saveSubscription(baseUrl: "https://ntfy.sh", topic: topic)
+        let t = gapNow
+        let cache = ["s1", "s2", "s3"].map { gapMessage($0, t, topic) }
+        XCTAssertEqual(store.save(notificationsFromMessages: [cache[0]], polledWith: try XCTUnwrap(store.pollRequest(for: sub)))?.count, 1)
+        guard case .stored(_) = store.ingest(pushedMessage: cache[2], baseUrl: sub.baseUrl!, topic: topic) else { return XCTFail("push not stored") }
+        let request = try XCTUnwrap(store.pollRequest(for: sub))
+        XCTAssertEqual(request.since, cache[0].id)
+        XCTAssertEqual(store.save(notificationsFromMessages: gapServer(cache, since: request.since), polledWith: request)?.map(\.id), [cache[1].id])
+        XCTAssertEqual(gapIDs(store, sub), cache.map(\.id))
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[2].id, "an ordered poll from the cursor moves within its second")
+        // A late answer to an older request that ends on a same-second message cannot move it back.
+        XCTAssertEqual(store.save(notificationsFromMessages: [cache[1]], polledWith: request)?.count, 0)
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[2].id, "never backward")
+    }
+
+    func testAPushStoredByTheExtensionLeavesTheSharedCursorForTheAppsNextPoll() throws {
+        let dir = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: dir, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: dir) }
+        let url = dir.appendingPathComponent("shared.sqlite")
+        let app = gapStore(url)
+        let topic = "gap868-two-processes"
+        let (sub, cache) = try gapAfterLostPushes(app, topic: topic)
+        let nse = gapStore(url)
+        // The extension stores and presents m6's push from its own process.
+        let m6 = gapMessage("\(topic)-m6", cache[4].time + 10, topic)
+        guard case .stored(_) = nse.ingest(pushedMessage: m6, baseUrl: sub.baseUrl!, topic: topic) else { return XCTFail("NSE push not stored") }
+        nse.recordPresentation(message: m6, baseUrl: sub.baseUrl!)
+        let relaunched = gapStore(url)
+        defer {
+            for store in [relaunched, nse, app] {
+                store.context.performAndWait { store.context.reset() }
+                let coordinator = store.container.persistentStoreCoordinator
+                for disk in coordinator.persistentStores { try? coordinator.remove(disk) }
+            }
+        }
+        let reopened = try XCTUnwrap(relaunched.getSubscription(baseUrl: sub.baseUrl!, topic: topic))
+        let request = try XCTUnwrap(relaunched.pollRequest(for: reopened))
+        XCTAssertEqual(request.since, cache[0].id, "neither process's push moved the shared cursor")
+        let server = cache + [m6]
+        let answer = gapServer(server, since: request.since)
+        XCTAssertEqual(relaunched.save(notificationsFromMessages: answer, polledWith: request)?.map(\.id), cache[1...3].map(\.id))
+        XCTAssertEqual(relaunched.alertCandidates(from: answer, baseUrl: sub.baseUrl!).map(\.id), cache[1...4].map(\.id),
+                       "m5 was never presented, so a presenting poll may alert it once; m6 was, so it is excluded")
+        XCTAssertEqual(gapIDs(relaunched, reopened), server.map(\.id))
+        XCTAssertEqual(relaunched.pollRequest(for: reopened)?.since, m6.id)
+    }
+
+    func testAPollThatReCoversAPushPrunedByRetentionDoesNotReviveIt() throws {
+        let store = gapStore()
+        store.saveNotificationRetention(.forever)
+        let topic = "gap868-retention"
+        let sub = store.saveSubscription(baseUrl: "https://ntfy.sh", topic: topic)
+        let now = Date()
+        let t = Int64(now.timeIntervalSince1970) - 2 * 86_400
+        let cache = (1...5).map { gapMessage("r\($0)", t + Int64($0 * 10), topic) }
+        XCTAssertEqual(store.save(notificationsFromMessages: [cache[0]], polledWith: try XCTUnwrap(store.pollRequest(for: sub)))?.count, 1)
+        guard case .stored(_) = store.ingest(pushedMessage: cache[4], baseUrl: sub.baseUrl!, topic: topic) else { return XCTFail("push not stored") }
+        // Both rows were stored over an hour ago, and the policy is now one day.
+        for row in gapRows(store, sub) { row.storedAt = now.addingTimeInterval(-7200) }
+        let pref = try XCTUnwrap(store.context.fetch(Preference.fetchRequest()).first { $0.key == Store.retentionPreferenceKey })
+        pref.value = String(NotificationRetention.day.rawValue)
+        try store.context.save()
+        let pruned = expectation(description: "prune")
+        store.pruneNotifications(now: now) { _ in pruned.fulfill() }
+        wait(for: [pruned], timeout: 10)
+        XCTAssertEqual(gapIDs(store, sub), [], "premise: retention removed both rows")
+        let request = try XCTUnwrap(store.pollRequest(for: sub))
+        XCTAssertEqual(request.since, cache[0].id)
+        XCTAssertEqual(store.save(notificationsFromMessages: gapServer(cache, since: request.since), polledWith: request)?.count, 0)
+        XCTAssertEqual(gapIDs(store, sub), [], "expired history, pushed or not, is not revived")
+        XCTAssertEqual(store.pollRequest(for: sub)?.since, cache[4].id, "the cursor still moves past discarded history")
+    }
+
     // MARK: A deleted notification must leave the published list at once — swipe-delete crash (ntfy #1058)
     //
     // `NotificationListView:183` renders `ForEach(notificationsModel.notifications, id: \.self)` and each
