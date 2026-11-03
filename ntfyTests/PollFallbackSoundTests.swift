@@ -27,7 +27,8 @@ final class PollFallbackSoundTests: XCTestCase {
     private func check(topic: String, priority: Int? = 3, subscribed: Bool = true,
                        expire: Bool = false, muted: Bool = false, duplicate: Bool = false,
                        custom: Bool = false, quiet: Bool = false, direct: Bool = false,
-                       rawBody: String? = nil, encoding: String? = nil, expectedBody: String? = nil) throws {
+                       rawBody: String? = nil, encoding: String? = nil, expectedBody: String? = nil,
+                       deliveryTimeout: TimeInterval = 5, onDelivered: @escaping () -> Void = {}) throws {
         let store = Store.shared
         let sub = subscribed ? store.saveSubscription(baseUrl: base, topic: topic) : nil
         defer { if let sub { _ = store.delete(subscription: sub) } }
@@ -72,10 +73,33 @@ final class PollFallbackSoundTests: XCTestCase {
             } else { XCTAssertEqual(output.sound, .default) }
             print("POLL_SOUND topic=\(topic) priority=\(priority.map(String.init) ?? "nil") direct=\(direct) expiry=\(expire) quiet=\(silent) sound=\(String(describing: output.sound)) level=\(output.interruptionLevel.rawValue) body=\(output.body)")
             delivered.fulfill()
+            onDelivered()
         }
         if expire { service.serviceExtensionTimeWillExpire() }
-        wait(for: [delivered], timeout: 5)
+        wait(for: [delivered], timeout: deliveryTimeout)
         withExtendedLifetime(service) {}
+    }
+
+    func testIndependentTestStoreCannotStallMutedPollFallback() throws {
+        // Each /dev/null Store has its own SQLite database. Hold an unrelated test store's
+        // scheduler callback, rather than relying on a slow Notification Center or a sleep.
+        let unrelated = Store(inMemory: true)
+        let message = Message(id: "held-by-another-test", time: 1_700_000_000,
+                              event: "message", topic: "unrelated")
+        let entered = expectation(description: "unrelated scheduler is pending")
+        let released = expectation(description: "unrelated scheduler cancelled")
+        let handoff = expectation(description: "fallback eventually drained")
+        let cancel = unrelated.deliverAlert(message: message, baseUrl: "https://unrelated.example",
+            delivery: { _ in entered.fulfill() }, completion: { released.fulfill() })
+        wait(for: [entered], timeout: 2)
+        defer {
+            cancel()
+            wait(for: [released, handoff], timeout: 3)
+        }
+        // This is the original muted HTTP-500 flow. Its handoff must complete while the
+        // independent scheduler is still held. Cleanup releases it even on the RED version.
+        try check(topic: "status500", muted: true, deliveryTimeout: 1,
+                  onDelivered: { handoff.fulfill() })
     }
 
     func testRefusedAndFailedPollsHaveDefaultSound() throws {

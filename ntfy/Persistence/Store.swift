@@ -713,7 +713,9 @@ class Store: ObservableObject {
     }
 
     private static let alertQueue = DispatchQueue(label: "ntfy.alert-delivery")
-    private static let memoryAlertLock = DispatchSemaphore(value: 1)
+    // /dev/null creates an independent SQLite store per container. Only deliveries using
+    // this Store share its state; another test store must not hold its scheduler hostage.
+    private let memoryAlertLock = DispatchSemaphore(value: 1)
 
     /// The app records only a successful scheduler callback. The NSE commits and releases before
     /// its synchronous handoff, since the system may suspend it as soon as that handler fires.
@@ -736,7 +738,7 @@ class Store: ObservableObject {
             guard !finished else { return }
             finished = true
             if descriptor >= 0 { flock(descriptor, LOCK_UN); close(descriptor); descriptor = -1 }
-            if memoryHeld { Self.memoryAlertLock.signal(); memoryHeld = false }
+            if memoryHeld { self.memoryAlertLock.signal(); memoryHeld = false }
             if let activity { ProcessInfo.processInfo.endActivity(activity) }
             completion()
         }
@@ -749,7 +751,7 @@ class Store: ObservableObject {
             }
             let contended: Bool
             if memory {
-                memoryHeld = Self.memoryAlertLock.wait(timeout: .now()) == .success
+                memoryHeld = self.memoryAlertLock.wait(timeout: .now()) == .success
                 contended = !memoryHeld
             } else if let url {
                 if descriptor < 0 {
