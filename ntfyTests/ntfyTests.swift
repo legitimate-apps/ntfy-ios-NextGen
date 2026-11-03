@@ -6308,6 +6308,50 @@ final class ntfyTests: XCTestCase {
         }
     }
 
+    /// ntfy #1743: detector limits must not silently change the destination of a long URL.
+    func testLongURLRetainsEntireDestinationAndStyling() throws {
+        let url = "https://example.com/p?x=" + String(repeating: "a1b2c3d4", count: 400)
+        XCTAssertEqual(url.count, 3224)
+        for type in [nil, "text/markdown"] as [String?] {
+            let body = "🙂 Open \(url) now"
+            let result = makeMessageNSAttributedString(renderMessageBody(body, contentType: type), style: .body)
+            let range = (result.string as NSString).range(of: url)
+            var linked = 0
+            result.enumerateAttributes(in: range) { attrs, run, _ in
+                XCTAssertEqual((attrs[.link] as? URL)?.absoluteString, url)
+                // Authored/parser-created Markdown links use UITextView's native
+                // linkTextAttributes; plain links also carry explicit styling.
+                if type == nil {
+                    XCTAssertEqual(attrs[.foregroundColor] as? UIColor, UIColor.link)
+                    XCTAssertEqual(attrs[.underlineStyle] as? Int, NSUnderlineStyle.single.rawValue)
+                }
+                if attrs[.link] != nil { linked += run.length }
+            }
+            XCTAssertEqual(linked, url.utf16.count)
+            XCTAssertNil(result.attribute(.link, at: NSMaxRange(range) + 1, effectiveRange: nil))
+        }
+    }
+
+    /// The long-token fallback must preserve boundaries and authored Markdown targets.
+    func testLongURLDetectionKeepsDelimitersUnicodeAndMarkdownTargets() throws {
+        let query = String(repeating: "a1b2c3d4", count: 400)
+        let urls = ["https://example.com/p?x=" + query,
+                    "https://example.com/" + query + "/Foo_(bar)?q=日本語&x[]=1#end",
+                    "HTTPS://example.com/p?x=" + query]
+        for url in urls {
+            let body = "🙂 See (\(url)), then https://ntfy.sh/docs."
+            for type in [nil, "text/markdown"] as [String?] {
+                let links = linkTargets(in: renderMessageBody(body, contentType: type))
+                XCTAssertEqual(links, [URL(string: url)!, URL(string: "https://ntfy.sh/docs")!])
+            }
+        }
+        let url = urls[0]
+        let markdown = "[\(url)](https://different.example/target) bare \(url)"
+        XCTAssertEqual(linkTargets(in: renderMessageBody(markdown, contentType: "text/markdown")),
+                       [URL(string: "https://different.example/target")!, URL(string: url)!])
+        XCTAssertEqual(linkTargets(in: renderMessageTitle(url)), [URL(string: url)!])
+    }
+
     func testDocsStillPointAtNtfysOwnDocumentation() {
         // Deliberately NOT de-upstreamed: ntfy.sh/docs is the real documentation
         // for the protocol this app speaks, and linking it is correct.

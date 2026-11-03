@@ -80,23 +80,63 @@ private func renderInlineMarkdown(_ source: String) -> AttributedString {
     return linkify(source)
 }
 
+private enum MessageLinkDetection {
+    static let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
+    static let httpTokens = try? NSRegularExpression(pattern: #"https?://[^\s<>"`“”]+"#, options: .caseInsensitive)
+}
+
+/// NSDataDetector can stop at a query name before a long value (for example,
+/// `?x` instead of `?x=...`). Retain its normal URL/punctuation rules, but extend
+/// recognized HTTP(S) prefixes to the end of a long explicit URL token.
+private func detectedMessageLinks(in source: String) -> [(range: NSRange, url: URL)] {
+    let text = source as NSString
+    let fullRange = NSRange(location: 0, length: text.length)
+    var links = MessageLinkDetection.detector?.matches(in: source, range: fullRange).compactMap { match in
+        match.url.map { (range: match.range, url: $0) }
+    } ?? []
+    // Short links keep the detector's behavior. Repetitive query values can
+    // trigger prefix-only detection below 1 KB, so check tokens above 512 UTF-16 units.
+    guard text.length > 512 else { return links }
+    MessageLinkDetection.httpTokens?.enumerateMatches(in: source, range: fullRange) { match, _, _ in
+        guard let match, match.range.length > 512,
+              let prefix = links.first(where: { $0.range.location == match.range.location }),
+              match.range.length > prefix.range.length else { return }
+        var candidate = text.substring(with: match.range)
+        let pairs: [Character: Character] = [")": "(", "]": "[", "}": "{"]
+        var counts: [Character: Int] = [:]
+        for character in candidate where "()[]{}".contains(character) { counts[character, default: 0] += 1 }
+        // Keep balanced URL parentheses/brackets, excluding sentence punctuation
+        // and closing delimiters belonging to the surrounding prose.
+        while let last = candidate.last {
+            if ".,;:!?'’".contains(last) { candidate.removeLast(); continue }
+            guard let opening = pairs[last], counts[last, default: 0] > counts[opening, default: 0] else { break }
+            counts[last, default: 0] -= 1
+            candidate.removeLast()
+        }
+        let range = NSRange(location: match.range.location, length: candidate.utf16.count)
+        guard range.length > prefix.range.length, let url = URL(string: candidate),
+              let host = url.host, !host.isEmpty, host == prefix.url.host else { return }
+        links.removeAll { NSIntersectionRange($0.range, range).length > 0 }
+        links.append((range: range, url: url))
+    }
+    return links.sorted { $0.range.location < $1.range.location }
+}
+
 /// Add tappable + styled links to any bare URL in an already-parsed AttributedString
 /// (e.g. markdown output), WITHOUT disturbing existing runs. Ranges that already carry
 /// a `.link` (markdown-authored links) are left untouched so their target/label survive.
 /// Operates purely on the Swift AttributedString so no markdown styling is ever lost.
 func linkifyBareUrls(in attributed: inout AttributedString) {
     let text = String(attributed.characters)
-    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-    let range = NSRange(location: 0, length: (text as NSString).length)
-    detector?.enumerateMatches(in: text, options: [], range: range) { match, _, _ in
-        guard let match, let url = match.url, let strRange = Range(match.range, in: text) else { return }
+    for match in detectedMessageLinks(in: text) {
+        guard let strRange = Range(match.range, in: text) else { continue }
         let start = text.distance(from: text.startIndex, to: strRange.lowerBound)
         let length = text.distance(from: strRange.lowerBound, to: strRange.upperBound)
         let lower = attributed.index(attributed.startIndex, offsetByCharacters: start)
         let upper = attributed.index(lower, offsetByCharacters: length)
         let attrRange = lower..<upper
-        guard attributed[attrRange].link == nil else { return }  // keep markdown-authored links
-        attributed[attrRange].link = url
+        guard attributed[attrRange].runs.allSatisfy({ $0.link == nil }) else { continue }
+        attributed[attrRange].link = match.url
         attributed[attrRange].foregroundColor = UIColor.link
         attributed[attrRange].underlineStyle = NSUnderlineStyle.single
     }
@@ -109,15 +149,13 @@ func linkifyBareUrls(in attributed: inout AttributedString) {
 /// truncated the coloring/underline of long or line-wrapping URLs to the
 /// recognized prefix (ntfy iOS #1743). Applying `.foregroundColor` and
 /// `.underlineStyle` explicitly over the full detector match keeps the whole
-/// URL visibly a link. Pure + free-standing so it's unit-testable without a
+/// URL visibly a link. Long explicit HTTP(S) tokens repair truncated detector
+/// matches via the shared detectedMessageLinks(). Unit-testable without a
 /// Core Data Notification.
 func linkify(_ source: String) -> AttributedString {
     let mutable = NSMutableAttributedString(string: source)
-    let detector = try? NSDataDetector(types: NSTextCheckingResult.CheckingType.link.rawValue)
-    let range = NSRange(location: 0, length: mutable.string.utf16.count)
-    detector?.enumerateMatches(in: mutable.string, options: [], range: range) { match, _, _ in
-        guard let match, let url = match.url else { return }
-        mutable.addAttribute(.link, value: url, range: match.range)
+    for match in detectedMessageLinks(in: source) {
+        mutable.addAttribute(.link, value: match.url, range: match.range)
         mutable.addAttribute(.foregroundColor, value: UIColor.link, range: match.range)
         mutable.addAttribute(.underlineStyle, value: NSUnderlineStyle.single.rawValue, range: match.range)
     }
