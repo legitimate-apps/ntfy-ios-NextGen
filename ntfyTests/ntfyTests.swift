@@ -9936,3 +9936,53 @@ final class AuthPapercutsEditorTests: XCTestCase {
         }
     }
 }
+
+/// Exercise UIKit's real trait propagation, including fonts derived for Markdown code.
+@MainActor
+final class MessageDynamicTypeTests: XCTestCase {
+    func testMarkdownFontsUpdateLiveInBothDirectionsWithoutLosingStylingOrLinks() throws {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        let store = Store(inMemory: true)
+        let subscription = store.saveSubscription(baseUrl: "https://dynamic-type.invalid", topic: "dynamic-type")
+        let message = ntfy.Notification(context: store.context)
+        message.title = "Deployment complete"
+        message.message = "Plain **bold** *italic* `inline` https://example.com/\n```\nfenced\n```"
+        message.contentType = "text/markdown"; message.subscription = subscription
+        message.time = Int64(Date().timeIntervalSince1970); message.priority = 3
+        let parent = UIViewController()
+        let child = UIHostingController(rootView: NotificationRowView(notification: message, onCopyMessage: {})
+            .environmentObject(store))
+        parent.addChild(child); parent.view.addSubview(child.view); child.didMove(toParent: parent)
+        child.view.frame = CGRect(x: 0, y: 0, width: 350, height: 800)
+        window.rootViewController = parent
+        window.makeKeyAndVisible()
+        RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        defer { window.isHidden = true; previous?.makeKey() }
+        func descendants(_ view: UIView) -> [UIView] { [view] + view.subviews.flatMap(descendants) }
+        let textView = try XCTUnwrap(descendants(child.view).compactMap { $0 as? MessageTextView }
+            .first { $0.text.contains("Plain") })
+        let original = textView.attributedText.string
+        let linkIndex = (original as NSString).range(of: "https://example.com/").location
+        let link = textView.attributedText.attribute(.link, at: linkIndex, effectiveRange: nil) as? URL
+        for category in [UIContentSizeCategory.extraSmall, .accessibilityExtraLarge, .extraSmall] {
+            let traits = UITraitCollection(preferredContentSizeCategory: category)
+            parent.setOverrideTraitCollection(traits, forChild: child)
+            RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+            XCTAssertEqual(textView.traitCollection.preferredContentSizeCategory, category)
+            let expected = UIFont.preferredFont(forTextStyle: .body, compatibleWith: traits).pointSize
+            for (token, requiredTrait) in [("Plain", UIFontDescriptor.SymbolicTraits()), ("bold", .traitBold), ("italic", .traitItalic), ("inline", .traitMonoSpace), ("fenced", .traitMonoSpace)] {
+                let index = (original as NSString).range(of: token).location
+                let font = try XCTUnwrap(textView.attributedText.attribute(.font, at: index, effectiveRange: nil) as? UIFont)
+                XCTAssertEqual(font.pointSize, expected, accuracy: 0.1, "\(token) must follow \(category.rawValue)")
+                XCTAssertTrue(font.fontDescriptor.symbolicTraits.contains(requiredTrait), "Preserve \(token) styling")
+            }
+            XCTAssertEqual(textView.attributedText.string, original)
+            XCTAssertEqual(textView.attributedText.attribute(.link, at: linkIndex, effectiveRange: nil) as? URL, link)
+            let paragraph = try XCTUnwrap(textView.attributedText.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle)
+            XCTAssertEqual(paragraph.lineBreakMode, .byWordWrapping)
+            XCTAssertEqual(paragraph.hyphenationFactor, 0)
+        }
+    }
+}

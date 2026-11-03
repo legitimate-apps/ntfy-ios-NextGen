@@ -340,7 +340,7 @@ extension NotificationRowView {
             context.coordinator.onOpenURL = onOpenURL
             context.coordinator.onPlainTap = onPlainTap
             configureMessageTextView(textView, isInteractionEnabled: isInteractionEnabled)
-            textView.setMessageText(makeMessageNSAttributedString(attributedText, style: style))
+            textView.setMessageText(attributedText, style: style)
         }
 
         final class Coordinator: NSObject, UITextViewDelegate, UIGestureRecognizerDelegate {
