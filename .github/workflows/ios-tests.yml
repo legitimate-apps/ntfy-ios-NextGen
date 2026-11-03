@@ -63,6 +63,10 @@ jobs:
         # CODE_SIGNING_ALLOWED=NO is correct for build+test (not for install-and-run: an unsigned
         # app is denied its App Group container). -parallel-testing-enabled NO: cloning the
         # simulator to parallelize is slower here and fails after a successful build.
+        # ENABLE_DEBUG_DYLIB=NO: with Xcode 26.6 the ntfy.debug.dylib and __preview.dylib links
+        # both write ntfy_dependency_info.dat, and when the preview link finishes last the App
+        # Intents metadata step finds no AppIntents dependency and skips Metadata.appintents.
+        # One link step removes that race; Release builds have no debug dylib.
         env:
           SIM_UDID: ${{ steps.sim.outputs.udid }}
         run: |
@@ -73,7 +77,7 @@ jobs:
             -destination "platform=iOS Simulator,id=$SIM_UDID" \
             -configuration Debug \
             -parallel-testing-enabled NO \
-            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO ENABLE_DEBUG_DYLIB=NO \
             test 2>&1 | tee "$RUNNER_TEMP/test.log"
 
       - name: Test summary
