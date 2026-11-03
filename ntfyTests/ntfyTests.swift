@@ -9410,16 +9410,16 @@ final class TopicSignInNoticeTests: XCTestCase {
 /// They require no new production API, so the same tests run on the unchanged base revision.
 @MainActor
 final class AuthPapercutsEditorTests: XCTestCase {
-    private func withEditor(_ url: String, existing: Bool = false,
+    private func withEditor(_ url: String, existing: Bool = false, editing: Bool = false,
                             check: (UIWindow, () -> String?) throws -> Void) throws {
         let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
-        if existing { XCTAssertTrue(store.saveUser(baseUrl: "https://editor.invalid/ntfy", username: "old", password: "old-secret")) }
+        if existing || editing { XCTAssertTrue(store.saveUser(baseUrl: "https://editor.invalid/ntfy", username: "old", password: "old-secret")) }
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         window.frame = UIScreen.main.bounds
         var savedURL: String?
-        let root = UserEditorView(selectedUser: nil, defaultBaseUrl: url,
+        let root = UserEditorView(selectedUser: editing ? store.getUser(baseUrl: "https://editor.invalid/ntfy") : nil, defaultBaseUrl: url,
             onSave: { base, _, _ in savedURL = base; return true }, onDelete: { _ in true }, onCancel: {})
             .environmentObject(store).environment(\.managedObjectContext, store.context)
             .environment(\.colorScheme, .light).environment(\.sizeCategory, .large)
@@ -9481,6 +9481,62 @@ final class AuthPapercutsEditorTests: XCTestCase {
         return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
     }
 
+    // Owner review: a blank Add user form is quiet, but Save still requires valid input.
+    // Exercise the mounted form as it becomes partial and is cleared again.
+    func testUntouchedNewUserIsQuietAndPartialInputExplainsFirstMissingItem() throws {
+        try withEditor("") { window, _ in
+            let fields = descendants(window).compactMap { $0 as? UITextField }
+            let username = try XCTUnwrap(fields.first { $0.textContentType == .username })
+            let password = try XCTUnwrap(fields.first { $0.isSecureTextEntry })
+            let url = try XCTUnwrap(fields.first { $0 !== username && $0 !== password })
+            @MainActor func enter(_ field: UITextField, _ text: String) {
+                field.text = text
+                field.sendActions(for: .editingChanged)
+                settle(window)
+            }
+            @MainActor func assertReason(_ expected: String?, file: StaticString = #filePath, line: UInt = #line) throws {
+                XCTAssertFalse(try saveItem(window).isEnabled, file: file, line: line)
+                let visible = try renderedText(window)
+                if let expected {
+                    XCTAssertTrue(visible.contains(expected), "Missing expected reason: \(visible)", file: file, line: line)
+                } else {
+                    XCTAssertFalse(visible.contains("Enter a "), "A blank form must not show a validation hint: \(visible)", file: file, line: line)
+                }
+            }
+            try assertReason(nil)
+            enter(username, "new-user")
+            try assertReason("Enter a valid server URL")
+            enter(username, "")
+            enter(password, "test-secret")
+            try assertReason("Enter a valid server URL")
+            enter(password, "")
+            enter(url, "https://editor.invalid")
+            try assertReason("Enter a username.")
+            enter(username, "new-user")
+            try assertReason("Enter a password.")
+            enter(url, "")
+            enter(username, "")
+            try assertReason(nil)
+        }
+    }
+
+    func testEditingExistingLoginKeepsBlankSecretAndValidationBehavior() throws {
+        try withEditor("", editing: true) { window, _ in
+            XCTAssertTrue(try saveItem(window).isEnabled, "Blank secret preserves the existing login")
+            let visible = try renderedText(window)
+            XCTAssertFalse(visible.contains("Enter a username."))
+            XCTAssertFalse(visible.contains("Enter a password."))
+            let username = try XCTUnwrap(descendants(window).compactMap { $0 as? UITextField }.first {
+                $0.textContentType == .username
+            })
+            username.text = ""
+            username.sendActions(for: .editingChanged)
+            settle(window)
+            XCTAssertFalse(try saveItem(window).isEnabled)
+            XCTAssertTrue(try renderedText(window).contains("Enter a username."))
+        }
+    }
+
     func testPastedWhitespaceAndUppercaseSchemeEnableSaveAndSaveNormalizedURL() throws {
         for input in ["https://editor.invalid/ntfy", " https://editor.invalid/ntfy ", "\nhttps://editor.invalid/ntfy\n", "HTTPS://editor.invalid/ntfy", " HtTpS://editor.invalid/ntfy/\n"] {
             try withEditor(input) { window, saved in
@@ -9517,7 +9573,7 @@ final class AuthPapercutsEditorTests: XCTestCase {
             try withEditor(input, existing: true) { window, _ in
                 try enterCredentials(window)
                 XCTAssertFalse(try saveItem(window).isEnabled)
-                XCTAssertTrue(try renderedText(window).contains("This server already has a login. Edit it in Settings instead."))
+                XCTAssertTrue(try renderedText(window).contains("This server already has a login. Go back and edit its existing login."))
             }
         }
     }

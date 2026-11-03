@@ -62,7 +62,7 @@ struct UserEditorView: View {
                    let notice = UrlSecurityNotice.message(for: normalizedBaseUrl, isAccessToken: login.method == .token) {
                     Text(notice).font(.footnote).foregroundColor(.secondary)
                 }
-                if let message = validationMessage {
+                if let message = validationMessage, !isBlankNewUser {
                     Text(message).font(.footnote).foregroundColor(.secondary)
                         .accessibilityIdentifier("user-validation-error")
                 }
@@ -131,6 +131,10 @@ struct UserEditorView: View {
         return onDelete(selectedUser)
     }
     
+    private var isBlankNewUser: Bool {
+        isNewUser && baseUrl.isEmpty && login.username.isEmpty && login.secret.isEmpty
+    }
+
     private var normalizedBaseUrl: String {
         var url = normalizeBaseUrl(baseUrl)
         if let scheme = url.range(of: "^https?://", options: [.regularExpression, .caseInsensitive]) {
@@ -147,7 +151,7 @@ struct UserEditorView: View {
                 return String(localized: "Enter a valid server URL starting with http:// or https://.")
             }
             if store.getUser(baseUrl: normalizedBaseUrl) != nil {
-                return String(localized: "This server already has a login. Edit it in Settings instead.")
+                return String(localized: "This server already has a login. Go back and edit its existing login.")
             }
         }
         guard login.canSave(isEditing: !isNewUser, originalMethod: originalMethod) else {

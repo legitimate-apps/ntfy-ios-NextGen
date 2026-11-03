@@ -28467,48 +28467,48 @@
         }
       }
     },
-    "This server already has a login. Edit it in Settings instead.": {
+    "This server already has a login. Go back and edit its existing login.": {
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "This server already has a login. Edit it in Settings instead."
+            "value": "This server already has a login. Go back and edit its existing login."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Für diesen Server sind bereits Zugangsdaten gespeichert. Bearbeite sie in den Einstellungen."
+            "value": "Für diesen Server sind bereits Zugangsdaten gespeichert. Gehe zurück und bearbeite die vorhandenen Zugangsdaten."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "Este servidor ya tiene unas credenciales guardadas. Edítalas en Ajustes."
+            "value": "Este servidor ya tiene unas credenciales guardadas. Vuelve atrás y edita las credenciales existentes de este servidor."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Questo server ha già delle credenziali. Modificale nelle Impostazioni."
+            "value": "Questo server ha già delle credenziali. Torna indietro e modifica le credenziali esistenti del server."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ten serwer ma już dane logowania. Edytuj je w Ustawieniach."
+            "value": "Ten serwer ma już dane logowania. Wróć i edytuj istniejące dane logowania tego serwera."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Deze server heeft al inloggegevens. Bewerk deze in Instellingen."
+            "value": "Deze server heeft al inloggegevens. Ga terug en bewerk de bestaande inloggegevens voor deze server."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ce serveur possède déjà des identifiants. Modifiez-les dans Réglages."
+            "value": "Ce serveur possède déjà des identifiants. Revenez en arrière et modifiez les identifiants existants de ce serveur."
           }
         }
       }
