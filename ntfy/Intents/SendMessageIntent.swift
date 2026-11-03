@@ -135,6 +135,8 @@ struct SendMessageIntent: AppIntent {
 @available(iOS 16.0, *)
 struct MessageAppShortcuts: AppShortcutsProvider {
     static var appShortcuts: [AppShortcut] {
+        AppShortcut(intent: ReadMessagesIntent(), phrases: ["Read messages with \(.applicationName)"],
+                    shortTitle: "Read messages", systemImageName: "tray")
         AppShortcut(intent: SendMessageIntent(), phrases: ["Send a message with \(.applicationName)"],
                     shortTitle: "Send message", systemImageName: "paperplane")
     }
