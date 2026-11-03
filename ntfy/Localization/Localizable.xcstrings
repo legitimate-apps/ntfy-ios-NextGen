@@ -28513,6 +28513,282 @@
         }
       }
     },
+    "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Zugriff wurde blockiert (HTTP 403), aber dies ist keine ntfy-Fehlerantwort. Ein Reverse-Proxy oder eine Sicherheitsprüfung könnte die Ursache sein. Prüfe die Konfiguration oder verwende Einstellungen > Eigene HTTP-Header, falls zusätzliche Zugangsdaten erforderlich sind."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Se ha bloqueado el acceso (HTTP 403), pero esta no es una respuesta de error de ntfy. Puede deberse a un proxy inverso o a una comprobación de seguridad. Revisa su configuración o, si requiere credenciales adicionales, usa Ajustes > Cabeceras HTTP personalizadas."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L'accesso è stato bloccato (HTTP 403), ma questa non è una risposta di errore di ntfy. La causa potrebbe essere un proxy inverso o un controllo di sicurezza. Controlla la configurazione oppure, se servono credenziali aggiuntive, usa Impostazioni > Intestazioni HTTP personalizzate."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dostęp został zablokowany (HTTP 403), ale to nie jest odpowiedź błędu ntfy. Przyczyną może być odwrotny serwer proxy lub kontrola bezpieczeństwa. Sprawdź konfigurację lub, jeśli wymagane są dodatkowe dane logowania, użyj opcji Ustawienia > Własne nagłówki HTTP."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "De toegang is geblokkeerd (HTTP 403), maar dit is geen foutmelding van ntfy. Een reverseproxy of beveiligingscontrole kan de oorzaak zijn. Controleer de configuratie of gebruik Instellingen > Aangepaste HTTP-headers als extra inloggegevens nodig zijn."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "L’accès a été bloqué (HTTP 403), mais cette réponse d’erreur ne vient pas de ntfy. Un proxy inverse ou un contrôle de sécurité peut en être la cause. Vérifiez sa configuration ou, si des identifiants supplémentaires sont requis, utilisez Réglages > En-têtes HTTP personnalisés."
+          }
+        }
+      }
+    },
+    "Enter a password.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a password."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib ein Passwort ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce una contraseña."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci una password."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz hasło."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer een wachtwoord in."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un mot de passe."
+          }
+        }
+      }
+    },
+    "Enter a username.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a username."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib einen Benutzernamen ein."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un nombre de usuario."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci un nome utente."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz nazwę użytkownika."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer een gebruikersnaam in."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un nom d’utilisateur."
+          }
+        }
+      }
+    },
+    "Enter a valid access token starting with tk_.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid access token starting with tk_."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib ein gültiges Zugriffstoken ein, das mit tk_ beginnt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce un token de acceso válido que empiece por tk_."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci un token di accesso valido che inizi con tk_."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz prawidłowy token dostępu zaczynający się od tk_."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer een geldig toegangstoken in dat begint met tk_."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez un jeton d’accès valide commençant par tk_."
+          }
+        }
+      }
+    },
+    "Enter a valid server URL starting with http:// or https://.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Enter a valid server URL starting with http:// or https://."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gib eine gültige Server-URL ein, die mit http:// oder https:// beginnt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Introduce una URL de servidor válida que empiece por http:// o https://."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Inserisci un URL del server valido che inizi con http:// o https://."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wpisz prawidłowy adres URL serwera zaczynający się od http:// lub https://."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Voer een geldige server-URL in die begint met http:// of https://."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Saisissez une URL de serveur valide commençant par http:// ou https://."
+          }
+        }
+      }
+    },
+    "This server already has a login. Go back and edit its existing login.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "This server already has a login. Go back and edit its existing login."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für diesen Server sind bereits Zugangsdaten gespeichert. Gehe zurück und bearbeite die vorhandenen Zugangsdaten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Este servidor ya tiene unas credenciales guardadas. Vuelve atrás y edita las credenciales existentes de este servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Questo server ha già delle credenziali. Torna indietro e modifica le credenziali esistenti del server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ten serwer ma już dane logowania. Wróć i edytuj istniejące dane logowania tego serwera."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Deze server heeft al inloggegevens. Ga terug en bewerk de bestaande inloggegevens voor deze server."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Ce serveur possède déjà des identifiants. Revenez en arrière et modifiez les identifiants existants de ce serveur."
+          }
+        }
+      }
+    },
     "Alerts are hidden": {
       "extractionState": "manual",
       "localizations": {
