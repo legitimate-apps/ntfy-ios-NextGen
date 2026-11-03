@@ -28237,6 +28237,282 @@
         }
       }
     },
+    "Choose topics to subscribe to on this device. Topics already subscribed and topics on other servers are not listed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose topics to subscribe to on this device. Topics already subscribed and topics on other servers are not listed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wähle die Themen aus, die du auf diesem Gerät abonnieren möchtest. Bereits abonnierte Themen und Themen auf anderen Servern werden nicht angezeigt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Elige los tópicos a los que suscribirte en este dispositivo. No se muestran los tópicos ya suscritos ni los de otros servidores."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Scegli gli argomenti a cui iscriverti su questo dispositivo. Gli argomenti già sottoscritti e quelli su altri server non sono elencati."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wybierz tematy do subskrybowania na tym urządzeniu. Tematy już subskrybowane i tematy na innych serwerach nie są wyświetlane."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies de onderwerpen waarop je je op dit apparaat wilt abonneren. Reeds geabonneerde onderwerpen en onderwerpen op andere servers worden niet getoond."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez les sujets auxquels vous abonner sur cet appareil. Les sujets déjà suivis et ceux des autres serveurs ne sont pas affichés."
+          }
+        }
+      }
+    },
+    "No new saved topics are available for this server account.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No new saved topics are available for this server account."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Für dieses Serverkonto sind keine neuen gespeicherten Themen verfügbar."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No hay nuevos tópicos guardados disponibles para esta cuenta del servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Non ci sono nuovi argomenti salvati disponibili per questo account del server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Brak nowych zapisanych tematów dla tego konta na serwerze."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Er zijn geen nieuwe opgeslagen onderwerpen beschikbaar voor dit serveraccount."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aucun nouveau sujet enregistré n’est disponible pour ce compte sur le serveur."
+          }
+        }
+      }
+    },
+    "Some topics couldn't be added. Check your server login and connection, then try again. Topics already added are kept.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Some topics couldn't be added. Check your server login and connection, then try again. Topics already added are kept."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Einige Themen konnten nicht hinzugefügt werden. Prüfe deine Serveranmeldung und Verbindung und versuche es erneut. Bereits hinzugefügte Themen bleiben erhalten."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "No se pudieron añadir algunos tópicos. Comprueba el inicio de sesión y la conexión con el servidor e inténtalo de nuevo. Se conservan los tópicos ya añadidos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Impossibile aggiungere alcuni argomenti. Controlla le credenziali e la connessione al server, poi riprova. Gli argomenti già aggiunti vengono mantenuti."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Nie udało się dodać niektórych tematów. Sprawdź dane logowania i połączenie z serwerem, a następnie spróbuj ponownie. Dodane tematy zostaną zachowane."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sommige onderwerpen konden niet worden toegevoegd. Controleer je serveraanmelding en verbinding en probeer het opnieuw. Reeds toegevoegde onderwerpen blijven behouden."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Certains sujets n’ont pas pu être ajoutés. Vérifiez votre connexion et vos identifiants sur le serveur, puis réessayez. Les sujets déjà ajoutés sont conservés."
+          }
+        }
+      }
+    },
+    "Topics saved in account": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topics saved in account"
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Im Konto gespeicherte Themen"
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tópicos guardados en la cuenta"
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Argomenti salvati nell’account"
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tematy zapisane na koncie"
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Onderwerpen opgeslagen in account"
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sujets enregistrés dans le compte"
+          }
+        }
+      }
+    },
+    "Topics saved in this account in the ntfy web app appear here. Topics already subscribed and topics on other servers are not listed.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Topics saved in this account in the ntfy web app appear here. Topics already subscribed and topics on other servers are not listed."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier erscheinen Themen, die in diesem Konto in der ntfy-Web-App gespeichert sind. Bereits abonnierte Themen und Themen auf anderen Servern werden nicht angezeigt."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Aquí aparecen los tópicos guardados en esta cuenta en la aplicación web de ntfy. No se muestran los tópicos ya suscritos ni los de otros servidores."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Qui vengono mostrati gli argomenti salvati in questo account nell’app web di ntfy. Gli argomenti già sottoscritti e quelli su altri server non sono elencati."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Tutaj pojawiają się tematy zapisane na tym koncie w aplikacji internetowej ntfy. Tematy już subskrybowane i tematy na innych serwerach nie są wyświetlane."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Hier verschijnen onderwerpen die in dit account in de ntfy-webapp zijn opgeslagen. Reeds geabonneerde onderwerpen en onderwerpen op andere servers worden niet getoond."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les sujets enregistrés dans ce compte dans l’application web ntfy apparaissent ici. Les sujets déjà suivis et ceux des autres serveurs ne sont pas affichés."
+          }
+        }
+      }
+    },
+    "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. iOS will ask you next.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. iOS will ask you next."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Erlaube Mitteilungen, damit Nachrichten an die hinzugefügten Themen auf deinem Sperrbildschirm erscheinen, auch wenn die App geschlossen ist. iOS fragt dich als Nächstes."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Permite las notificaciones para que los mensajes enviados a los tópicos que has añadido aparezcan en la pantalla de bloqueo, incluso con la app cerrada. iOS te lo preguntará a continuación."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consenti le notifiche per mostrare sulla schermata di blocco i messaggi inviati agli argomenti aggiunti, anche quando l’app è chiusa. iOS ti chiederà il permesso al passaggio successivo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Zezwól na powiadomienia, aby wiadomości wysyłane do dodanych tematów pojawiały się na ekranie blokady, nawet gdy aplikacja jest zamknięta. iOS zapyta Cię o zgodę w następnym kroku."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Sta meldingen toe zodat berichten aan de toegevoegde onderwerpen op je toegangsscherm verschijnen, ook als de app gesloten is. iOS vraagt je hierna om toestemming."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Autorisez les notifications pour que les messages envoyés aux sujets ajoutés s’affichent sur votre écran verrouillé, même lorsque l’app est fermée. iOS vous demandera ensuite votre accord."
+          }
+        }
+      }
+    },
     "Access was blocked (HTTP 403), but this is not an ntfy error response. A reverse proxy or security check may be responsible. Check its configuration or, if it requires extra credentials, use Settings > Custom HTTP headers.": {
       "localizations": {
         "en": {
