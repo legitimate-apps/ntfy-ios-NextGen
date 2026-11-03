@@ -6276,16 +6276,6 @@ final class ntfyTests: XCTestCase {
                        "copying the displayed body must not carry a rendered hyphen")
     }
 
-    func testWideEnoughLinesLeaveWordWrappingAlone() {
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 120, availableWidth: 200), .byWordWrapping)
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 260, availableWidth: 200), .byCharWrapping)
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 260, availableWidth: 0), .byWordWrapping,
-            "an unlaid-out view must not be treated as a zero-width line")
-    }
-
     /// A URL is one token even though it is full of punctuation, and a message
     /// that mixes prose with an over-long token still has to lose the hyphen.
     func testMixedProseAndTokenStillRendersWithoutAnInsertedHyphen() throws {
@@ -6294,6 +6284,72 @@ final class ntfyTests: XCTestCase {
         let textView = makeMessageTextView(body, width: 200)
         XCTAssertEqual(insertedGlyphWidths(in: textView), [])
         XCTAssertEqual(laidOutLines(textView).joined(), body)
+    }
+
+    /// ntfy #1743: a wide URL must not change the breaks in its neighboring prose.
+    func testProseBesideLongURLKeepsWordBoundaries() throws {
+        guard #available(iOS 16.0, *) else { throw XCTSkip("TextKit 2 inspection needs iOS 16") }
+        let url = "https://example.com/" + String(repeating: "segment", count: 25)
+        let body = "Deployment finished successfully on production cluster " + url
+            + " Deployment finished successfully on production cluster"
+        for style in [MessageTextStyle.body, .title] {
+            let view = makeMessageTextView(body, width: 200, style: style, language: "en")
+            let lines = laidOutLines(view)
+            XCTAssertGreaterThan(lines.count, 3)
+            var offset = 0
+            let urlRange = (body as NSString).range(of: url)
+            for line in lines.dropLast() {
+                offset += (line as NSString).length
+                let insideURL = offset > urlRange.location && offset < NSMaxRange(urlRange)
+                XCTAssertTrue(insideURL || line.hasSuffix(" "), "Prose split inside a word: \(line)")
+            }
+            XCTAssertEqual(lines.joined(), body)
+            XCTAssertEqual(insertedGlyphWidths(in: view), [])
+        }
+    }
+
+    /// ntfy #1743: detector limits must not silently change the destination of a long URL.
+    func testLongURLRetainsEntireDestinationAndStyling() throws {
+        let url = "https://example.com/p?x=" + String(repeating: "a1b2c3d4", count: 400)
+        XCTAssertEqual(url.count, 3224)
+        for type in [nil, "text/markdown"] as [String?] {
+            let body = "🙂 Open \(url) now"
+            let result = makeMessageNSAttributedString(renderMessageBody(body, contentType: type), style: .body)
+            let range = (result.string as NSString).range(of: url)
+            var linked = 0
+            result.enumerateAttributes(in: range) { attrs, run, _ in
+                XCTAssertEqual((attrs[.link] as? URL)?.absoluteString, url)
+                // Authored/parser-created Markdown links use UITextView's native
+                // linkTextAttributes; plain links also carry explicit styling.
+                if type == nil {
+                    XCTAssertEqual(attrs[.foregroundColor] as? UIColor, UIColor.link)
+                    XCTAssertEqual(attrs[.underlineStyle] as? Int, NSUnderlineStyle.single.rawValue)
+                }
+                if attrs[.link] != nil { linked += run.length }
+            }
+            XCTAssertEqual(linked, url.utf16.count)
+            XCTAssertNil(result.attribute(.link, at: NSMaxRange(range) + 1, effectiveRange: nil))
+        }
+    }
+
+    /// The long-token fallback must preserve boundaries and authored Markdown targets.
+    func testLongURLDetectionKeepsDelimitersUnicodeAndMarkdownTargets() throws {
+        let query = String(repeating: "a1b2c3d4", count: 400)
+        let urls = ["https://example.com/p?x=" + query,
+                    "https://example.com/" + query + "/Foo_(bar)?q=日本語&x[]=1#end",
+                    "HTTPS://example.com/p?x=" + query]
+        for url in urls {
+            let body = "🙂 See (\(url)), then https://ntfy.sh/docs."
+            for type in [nil, "text/markdown"] as [String?] {
+                let links = linkTargets(in: renderMessageBody(body, contentType: type))
+                XCTAssertEqual(links, [URL(string: url)!, URL(string: "https://ntfy.sh/docs")!])
+            }
+        }
+        let url = urls[0]
+        let markdown = "[\(url)](https://different.example/target) bare \(url)"
+        XCTAssertEqual(linkTargets(in: renderMessageBody(markdown, contentType: "text/markdown")),
+                       [URL(string: "https://different.example/target")!, URL(string: url)!])
+        XCTAssertEqual(linkTargets(in: renderMessageTitle(url)), [URL(string: url)!])
     }
 
     func testDocsStillPointAtNtfysOwnDocumentation() {
