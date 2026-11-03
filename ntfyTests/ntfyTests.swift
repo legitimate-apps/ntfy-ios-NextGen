@@ -6276,16 +6276,6 @@ final class ntfyTests: XCTestCase {
                        "copying the displayed body must not carry a rendered hyphen")
     }
 
-    func testWideEnoughLinesLeaveWordWrappingAlone() {
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 120, availableWidth: 200), .byWordWrapping)
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 260, availableWidth: 200), .byCharWrapping)
-        XCTAssertEqual(
-            messageLineBreakMode(widestTokenWidth: 260, availableWidth: 0), .byWordWrapping,
-            "an unlaid-out view must not be treated as a zero-width line")
-    }
-
     /// A URL is one token even though it is full of punctuation, and a message
     /// that mixes prose with an over-long token still has to lose the hyphen.
     func testMixedProseAndTokenStillRendersWithoutAnInsertedHyphen() throws {
@@ -6294,6 +6284,28 @@ final class ntfyTests: XCTestCase {
         let textView = makeMessageTextView(body, width: 200)
         XCTAssertEqual(insertedGlyphWidths(in: textView), [])
         XCTAssertEqual(laidOutLines(textView).joined(), body)
+    }
+
+    /// ntfy #1743: a wide URL must not change the breaks in its neighboring prose.
+    func testProseBesideLongURLKeepsWordBoundaries() throws {
+        guard #available(iOS 16.0, *) else { throw XCTSkip("TextKit 2 inspection needs iOS 16") }
+        let url = "https://example.com/" + String(repeating: "segment", count: 25)
+        let body = "Deployment finished successfully on production cluster " + url
+            + " Deployment finished successfully on production cluster"
+        for style in [MessageTextStyle.body, .title] {
+            let view = makeMessageTextView(body, width: 200, style: style, language: "en")
+            let lines = laidOutLines(view)
+            XCTAssertGreaterThan(lines.count, 3)
+            var offset = 0
+            let urlRange = (body as NSString).range(of: url)
+            for line in lines.dropLast() {
+                offset += (line as NSString).length
+                let insideURL = offset > urlRange.location && offset < NSMaxRange(urlRange)
+                XCTAssertTrue(insideURL || line.hasSuffix(" "), "Prose split inside a word: \(line)")
+            }
+            XCTAssertEqual(lines.joined(), body)
+            XCTAssertEqual(insertedGlyphWidths(in: view), [])
+        }
     }
 
     func testDocsStillPointAtNtfysOwnDocumentation() {

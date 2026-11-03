@@ -249,55 +249,22 @@ func configureMessageTextView(
 
 // MARK: Wrapping without hyphenation
 
-/// Width of the widest whitespace-delimited token, measured with the attributes
-/// the token is actually drawn with. A "token" here is deliberately not a
-/// linguistic word: an API key, a URL or a base64 blob is one token, and it is
-/// exactly those that the line breaker cannot fit.
-func widestTokenWidth(in attributed: NSAttributedString) -> CGFloat {
-    let text = attributed.string as NSString
-    let whitespace = CharacterSet.whitespacesAndNewlines
-    var widest: CGFloat = 0
-    var index = 0
-    while index < text.length {
-        var end = index
-        while end < text.length,
-              let scalar = Unicode.Scalar(text.character(at: end)),
-              !whitespace.contains(scalar) {
-            end += 1
-        }
-        if end > index {
-            let token = attributed.attributedSubstring(from: NSRange(location: index, length: end - index))
-            widest = max(widest, token.size().width)
-            index = end
-        } else {
-            index += 1
-        }
+/// Keep word boundaries throughout the paragraph. TextKit 2's line-break delegate
+/// rejects synthetic hyphens, allowing an oversized token to split without
+/// forcing the neighboring prose into character wrapping.
+@available(iOS 16.0, *)
+private final class MessageLineBreakDelegate: NSObject, NSTextLayoutManagerDelegate {
+    static let shared = MessageLineBreakDelegate()
+
+    func textLayoutManager(_ textLayoutManager: NSTextLayoutManager,
+                           shouldBreakLineBefore location: any NSTextLocation,
+                           hyphenating: Bool) -> Bool {
+        return !hyphenating
     }
-    return widest
 }
 
-/// TextKit 2 inserts a hyphen when word wrapping has to break inside a single
-/// word that cannot fit the line, so a 64-character API token renders as
-/// `…b32e-` / `fa674…` — and whoever reads it off the screen carries away a
-/// character the message never contained. Measured on iOS 26.5: neither
-/// `hyphenationFactor = 0` nor `usesDefaultHyphenation = false` suppresses it,
-/// and `NSTextContainer.lineBreakMode` is ignored outright. Character wrapping
-/// is the only mode that never inserts one, but it also breaks ordinary prose
-/// mid-word ("succ/essfully"), so a paragraph earns it only when that paragraph
-/// really does hold a token wider than the line it has to fit in.
-func messageLineBreakMode(widestTokenWidth: CGFloat, availableWidth: CGFloat) -> NSLineBreakMode {
-    guard availableWidth > 0, widestTokenWidth > availableWidth else {
-        return .byWordWrapping
-    }
-    return .byCharWrapping
-}
-
-/// Gives every paragraph the line-break mode it needs at this width, preserving
-/// any other paragraph attributes the Markdown parser produced. The hyphenation
-/// properties are set too: they do not suppress the inserted hyphen on their own
-/// (that is what the mode is for), but they state the intent for any renderer
-/// that does honor them.
-func applyMessageWrapping(to attributed: NSAttributedString, availableWidth: CGFloat) -> NSAttributedString {
+/// Preserve Markdown paragraph attributes while disabling linguistic hyphenation.
+func applyMessageWrapping(to attributed: NSAttributedString) -> NSAttributedString {
     guard attributed.length > 0 else {
         return attributed
     }
@@ -311,10 +278,7 @@ func applyMessageWrapping(to attributed: NSAttributedString, availableWidth: CGF
         let paragraph = output.attributedSubstring(from: enclosingRange)
         let existing = paragraph.attribute(.paragraphStyle, at: 0, effectiveRange: nil) as? NSParagraphStyle
         let style = (existing?.mutableCopy() as? NSMutableParagraphStyle) ?? NSMutableParagraphStyle()
-        style.lineBreakMode = messageLineBreakMode(
-            widestTokenWidth: widestTokenWidth(in: paragraph),
-            availableWidth: max(0, availableWidth - max(style.headIndent, style.firstLineHeadIndent) + min(0, style.tailIndent))
-        )
+        style.lineBreakMode = .byWordWrapping
         style.hyphenationFactor = 0
         if #available(iOS 15.0, *) {
             style.usesDefaultHyphenation = false
@@ -324,42 +288,21 @@ func applyMessageWrapping(to attributed: NSAttributedString, availableWidth: CGF
     return output
 }
 
-/// A self-sizing, non-scrolling text view that re-decides how to wrap whenever
-/// its width changes. It keeps the message it was given, so the wrapping
-/// decision is always recomputed from the original text rather than compounded
-/// on top of the last decision.
+/// A self-sizing, non-scrolling text view that preserves word wrapping even
+/// when a message contains oversized tokens.
 final class MessageTextView: UITextView {
     private var lastLaidOutWidth: CGFloat = 0
     private var messageText: NSAttributedString?
-    private var wrappedWidth: CGFloat = -1
-
-    /// The width text actually gets to occupy, which is what the wrapping
-    /// decision has to be made against — not the view's own bounds.
-    var availableTextWidth: CGFloat {
-        let insets = textContainerInset.left + textContainerInset.right
-        let padding = textContainer.lineFragmentPadding * 2
-        return max(0, bounds.width - insets - padding)
-    }
 
     func setMessageText(_ next: NSAttributedString) {
         guard messageText?.isEqual(to: next) != true else {
             return
         }
         messageText = next
-        wrappedWidth = -1
-        applyWrapping()
-    }
-
-    private func applyWrapping() {
-        guard let messageText else {
-            return
+        if #available(iOS 16.0, *) {
+            textLayoutManager?.delegate = MessageLineBreakDelegate.shared
         }
-        let width = availableTextWidth
-        guard abs(width - wrappedWidth) > 0.5 else {
-            return
-        }
-        wrappedWidth = width
-        let wrapped = applyMessageWrapping(to: messageText, availableWidth: width)
+        let wrapped = applyMessageWrapping(to: next)
         guard !attributedText.isEqual(to: wrapped) else {
             return
         }
@@ -386,7 +329,6 @@ final class MessageTextView: UITextView {
 
     override func layoutSubviews() {
         super.layoutSubviews()
-        applyWrapping()
         guard abs(bounds.width - lastLaidOutWidth) > 0.5 else {
             return
         }
