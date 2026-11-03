@@ -7,6 +7,8 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A124DA7F0000000000000002 /* NotificationSwitches.swift in Sources */ = {isa = PBXBuildFile; fileRef = A124DA7F0000000000000001 /* NotificationSwitches.swift */; };
+		A124DA7F0000000000000004 /* NotificationSwitchesTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A124DA7F0000000000000003 /* NotificationSwitchesTests.swift */; };
         A124DA7E0000000000000004 /* SubscriptionDateTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = A124DA7E0000000000000005; };
 		36F3897CDC503084F420B8E4 = {isa = PBXBuildFile; fileRef = 00430C4D44D528D53F5950F8; };
 		729248E8E1BB5BEEC70AAFF9 = {isa = PBXBuildFile; fileRef = E025341946943C384D6CD042; };
@@ -244,6 +246,8 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		A124DA7F0000000000000001 /* NotificationSwitches.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationSwitches.swift; sourceTree = "<group>"; };
+		A124DA7F0000000000000003 /* NotificationSwitchesTests.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/NotificationSwitchesTests.swift"; sourceTree = SOURCE_ROOT; };
         A124DA7E0000000000000005 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/SubscriptionDateTests.swift"; sourceTree = SOURCE_ROOT; };
 		00430C4D44D528D53F5950F8 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfyTests/QuietHoursStorageTests.swift"; sourceTree = SOURCE_ROOT; };
 		E025341946943C384D6CD042 = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "ntfy/Views/Settings/QuietHoursView.swift"; sourceTree = SOURCE_ROOT; };
@@ -495,6 +499,7 @@
 				546000000000000000000002,
 				546000000000000000000003,
                 A124DA7E0000000000000005 /* SubscriptionDateTests.swift */,
+				A124DA7F0000000000000003 /* NotificationSwitchesTests.swift */,
 
 				DE1190000000000000000011 /* Localizable.xcstrings */,
 				DE1190000000000000000012 /* InfoPlist.xcstrings */,
@@ -623,6 +628,7 @@
 				29EE00022FD0000100F927E4 /* TopicEncryption+Message.swift */,
 				29EE00012FD0000100F927E4 /* TopicEncryption.swift */,
 				118CAFE00000000000000001 /* RelayCheck.swift */,
+				A124DA7F0000000000000001 /* NotificationSwitches.swift */,
 				94A3F7C928386B2100C48E79 /* Config.swift */,
 				2E1C0A032FF0000100A52946 /* OpenSourceLicenses.swift */,
 				29E8419D2FB417EA00F927E4 /* AttachmentFileStore.swift */,
@@ -911,6 +917,7 @@
 				2939B21A2F8F293C00A52946 /* SettingsView.swift in Sources */,
 				A70264F2C0E04C0ABEB04DE4 /* NotificationStatusView.swift in Sources */,
 				118BEEF00000000000000001 /* RelayCheck.swift in Sources */,
+				A124DA7F0000000000000002 /* NotificationSwitches.swift in Sources */,
 				2939B21B2F8F293C00A52946 /* UserTableView.swift in Sources */,
 				E27008102AF0F64B006E33BA /* SubscriptionsObservable.swift in Sources */,
 				02024E60283D7CBB0064224A /* Extensions.swift in Sources */,
@@ -1061,6 +1068,7 @@
 				E395E64D584757183956EA0B /* DiagnosticReportTests.swift in Sources */,
 				546100000000000000000303 /* TopicSoundTests.swift in Sources */,
                 A124DA7E0000000000000004 /* SubscriptionDateTests.swift in Sources */,
+				A124DA7F0000000000000004 /* NotificationSwitchesTests.swift in Sources */,
 				547100000000000000000303,
 				547100000000000000000304,
 				DE1190000000000000000004 /* LocalizationTests.swift in Sources */,
