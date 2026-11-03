@@ -4,6 +4,18 @@ User-facing release notes for **NTFY me - Next Gen** (ntfy iOS NextGen). These a
 into the App Store "What's New" field. Engineering detail and upstream tracking live in
 `CHANGES-vs-upstream.md`.
 
+## 1.24.0
+
+- Read stored topic messages from Shortcuts with a limit and date filter. The action reads local history without fetching or marking messages read.
+- Show the subscription date and time in Topic details. Dates for subscriptions created before this version are unknown.
+- Show iOS settings that hide or delay alerts in Notification status, including alert destinations, sounds, Scheduled Summary, Background App Refresh and Low Power Mode. These checks do not diagnose server configuration.
+- Fetch messages missed by dropped pushes on the next poll while they remain in the server cache. A newer push no longer skips earlier messages.
+- Choose and import topics saved in a signed-in server account from Add subscription. Later changes to the account are not synchronized.
+- Explain proxy or security-check HTTP 403 responses and point to Custom HTTP headers. Normalize server URLs in Add user and explain why Save is disabled.
+- Reduce repeat alerts when iOS cuts the notification extension short by recording a pushed alert before slow presentation steps.
+- Keep ordinary words wrapping normally beside long URLs and preserve the full destination of very long message links.
+- Resize inline and fenced Markdown code when the system text size changes while the app is open.
+
 ## 1.23.0
 
 - Schedule quiet hours on chosen days, with exceptions for priority 5 and selected topics. Messages stay in history and Notification Center.

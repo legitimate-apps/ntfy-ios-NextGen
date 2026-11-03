@@ -11,7 +11,7 @@ final class NavigationPilotUITests: XCTestCase {
     let newTopic = "zz-nav-118-new"
     override func setUp() {
         continueAfterFailure = false
-        app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.23.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.24.0", "-notificationPermissionPrimerOffered", "YES"]
         app.launchEnvironment["DYLD_INSERT_LIBRARIES"] = setting("NTFYTestHarness")
     }
     func test00ResolveLaunchAlert() {
@@ -94,8 +94,8 @@ final class NavigationPilotUITests: XCTestCase {
         CFNotificationCenterPostNotification(CFNotificationCenterGetDarwinNotifyCenter(), CFNotificationName("ntfy.navigation.fixture.response" as CFString), nil, nil, true)
         assertTarget()
     }
-    func testVersion123UpdateSheet() {
-        verifyVersion123UpdateSheet(app: app, german: false)
+    func testVersion124UpdateSheet() {
+        verifyVersion124UpdateSheet(app: app, german: false)
     }
     func testWhatsNewIsReplacedByURL() {
         app.launchArguments = ["-ntfyDebugLastSeenVersion", "1.17.0", "-notificationPermissionPrimerOffered", "YES"]
@@ -375,7 +375,7 @@ final class GermanLocalizationUITests: XCTestCase {
 
     override func setUp() {
         continueAfterFailure = false
-        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.23.0", "-notificationPermissionPrimerOffered", "YES"]
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.24.0", "-notificationPermissionPrimerOffered", "YES"]
     }
     func capture(_ name: String) {
         let tree = XCTAttachment(string: app.debugDescription)
@@ -404,8 +404,8 @@ final class GermanLocalizationUITests: XCTestCase {
         XCTAssertFalse(app.buttons["Add subscription"].exists)
         XCTAssertTrue(app.buttons["Neues Abo"].exists)
     }
-    func testVersion123UpdateSheet() {
-        verifyVersion123UpdateSheet(app: app, german: true)
+    func testVersion124UpdateSheet() {
+        verifyVersion124UpdateSheet(app: app, german: true)
     }
     func testGermanMainScreens() {
         launch()
@@ -580,10 +580,10 @@ final class GermanLocalizationUITests: XCTestCase {
 
 private extension XCTestCase {
     /// Exercise the automatic update path with the subscribed run.py fixture, not a manual sheet.
-    func verifyVersion123UpdateSheet(app: XCUIApplication, german: Bool) {
+    func verifyVersion124UpdateSheet(app: XCUIApplication, german: Bool) {
         let language = german ? ["-AppleLanguages", "(de)", "-AppleLocale", "de_DE"]
                               : ["-AppleLanguages", "(en)", "-AppleLocale", "en_US"]
-        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.22.0",
+        app.launchArguments = language + ["-ntfyDebugLastSeenVersion", "1.23.0",
                                          "-notificationPermissionPrimerOffered", "YES"]
         app.launch()
         let springboard = XCUIApplication(bundleIdentifier: "com.apple.springboard")
@@ -591,26 +591,26 @@ private extension XCTestCase {
             if springboard.buttons[label].waitForExistence(timeout: 1) { springboard.buttons[label].tap() }
         }
         XCTAssertTrue(app.navigationBars[german ? "Neuigkeiten" : "What's new"].waitForExistence(timeout: 8))
-        XCTAssertTrue(app.staticTexts["1.23.0"].exists)
-        XCTAssertFalse(app.staticTexts["1.22.0"].exists, "only the unseen release should be shown")
+        XCTAssertTrue(app.staticTexts["1.24.0"].exists)
+        XCTAssertFalse(app.staticTexts["1.23.0"].exists, "only the unseen release should be shown")
         let bullets: [String] = german ? [
-            "Plane Ruhezeiten mit Ausnahmen für Priorität 5 und ausgewählte Themen.",
-            "HTTP-Benachrichtigungsaktionen öffnen die App nicht mehr. Entsperren bleibt nötig.",
-            "Sende Nachrichten mit Kurzbefehlen und Siri.",
-            "„Bei Stille benachrichtigen“ meldet, wenn ein Thema keine Nachrichten empfängt.",
-            "Lies Codeblöcke in Festbreitenschrift und öffne Weblinks auf Wunsch in der App.",
-            "Behebt stumme Ersatzbenachrichtigungen, wenn eine Nachricht nicht geladen werden kann."
+            "Beim nächsten Abruf werden durch ausgebliebene Pushs verpasste Nachrichten aus dem Servercache geladen.",
+            "Lies gespeicherte Nachrichten eines Themas mit „Nachrichten lesen“ in der App „Kurzbefehle“.",
+            "Abonniere „Im Konto gespeicherte Themen“, wenn du beim Server angemeldet bist.",
+            "Der Benachrichtigungsstatus zeigt jetzt iOS-Einstellungen, die Hinweise ausblenden oder verzögern.",
+            "Die Themendetails zeigen, wann du ein Thema abonniert hast. Bei älteren Abos steht „Unbekannt“.",
+            "Lange Links funktionieren vollständig. Text wird normal umbrochen und Markdown-Code folgt der Textgröße."
         ] : [
-            "Schedule Quiet hours, with exceptions for priority 5 and chosen topics.",
-            "Run HTTP notification buttons without opening the app. Unlocking is still required.",
-            "Send messages from Shortcuts and Siri.",
-            "Use Alert if quiet to be notified when a topic receives no messages.",
-            "Read code blocks in monospace and choose to open web links in app.",
-            "Fix silent fallback notifications when a message cannot be fetched."
+            "The next poll fetches messages missed by dropped pushes, while they remain in the server cache.",
+            "Use Read messages in Shortcuts to read stored messages from a topic.",
+            "Choose Topics saved in account when adding a subscription on a server you are signed in to.",
+            "Notification status now shows iOS settings that hide or delay alerts.",
+            "See when you subscribed in Topic details. Older subscriptions show Unknown.",
+            "Long message links work in full, words wrap normally, and Markdown code follows text size changes."
         ]
         var renderedGerman = ""
         func capture(_ page: Int, suffix: String? = nil) {
-            let name = (german ? "de" : "en") + "-whats-new-1.23-" + (suffix ?? "page-\(page)")
+            let name = (german ? "de" : "en") + "-whats-new-1.24-" + (suffix ?? "page-\(page)")
             let tree = XCTAttachment(string: app.debugDescription)
             tree.name = name + ".txt"; tree.lifetime = .keepAlways; add(tree)
             let screenshot = app.screenshot()
@@ -626,20 +626,23 @@ private extension XCTestCase {
         }
         var seen = Set<String>()
         let next = app.buttons[german ? "Weiter" : "Continue"]
-        for page in 0..<12 {
+        for page in 0..<20 {
             // Identifier shorthand rejects strings over 128 characters, common in release notes.
             for bullet in bullets where app.staticTexts.matching(NSPredicate(format: "label == %@", bullet)).firstMatch.exists {
                 seen.insert(bullet)
             }
             capture(page)
             if next.isHittable && app.frame.contains(next.frame) { break }
-            app.scrollViews.firstMatch.swipeUp()
+            // Keep enough overlap that OCR sees each ending phrase within one captured viewport.
+            let scroll = app.scrollViews.firstMatch
+            scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.8))
+                .press(forDuration: 0.1, thenDragTo: scroll.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.4)))
         }
         XCTAssertEqual(seen, Set(bullets), "all six release bullets must resolve in the selected language")
         if german {
             // AX retains the complete label even when SwiftUI draws an ellipsis. Inspect pixels too.
             let words = renderedGerman.lowercased().components(separatedBy: CharacterSet.letters.inverted).joined()
-            for ending in ["ausgewähltethemen", "entsperrenbleibtnötig", "kurzbefehlenundsiri", "keinenachrichtenempfängt", "aufwunschinderapp", "geladenwerdenkann"] {
+            for ending in ["servercachegeladen", "derappkurzbefehle", "angemeldetbist", "ausblendenoderverzögern", "unbekannt", "folgtdertextgröße"] {
                 XCTAssertTrue(words.contains(ending), "Each German bullet must render its final word (\(ending)): \(renderedGerman)")
             }
         }
