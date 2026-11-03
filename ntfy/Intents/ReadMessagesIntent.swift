@@ -80,7 +80,7 @@ struct ReadMessagesIntent: AppIntent {
         }
         let request = Notification.fetchRequest()
         var predicates = [NSPredicate(format: "subscription == %@", subscription)]
-        if let since { predicates.append(NSPredicate(format: "time > %f", since.timeIntervalSince1970)) }
+        if let since { predicates.append(NSPredicate(format: "time > %@", NSNumber(value: since.timeIntervalSince1970))) }
         request.predicate = NSCompoundPredicate(andPredicateWithSubpredicates: predicates)
         request.sortDescriptors = [NSSortDescriptor(key: "time", ascending: false), NSSortDescriptor(key: "id", ascending: false)]
         request.fetchLimit = limit

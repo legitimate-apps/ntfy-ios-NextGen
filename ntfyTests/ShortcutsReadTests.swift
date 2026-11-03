@@ -73,6 +73,47 @@ final class ShortcutsReadTests: XCTestCase {
         XCTAssertTrue(try intent.read(store: store).isEmpty)
     }
 
+    func testSinceAt2026EpochThatRoundsUpPreservesExclusiveBoundary() throws {
+        try assertSinceBoundary(at: 1_793_663_826)
+    }
+
+    func testSinceAt2026EpochThatRoundsDownPreservesExclusiveBoundary() throws {
+        try assertSinceBoundary(at: 1_793_663_873)
+    }
+
+    private func assertSinceBoundary(at cutoff: Int64) throws {
+        let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        // Exercise SQLite's integer time column through the real fresh-context read query.
+        let store = Store(inMemory: true, storeURL: directory.appendingPathComponent("since.sqlite"),
+                          credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
+        defer {
+            for persistentStore in store.container.persistentStoreCoordinator.persistentStores {
+                try? store.container.persistentStoreCoordinator.remove(persistentStore)
+            }
+        }
+        let sub = store.saveSubscription(baseUrl: "https://example.org", topic: "since-boundary")
+        for (id, offset): (String, Int64) in [("before", -1), ("exact", 0), ("after1", 1), ("after2", 2)] {
+            try row(id, time: cutoff + offset, sub: sub, store: store, body: id)
+        }
+        var intent = ReadMessagesIntent()
+        intent.topic = SubscribedTopic(subscription: sub)
+        intent.limit = 100
+        for (offset, expected): (Double, [String]) in [
+            (-0.5, ["after2", "after1", "exact"]),
+            (0, ["after2", "after1"]),
+            (0.5, ["after2", "after1"]),
+            (1.5, ["after2"]),
+            (2, []),
+            (3, [])
+        ] {
+            intent.since = Date(timeIntervalSince1970: Double(cutoff) + offset)
+            XCTAssertEqual(try intent.read(store: store).map(\.message), expected,
+                           "Exclusive cutoff \(cutoff) + \(offset)")
+        }
+    }
+
     func testSameNameOnOtherServerIsExcludedAndReadingDoesNotMarkRead() throws {
         let (store, sub, intent) = fixture()
         let other = store.saveSubscription(baseUrl: "https://another.example.org", topic: "automation")
