@@ -9404,3 +9404,121 @@ final class TopicSignInNoticeTests: XCTestCase {
         }
     }
 }
+
+
+/// Native hosted-view tests run on the simulator with the real SwiftUI Save button and fields.
+/// They require no new production API, so the same tests run on the unchanged base revision.
+@MainActor
+final class AuthPapercutsEditorTests: XCTestCase {
+    private func withEditor(_ url: String, existing: Bool = false,
+                            check: (UIWindow, () -> String?) throws -> Void) throws {
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
+        if existing { XCTAssertTrue(store.saveUser(baseUrl: "https://editor.invalid/ntfy", username: "old", password: "old-secret")) }
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        var savedURL: String?
+        let root = UserEditorView(selectedUser: nil, defaultBaseUrl: url,
+            onSave: { base, _, _ in savedURL = base; return true }, onDelete: { _ in true }, onCancel: {})
+            .environmentObject(store).environment(\.managedObjectContext, store.context)
+            .environment(\.colorScheme, .light).environment(\.sizeCategory, .large)
+        window.rootViewController = UIHostingController(rootView: root)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        settle(window)
+        try check(window, { savedURL })
+    }
+
+    private func settle(_ window: UIWindow) {
+        RunLoop.main.run(until: Date().addingTimeInterval(0.5))
+        window.layoutIfNeeded()
+    }
+
+    private func descendants(_ view: UIView) -> [UIView] {
+        [view] + view.subviews.flatMap(descendants)
+    }
+
+    private func enterCredentials(_ window: UIWindow) throws {
+        let fields = descendants(window).compactMap { $0 as? UITextField }
+        let username = try XCTUnwrap(fields.first { $0.textContentType == .username })
+        let password = try XCTUnwrap(fields.first { $0.isSecureTextEntry })
+        for (field, value) in [(username, "new-user"), (password, "test-secret")] {
+            field.text = value
+            field.sendActions(for: .editingChanged)
+        }
+        settle(window)
+    }
+
+    private func saveItem(_ window: UIWindow) throws -> UIBarButtonItem {
+        func controllers(_ vc: UIViewController) -> [UIViewController] {
+            [vc] + vc.children.flatMap(controllers)
+        }
+        let navigationItems = controllers(try XCTUnwrap(window.rootViewController)).map(\.navigationItem)
+            + descendants(window).compactMap { $0 as? UINavigationBar }.flatMap { $0.items ?? [] }
+        let items = navigationItems.flatMap { item -> [UIBarButtonItem] in
+            if #available(iOS 16.0, *) {
+                return (item.rightBarButtonItems ?? []) + item.trailingItemGroups.flatMap(\.barButtonItems)
+            }
+            return item.rightBarButtonItems ?? []
+        }
+        return try XCTUnwrap(items.first { $0.title == "Save" })
+    }
+
+    private func renderedText(_ window: UIWindow) throws -> String {
+        settle(window)
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let attachment = XCTAttachment(image: image)
+        attachment.name = "Add user validation"
+        attachment.lifetime = .keepAlways
+        add(attachment)
+        let request = VNRecognizeTextRequest()
+        request.recognitionLanguages = ["en-US"]
+        request.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage)).perform([request])
+        return (request.results ?? []).compactMap { $0.topCandidates(1).first?.string }.joined(separator: " ")
+    }
+
+    func testPastedWhitespaceAndUppercaseSchemeEnableSaveAndSaveNormalizedURL() throws {
+        for input in ["https://editor.invalid/ntfy", " https://editor.invalid/ntfy ", "\nhttps://editor.invalid/ntfy\n", "HTTPS://editor.invalid/ntfy", " HtTpS://editor.invalid/ntfy/\n"] {
+            try withEditor(input) { window, saved in
+                try enterCredentials(window)
+                let save = try saveItem(window)
+                XCTAssertTrue(save.isEnabled, "Valid pasted URL should enable Save: \(input.debugDescription)")
+                _ = try renderedText(window)
+                if save.isEnabled {
+                    let action = try XCTUnwrap(save.action, "Save must expose its native target/action")
+                    UIApplication.shared.sendAction(action, to: save.target, from: save, for: nil)
+                    settle(window)
+                    XCTAssertEqual(saved(), "https://editor.invalid/ntfy", "Save must receive the same normalized URL used for validation")
+                }
+            }
+        }
+    }
+
+    func testDisabledSaveExplainsInvalidURLAndMissingCredentials() throws {
+        for invalid in ["ftp://editor.invalid", "https://bad host.invalid"] {
+            try withEditor(invalid) { window, _ in
+                try enterCredentials(window)
+                XCTAssertFalse(try saveItem(window).isEnabled, "Malformed server URLs must not be saved: \(invalid)")
+                XCTAssertTrue(try renderedText(window).contains("Enter a valid server URL starting with http:// or https://."))
+            }
+        }
+        try withEditor("https://editor.invalid") { window, _ in
+            XCTAssertFalse(try saveItem(window).isEnabled)
+            XCTAssertTrue(try renderedText(window).contains("Enter a username."))
+        }
+    }
+
+    func testDuplicateServerExplainsEditingExistingLogin() throws {
+        for input in ["https://editor.invalid/ntfy", " HTTPS://editor.invalid/ntfy/\n"] {
+            try withEditor(input, existing: true) { window, _ in
+                try enterCredentials(window)
+                XCTAssertFalse(try saveItem(window).isEnabled)
+                XCTAssertTrue(try renderedText(window).contains("This server already has a login. Edit it in Settings instead."))
+            }
+        }
+    }
+}
