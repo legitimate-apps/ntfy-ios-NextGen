@@ -29634,6 +29634,282 @@
           }
         }
       }
+    },
+    "The next poll fetches messages missed by dropped pushes, while they remain in the server cache.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "The next poll fetches messages missed by dropped pushes, while they remain in the server cache."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Beim nächsten Abruf werden durch ausgebliebene Pushs verpasste Nachrichten aus dem Servercache geladen."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los mensajes perdidos por notificaciones push que no llegaron se recuperan en la próxima consulta, si siguen en la caché del servidor."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I messaggi persi per notifiche push non arrivate vengono recuperati alla prossima verifica, se sono ancora nella cache del server."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Wiadomości pominięte z powodu niedostarczonych powiadomień push zostaną pobrane przy następnym odpytywaniu, jeśli są jeszcze w pamięci podręcznej serwera."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Berichten die door gemiste pushmeldingen ontbraken, worden bij de volgende controle opgehaald zolang ze nog in de servercache staan."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les messages manqués à cause de notifications push non reçues sont récupérés à la prochaine interrogation, s’ils sont encore dans le cache du serveur."
+          }
+        }
+      }
+    },
+    "Use Read messages in Shortcuts to read stored messages from a topic.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Use Read messages in Shortcuts to read stored messages from a topic."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lies gespeicherte Nachrichten eines Themas mit „Nachrichten lesen“ in der App „Kurzbefehle“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Leer mensajes en Atajos para leer los mensajes guardados de un tópico."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Usa Leggi messaggi in Comandi Rapidi per leggere i messaggi salvati di un argomento."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Użyj akcji Odczytaj wiadomości w Skrótach, aby czytać zapisane wiadomości z tematu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Gebruik Berichten lezen in Opdrachten om opgeslagen berichten van een onderwerp te lezen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Utilisez Lire les messages dans Raccourcis pour lire les messages enregistrés d’un sujet."
+          }
+        }
+      }
+    },
+    "Choose Topics saved in account when adding a subscription on a server you are signed in to.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choose Topics saved in account when adding a subscription on a server you are signed in to."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Abonniere „Im Konto gespeicherte Themen“, wenn du beim Server angemeldet bist."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Al añadir una suscripción en un servidor donde has iniciado sesión, elige Tópicos guardados en la cuenta."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Quando aggiungi un’iscrizione su un server a cui hai effettuato l’accesso, scegli Argomenti salvati nell’account."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dodając subskrypcję na serwerze, na którym jesteś zalogowany, wybierz Tematy zapisane na koncie."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Kies Onderwerpen opgeslagen in account wanneer je een abonnement toevoegt op een server waarop je bent ingelogd."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Choisissez Sujets enregistrés dans le compte lors de l’ajout d’un abonnement sur un serveur auquel vous êtes connecté."
+          }
+        }
+      }
+    },
+    "Notification status now shows iOS settings that hide or delay alerts.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Notification status now shows iOS settings that hide or delay alerts."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Der Benachrichtigungsstatus zeigt jetzt iOS-Einstellungen, die Hinweise ausblenden oder verzögern."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Estado de notificaciones ahora muestra los ajustes de iOS que ocultan o retrasan los avisos."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stato notifiche ora mostra le impostazioni di iOS che nascondono o ritardano gli avvisi."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Stan powiadomień pokazuje teraz ustawienia iOS, które ukrywają lub opóźniają alerty."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Meldingsstatus toont nu iOS-instellingen die meldingen verbergen of vertragen."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Dans État des notifications, consultez les réglages iOS qui masquent ou retardent les alertes."
+          }
+        }
+      }
+    },
+    "See when you subscribed in Topic details. Older subscriptions show Unknown.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "See when you subscribed in Topic details. Older subscriptions show Unknown."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Die Themendetails zeigen, wann du ein Thema abonniert hast. Bei älteren Abos steht „Unbekannt“."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consulta cuándo te suscribiste en Detalles del tópico. Las suscripciones anteriores muestran Desconocida."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Dettagli dell’argomento puoi vedere quando ti sei iscritto. Le iscrizioni precedenti mostrano Sconosciuta."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "W sekcji Szczegóły tematu sprawdzisz datę subskrypcji. Starsze subskrypcje mają datę Nieznana."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "In Onderwerpdetails zie je wanneer je je hebt geabonneerd. Bij oudere abonnementen staat Onbekend."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Consultez votre date d’abonnement dans Détails du sujet. Les anciens abonnements indiquent Inconnue."
+          }
+        }
+      }
+    },
+    "Long message links work in full, words wrap normally, and Markdown code follows text size changes.": {
+      "localizations": {
+        "en": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Long message links work in full, words wrap normally, and Markdown code follows text size changes."
+          }
+        },
+        "de": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lange Links funktionieren vollständig. Text wird normal umbrochen und Markdown-Code folgt der Textgröße."
+          }
+        },
+        "es": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Los enlaces largos funcionan completos, las palabras se ajustan con normalidad y el código Markdown sigue los cambios del tamaño de texto."
+          }
+        },
+        "it": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "I link lunghi funzionano per intero, le parole vanno a capo normalmente e il codice Markdown segue le modifiche alla dimensione del testo."
+          }
+        },
+        "pl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Długie linki działają w całości, słowa zawijają się prawidłowo, a kod Markdown dostosowuje się do zmian rozmiaru tekstu."
+          }
+        },
+        "nl": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Lange links werken volledig, woorden lopen normaal door en Markdown-code volgt wijzigingen in de tekstgrootte."
+          }
+        },
+        "fr": {
+          "stringUnit": {
+            "state": "translated",
+            "value": "Les liens longs fonctionnent en entier, les mots passent normalement à la ligne et le code Markdown suit les changements de taille du texte."
+          }
+        }
+      }
     }
   },
   "version": "1.0"
