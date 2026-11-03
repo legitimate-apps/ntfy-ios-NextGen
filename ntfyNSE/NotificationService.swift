@@ -45,6 +45,17 @@ class NotificationService: UNNotificationServiceExtension {
     private var quietHours = QuietHours.load()
     private var expiryIsQuiet = false
     private var processedIdentity: (message: Message, baseUrl: String)?
+    /// Settled before the slow steps of a presentation: true when this extension alerts the
+    /// message, false when the app or an earlier delivery already did. Nil means not claimed.
+    private var alertClaim: Bool? {
+        get { presentationLock.lock(); defer { presentationLock.unlock() }; return claimedAlert }
+        set {
+            presentationLock.lock(); defer { presentationLock.unlock() }
+            claimedAlert = newValue
+            if newValue == false { expiryIsQuiet = true }
+        }
+    }
+    private var claimedAlert: Bool?
 
     override func didReceive(_ request: UNNotificationRequest, withContentHandler contentHandler: @escaping (UNNotificationContent) -> Void) {
         // On a Mac this process can outlive the banner and receive its taps; pass them to the app.
@@ -61,6 +72,7 @@ class NotificationService: UNNotificationServiceExtension {
         quietHours = QuietHours.load()
         presentationMessage = nil
         alertIdentity = nil
+        alertClaim = nil
         self.bestAttemptContent = (fallbackContent(request).mutableCopy() as? UNMutableNotificationContent)
 
         if let bestAttemptContent = bestAttemptContent {
@@ -136,23 +148,45 @@ class NotificationService: UNNotificationServiceExtension {
             _ = handoff(final)
             return
         }
-        guard let identity = alertIdentity, let store else {
-            _ = handoff(final)
-            return
-        }
         // Passive content prevents a duplicate banner/sound. Fully removing the Notification Center
         // entry would require Apple's notification-filtering entitlement; empty content is unsafe.
-        let gate = deliveryGate
-        store.deliverAlert(message: identity.message, baseUrl: identity.baseUrl, recordBeforeDelivery: true,
-                           stillNeeded: { gate?.isPending == true }, delivery: { finished in
-            finished(handoff(final))
-        }, suppressed: {
+        let passive = {
             let quiet = final.mutableCopy() as! UNMutableNotificationContent
             quiet.sound = nil
             quiet.interruptionLevel = .passive
             quiet.relevanceScore = 0
             _ = handoff(quiet)
-        })
+        }
+        if let claim = alertClaim {
+            if claim { _ = handoff(final) } else { passive() }
+            return
+        }
+        guard let identity = alertIdentity, let store else {
+            _ = handoff(final)
+            return
+        }
+        let gate = deliveryGate
+        store.deliverAlert(message: identity.message, baseUrl: identity.baseUrl, recordBeforeDelivery: true,
+                           stillNeeded: { gate?.isPending == true }, delivery: { finished in
+            finished(handoff(final))
+        }, suppressed: passive)
+    }
+
+    /// Records the alert for a stored message before category registration and the attachment
+    /// download, not at the handoff. Once the content handler is pending, iOS shows this push whether
+    /// the extension finishes, expires (best attempt) or is killed (original payload), and expiry
+    /// itself may not touch the store. A later presenting poll then sees `alerted` and stays quiet.
+    private func claimAlert(then next: @escaping () -> Void) {
+        guard let identity = alertIdentity, let store else { next(); return }
+        let gate = deliveryGate
+        let proceed = { (alerting: Bool) in
+            self.alertClaim = alerting
+            DispatchQueue.global(qos: .userInitiated).async(execute: next)
+        }
+        // If expiry already handed off, neither closure runs and nothing remains to present.
+        store.deliverAlert(message: identity.message, baseUrl: identity.baseUrl, recordBeforeDelivery: true,
+                           stillNeeded: { gate?.isPending == true },
+                           delivery: { _ in proceed(true) }, suppressed: { proceed(false) })
     }
     
     private func handleMessage(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ received: Message) {
@@ -216,6 +250,10 @@ class NotificationService: UNNotificationServiceExtension {
 
     private func handlePresentation(_ request: UNNotificationRequest, _ content: UNMutableNotificationContent, _ baseUrl: String, _ message: Message, reconciled: Bool = false) {
         bestAttemptContent = content
+        claimAlert { self.presentClaimed(content, baseUrl, message, reconciled: reconciled) }
+    }
+
+    private func presentClaimed(_ content: UNMutableNotificationContent, _ baseUrl: String, _ message: Message, reconciled: Bool) {
         let user = store?.getBasicUser(baseUrl: baseUrl)
         let displayName = store?.subscriptionDisplayName(baseUrl: baseUrl, topic: message.topic)
         let soundName = store?.topicSoundName(baseUrl: baseUrl, topic: message.topic, library: soundLibrary)

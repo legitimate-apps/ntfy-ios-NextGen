@@ -9221,6 +9221,71 @@ extension AlertedTests {
         wait(for: [settled], timeout: 5)
         XCTAssertEqual(calls, 1)
     }
+
+    /// #31 residual: a push the NSE stored and iOS then presented as the expiry best attempt (here,
+    /// while its image download stalls) must not be alerted again by the app's next presenting poll.
+    /// When the app alerted the message first, the expiry banner must also stay quiet.
+    func testExpiryDuringAttachmentDownloadLeavesThePushAlertedForTheAppsNextPoll() throws {
+        // A loopback port that accepts connections into its backlog and never answers.
+        let listener = socket(AF_INET, SOCK_STREAM, 0)
+        XCTAssertGreaterThanOrEqual(listener, 0)
+        defer { close(listener) }
+        var address = sockaddr_in()
+        address.sin_len = UInt8(MemoryLayout<sockaddr_in>.size)
+        address.sin_family = sa_family_t(AF_INET)
+        address.sin_addr.s_addr = inet_addr("127.0.0.1")
+        var length = socklen_t(MemoryLayout<sockaddr_in>.size)
+        try withUnsafeMutablePointer(to: &address) { pointer in
+            try pointer.withMemoryRebound(to: sockaddr.self, capacity: 1) {
+                guard bind(listener, $0, length) == 0, listen(listener, 8) == 0,
+                      getsockname(listener, $0, &length) == 0 else { throw POSIXError(.EADDRINUSE) }
+            }
+        }
+        let port = UInt16(bigEndian: address.sin_port)
+        for appAlertedFirst in [false, true] {
+            let directory = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+            try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+            defer { try? FileManager.default.removeItem(at: directory) }
+            let url = directory.appendingPathComponent("claim.sqlite")
+            let app = Store(inMemory: true, storeURL: url), extensionStore = Store(inMemory: true, storeURL: url)
+            let base = "https://expiry-claim.example"
+            let sub = app.saveSubscription(baseUrl: base, topic: "claim-\(appAlertedFirst)")
+            let msg = Message(id: UUID().uuidString, time: Int64(Date().timeIntervalSince1970), event: "message",
+                              topic: sub.topic!, message: "Photo", priority: 4,
+                              attachment: MessageAttachment(name: "shot.png", type: "image/png", size: 1024, expires: nil,
+                                                            url: "http://127.0.0.1:\(port)/shot.png"))
+            // Holding the alert lock keeps the extension from settling its alert until the app has alerted.
+            let fd = open(url.appendingPathExtension("alerts.lock").path, O_CREAT | O_RDWR, S_IRUSR | S_IWUSR)
+            XCTAssertGreaterThanOrEqual(fd, 0)
+            defer { close(fd) }
+            if appAlertedFirst { XCTAssertEqual(flock(fd, LOCK_EX | LOCK_NB), 0) }
+            let service = NotificationService(); service.makeStore = { extensionStore }
+            let content = UNMutableNotificationContent(); content.sound = .default
+            content.userInfo = msg.toUserInfo(); content.userInfo["base_url"] = base
+            var outputs: [UNNotificationContent] = []
+            service.didReceive(UNNotificationRequest(identifier: UUID().uuidString, content: content, trigger: nil)) { outputs.append($0) }
+            if appAlertedFirst {
+                app.recordPresentation(message: msg, baseUrl: base)
+                flock(fd, LOCK_UN)
+            }
+            let settle = expectation(description: "the image download is stalled")
+            DispatchQueue.main.asyncAfter(deadline: .now() + 1) { settle.fulfill() }
+            wait(for: [settle], timeout: 5)
+            XCTAssertTrue(outputs.isEmpty, "premise: the extension is still waiting for the image")
+            service.serviceExtensionTimeWillExpire()
+            XCTAssertEqual(outputs.count, 1, "expiry hands off once")
+            if appAlertedFirst {
+                XCTAssertNil(outputs.first?.sound, "the app already alerted; the expiry banner must not sound again")
+                XCTAssertEqual(outputs.first?.interruptionLevel, .passive)
+            } else {
+                XCTAssertNotNil(outputs.first?.sound, "the first alert still sounds")
+            }
+            let relaunched = Store(inMemory: true, storeURL: url)
+            XCTAssertTrue(relaunched.wasAlerted(message: msg, baseUrl: base), "appAlertedFirst=\(appAlertedFirst)")
+            XCTAssertEqual(relaunched.alertCandidates(from: [msg], baseUrl: base).map(\.id), [],
+                           "a presenting poll that re-covers the presented push must not alert it again (appAlertedFirst=\(appAlertedFirst))")
+        }
+    }
 }
 
 
