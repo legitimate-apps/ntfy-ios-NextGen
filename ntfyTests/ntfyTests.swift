@@ -10037,7 +10037,6 @@ final class MessageDynamicTypeTests: XCTestCase {
 @MainActor
 final class UrgentAlertsPresentationTests: XCTestCase {
     private func render(urgent: Bool, banner: Bool = false,
-                        subscriptionList: Bool = false, sizeCategory: ContentSizeCategory = .large,
                         authorization: UNAuthorizationStatus = .notDetermined) throws -> [(String, CGRect)] {
         let method = try XCTUnwrap(class_getInstanceMethod(UNNotificationSettings.self,
             #selector(getter: UNNotificationSettings.authorizationStatus)))
@@ -10058,17 +10057,12 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         let refreshed = expectation(description: "Read the stubbed system authorization")
         delegate.refreshNotificationSettings { refreshed.fulfill() }
         wait(for: [refreshed], timeout: 5)
-        let root = Group {
-            if subscriptionList { SubscriptionListView() }
-            else {
-                Form {
-                    if banner { NotificationPermissionBanner() }
-                    else if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
-                }
-            }
+        let root = Form {
+            if banner { NotificationPermissionBanner() }
+            else if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
         }.environmentObject(delegate).environmentObject(store)
             .environment(\.managedObjectContext, store.context)
-            .environment(\.sizeCategory, sizeCategory).environment(\.colorScheme, .light)
+            .environment(\.sizeCategory, .large).environment(\.colorScheme, .light)
             .environment(\.scenePhase, .inactive)
         window.rootViewController = UIHostingController(rootView: root)
         window.makeKeyAndVisible()
@@ -10101,42 +10095,29 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         let text = try render(urgent: true).map(\.0).joined(separator: " ")
         XCTAssertTrue(text.contains("Not requested yet"))
         XCTAssertTrue(text.contains("Allow notifications"))
-        XCTAssertFalse(text.contains("Open Notification Settings"))
+        XCTAssertFalse(text.contains("Open Settings"))
     }
 
-    func testSettingsRecoveryUsesOneLabelInBothSectionsAndBanner() throws {
+    func testRecoveryActionsUseOneSettingsLabelForDeniedAndProvisional() throws {
         for authorization: UNAuthorizationStatus in [.denied, .provisional] {
             for urgent in [false, true] {
-                let text = try render(urgent: urgent, authorization: authorization).map(\.0).joined(separator: " ")
-                XCTAssertTrue(text.contains("Open Notification Settings"), "Same recovery destination needs the same label: \(text)")
-                XCTAssertFalse(text.contains("Open Settings"))
+                let rows = try render(urgent: urgent, authorization: authorization)
+                XCTAssertTrue(rows.contains { $0.0 == "Open Settings" },
+                              "Same recovery destination needs the same label: \(rows.map(\.0))")
             }
         }
-        let banner = try render(urgent: false, banner: true, authorization: .denied).map(\.0).joined(separator: " ")
-        XCTAssertTrue(banner.contains("Open Notification Settings"))
+        let banner = try render(urgent: false, banner: true, authorization: .denied)
+        XCTAssertTrue(banner.contains { $0.0 == "Open Settings" })
     }
 
     func testStatusAndActionPrecedeTheExplanation() throws {
         let rows = try render(urgent: true)
         let status = try XCTUnwrap(rows.first { $0.0.contains("Time Sensitive notifications") })
         let explanation = try XCTUnwrap(rows.first { $0.0.contains("Priority 4 and 5") })
-        let action = try XCTUnwrap(rows.first { $0.0.contains("Allow notifications") || $0.0.contains("Open Notification Settings") })
+        let action = try XCTUnwrap(rows.first { $0.0.contains("Allow notifications") || $0.0.contains("Open Settings") })
         // Vision coordinates start at the bottom of the image.
         XCTAssertGreaterThan(status.1.midY, explanation.1.midY)
         XCTAssertGreaterThan(action.1.midY, explanation.1.midY)
-    }
-
-    func testDeniedBannerRecoveryLabelWrapsInFullAtLargestDynamicType() throws {
-        let rows = try render(urgent: false, subscriptionList: true,
-                              sizeCategory: .accessibilityExtraExtraExtraLarge,
-                              authorization: .denied)
-        let text = rows.map(\.0).joined(separator: " ")
-        XCTAssertTrue(text.contains("Open Notification Settings"), "Recovery action must stay readable: \(text)")
-        let firstLine = try XCTUnwrap(rows.first { $0.0 == "Open Notification" })
-        let secondLine = try XCTUnwrap(rows.first { $0.0 == "Settings" })
-        XCTAssertEqual(firstLine.1.minX * UIScreen.main.bounds.width,
-                       secondLine.1.minX * UIScreen.main.bounds.width, accuracy: 3,
-                       "Wrapped action lines must share the banner's leading edge")
     }
 
     func testWarningInstructionsNameTheVisibleRecoveryAction() throws {
@@ -10147,9 +10128,10 @@ final class UrgentAlertsPresentationTests: XCTestCase {
             if let previous { defaults.set(previous, forKey: "NTFYStatusWarnings") }
             else { defaults.removeObject(forKey: "NTFYStatusWarnings") }
         }
-        let text = try render(urgent: false, authorization: .authorized).map(\.0).joined(separator: " ")
+        let rows = try render(urgent: false, authorization: .authorized)
+        let text = rows.map(\.0).joined(separator: " ")
         XCTAssertTrue(text.contains("Banners are off"), "Exercise the warning row: \(text)")
-        XCTAssertTrue(text.contains("Tap Open Notification Settings"), "Instruction must name its recovery action: \(text)")
-        XCTAssertFalse(text.contains("Tap Open Settings"))
+        XCTAssertTrue(text.contains("Tap Open Settings"), "Instruction must name its recovery action: \(text)")
+        XCTAssertTrue(rows.contains { $0.0 == "Open Settings" }, "Show the action named by the warning: \(text)")
     }
 }

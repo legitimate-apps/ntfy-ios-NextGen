@@ -68,7 +68,7 @@ struct UrgentAlertsSettingView: View {
                 }
             }
             if state.showsSettingsButton {
-                Button(String(localized: "Open Notification Settings")) {
+                Button(DeliveryHealthCopy.openSettings) {
                     delegate.openNotificationSettings()
                 }
             }
@@ -108,7 +108,7 @@ struct CriticalAlertsSettingView: View {
             }
         }
         .alert(String(localized: "Enable Critical Alerts"), isPresented: $showingSettingsAlert) {
-            Button(String(localized: "Open Notification Settings")) {
+            Button(DeliveryHealthCopy.openSettings) {
                 delegate.openNotificationSettings()
             }
             Button(String(localized: "Cancel"), role: .cancel) {}
