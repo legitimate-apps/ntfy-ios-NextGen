@@ -10037,6 +10037,7 @@ final class MessageDynamicTypeTests: XCTestCase {
 @MainActor
 final class UrgentAlertsPresentationTests: XCTestCase {
     private func render(urgent: Bool, banner: Bool = false,
+                        subscriptionList: Bool = false, sizeCategory: ContentSizeCategory = .large,
                         authorization: UNAuthorizationStatus = .notDetermined) throws -> [(String, CGRect)] {
         let method = try XCTUnwrap(class_getInstanceMethod(UNNotificationSettings.self,
             #selector(getter: UNNotificationSettings.authorizationStatus)))
@@ -10053,12 +10054,22 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         let window = UIWindow(windowScene: scene)
         window.frame = UIScreen.main.bounds
         let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
-        let root = Form {
-            if banner { NotificationPermissionBanner() }
-            else if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
-        }.environmentObject(AppDelegate()).environmentObject(store)
+        let delegate = AppDelegate()
+        let refreshed = expectation(description: "Read the stubbed system authorization")
+        delegate.refreshNotificationSettings { refreshed.fulfill() }
+        wait(for: [refreshed], timeout: 5)
+        let root = Group {
+            if subscriptionList { SubscriptionListView() }
+            else {
+                Form {
+                    if banner { NotificationPermissionBanner() }
+                    else if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
+                }
+            }
+        }.environmentObject(delegate).environmentObject(store)
             .environment(\.managedObjectContext, store.context)
-            .environment(\.sizeCategory, .large).environment(\.colorScheme, .light)
+            .environment(\.sizeCategory, sizeCategory).environment(\.colorScheme, .light)
+            .environment(\.scenePhase, .inactive)
         window.rootViewController = UIHostingController(rootView: root)
         window.makeKeyAndVisible()
         defer { window.isHidden = true; previous?.makeKey() }
@@ -10113,5 +10124,12 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         // Vision coordinates start at the bottom of the image.
         XCTAssertGreaterThan(status.1.midY, explanation.1.midY)
         XCTAssertGreaterThan(action.1.midY, explanation.1.midY)
+    }
+
+    func testDeniedBannerRecoveryLabelWrapsInFullAtLargestDynamicType() throws {
+        let text = try render(urgent: false, subscriptionList: true,
+                              sizeCategory: .accessibilityExtraExtraExtraLarge,
+                              authorization: .denied).map(\.0).joined(separator: " ")
+        XCTAssertTrue(text.contains("Open Notification Settings"), "Recovery action must stay readable: \(text)")
     }
 }

@@ -9,6 +9,7 @@ struct NotificationPermissionBanner: View {
             Text(DeliveryHealthCopy.notificationsOff)
                 .fixedSize(horizontal: false, vertical: true)
             Button(String(localized: "Open Notification Settings")) { delegate.openNotificationSettings() }
+                .fixedSize(horizontal: false, vertical: true)
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
