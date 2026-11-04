@@ -7391,11 +7391,57 @@ final class UrgentAlertsStateTests: XCTestCase {
     }
 
     func testNotificationsOffOverridesTimeSensitiveEnabled() {
-        for authorization: UNAuthorizationStatus in [.denied, .notDetermined] {
+        for authorization: UNAuthorizationStatus in [.denied] {
             let state = UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported, authorization: authorization)
             XCTAssertEqual(state.status, .notificationsOff)
             XCTAssertTrue(state.showsSettingsButton)
             XCTAssertFalse(state.showsCriticalToggle)
+        }
+    }
+
+    func testEveryAuthorizationStatusMapsToHonestStatusAndSettingsAction() {
+        let cases: [(UNAuthorizationStatus, String, Bool)] = [
+            (.notDetermined, "Not requested yet", false),
+            (.denied, "Notifications off", true),
+            (.provisional, "Off", true),
+            (.ephemeral, "On", false),
+            (.authorized, "On", false)
+        ]
+        for (authorization, label, settings) in cases {
+            let state = UrgentAlertsState(timeSensitive: .enabled, critical: .notSupported,
+                                          authorization: authorization)
+            XCTAssertEqual(state.status.rawValue, label, "authorization=\(authorization.rawValue)")
+            XCTAssertEqual(state.showsSettingsButton, settings, "authorization=\(authorization.rawValue)")
+        }
+    }
+
+    @MainActor
+    func testStandardPermissionAnswerPublishesFreshSettingsBeforeCompletion() throws {
+        let selector = NSSelectorFromString("requestAuthorizationWithOptions:completionHandler:")
+        let method = try XCTUnwrap(class_getInstanceMethod(UNUserNotificationCenter.self, selector))
+        let original = method_getImplementation(method)
+        defer { method_setImplementation(method, original) }
+        for allowed in [false, true] {
+            // Exercise both system answers without opening a modal in the unit-test host.
+            let answer: @convention(block) (NSObject, UInt, @escaping (Bool, Error?) -> Void) -> Void = { _, _, completion in
+                completion(allowed, nil)
+            }
+            let replacement = imp_implementationWithBlock(answer)
+            method_setImplementation(method, replacement)
+            defer {
+                method_setImplementation(method, original)
+                imp_removeBlock(replacement)
+            }
+            let delegate = AppDelegate()
+            var publications = 0
+            let observation = delegate.$notificationAuthorizationStatus.dropFirst().sink { _ in publications += 1 }
+            let finished = expectation(description: "answer refreshes settings")
+            delegate.requestStandardNotificationAuthorization {
+                XCTAssertGreaterThan(publications, 0, "Both sections need fresh published settings before completion")
+                finished.fulfill()
+            }
+            wait(for: [finished], timeout: 5)
+            withExtendedLifetime(observation) {}
         }
     }
 
@@ -9984,5 +10030,64 @@ final class MessageDynamicTypeTests: XCTestCase {
             XCTAssertEqual(paragraph.lineBreakMode, .byWordWrapping)
             XCTAssertEqual(paragraph.hyphenationFactor, 0)
         }
+    }
+}
+
+/// Render the real sections rather than pinning their SwiftUI implementation.
+@MainActor
+final class UrgentAlertsPresentationTests: XCTestCase {
+    private func render(urgent: Bool) throws -> [(String, CGRect)] {
+        let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
+        let previous = scene.windows.first(where: \.isKeyWindow)
+        let window = UIWindow(windowScene: scene)
+        window.frame = UIScreen.main.bounds
+        let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
+        let root = Form {
+            if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
+        }.environmentObject(AppDelegate()).environmentObject(store)
+            .environment(\.managedObjectContext, store.context)
+            .environment(\.sizeCategory, .large).environment(\.colorScheme, .light)
+        window.rootViewController = UIHostingController(rootView: root)
+        window.makeKeyAndVisible()
+        defer { window.isHidden = true; previous?.makeKey() }
+        RunLoop.main.run(until: Date().addingTimeInterval(0.6))
+        window.layoutIfNeeded()
+        let image = UIGraphicsImageRenderer(bounds: window.bounds).image { _ in
+            window.drawHierarchy(in: window.bounds, afterScreenUpdates: true)
+        }
+        let request = VNRecognizeTextRequest()
+        request.recognitionLanguages = ["en-US"]
+        request.recognitionLevel = .accurate
+        try VNImageRequestHandler(cgImage: XCTUnwrap(image.cgImage)).perform([request])
+        return (request.results ?? []).compactMap { result in
+            result.topCandidates(1).first.map { ($0.string, result.boundingBox) }
+        }
+    }
+
+    func testUrgentStatusUsesTheSameSecondaryTypeSizeAsPermission() throws {
+        let permission = try XCTUnwrap(render(urgent: false).first { $0.0.contains("Not requested yet") })
+        let urgent = try XCTUnwrap(render(urgent: true).first {
+            $0.0.contains("Not requested yet") || $0.0.contains("Notifications off")
+        })
+        XCTAssertEqual(urgent.1.height * UIScreen.main.bounds.height,
+                       permission.1.height * UIScreen.main.bounds.height, accuracy: 1,
+                       "Status values on this page must use the same type size")
+    }
+
+    func testUnrequestedPermissionOffersAnInAppRequest() throws {
+        let text = try render(urgent: true).map(\.0).joined(separator: " ")
+        XCTAssertTrue(text.contains("Not requested yet"))
+        XCTAssertTrue(text.contains("Allow notifications"))
+        XCTAssertFalse(text.contains("Open Notification Settings"))
+    }
+
+    func testStatusAndActionPrecedeTheExplanation() throws {
+        let rows = try render(urgent: true)
+        let status = try XCTUnwrap(rows.first { $0.0.contains("Time Sensitive notifications") })
+        let explanation = try XCTUnwrap(rows.first { $0.0.contains("Priority 4 and 5") })
+        let action = try XCTUnwrap(rows.first { $0.0.contains("Allow notifications") || $0.0.contains("Open Notification Settings") })
+        // Vision coordinates start at the bottom of the image.
+        XCTAssertGreaterThan(status.1.midY, explanation.1.midY)
+        XCTAssertGreaterThan(action.1.midY, explanation.1.midY)
     }
 }

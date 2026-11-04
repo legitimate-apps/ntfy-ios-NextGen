@@ -13,6 +13,7 @@ struct UrgentAlertsState: Equatable {
     enum Status: String {
         case on = "On"
         case off = "Off"
+        case notRequested = "Not requested yet"
         case notificationsOff = "Notifications off"
     }
 
@@ -22,7 +23,7 @@ struct UrgentAlertsState: Equatable {
 
     let status: Status
     let showsCriticalToggle: Bool
-    var showsSettingsButton: Bool { status != .on }
+    var showsSettingsButton: Bool { status != .on && status != .notRequested }
     var criticalText: String { showsCriticalToggle ? Self.criticalExplanation : Self.criticalUnavailable }
 
     init(timeSensitive: UNNotificationSetting, critical: UNNotificationSetting,
@@ -30,6 +31,8 @@ struct UrgentAlertsState: Equatable {
         switch authorization {
         case .authorized, .ephemeral:
             status = timeSensitive == .enabled ? .on : .off
+        case .notDetermined:
+            status = .notRequested
         case .provisional:
             // Quiet provisional delivery cannot break through Focus.
             status = .off
@@ -50,14 +53,20 @@ struct UrgentAlertsSettingView: View {
     }
 
     var body: some View {
-        Section(header: Text(String(localized: "Urgent alerts"))) {
-            Text(UrgentAlertsState.explanation)
-            VStack(alignment: .leading, spacing: 4) {
-                Text(String(localized: "Time Sensitive notifications"))
-                Text(LocalizedStringKey(state.status.rawValue))
-                    .foregroundColor(.secondary)
+        Section(
+            header: Text(String(localized: "Urgent alerts")),
+            footer: VStack(alignment: .leading, spacing: 8) {
+                Text(UrgentAlertsState.explanation)
+                Text(state.criticalText)
             }
-            .accessibilityElement(children: .combine)
+        ) {
+            NotificationStatusRow(title: String(localized: "Time Sensitive notifications"),
+                                  value: NSLocalizedString(state.status.rawValue, comment: ""))
+            if state.status == .notRequested {
+                Button(DeliveryHealthCopy.allowNotifications) {
+                    delegate.requestStandardNotificationAuthorization()
+                }
+            }
             if state.showsSettingsButton {
                 Button(String(localized: "Open Notification Settings")) {
                     delegate.openNotificationSettings()
@@ -66,9 +75,6 @@ struct UrgentAlertsSettingView: View {
             if state.showsCriticalToggle {
                 CriticalAlertsSettingView()
             }
-            Text(state.criticalText)
-                .font(.footnote)
-                .foregroundColor(.secondary)
         }
         .onAppear { delegate.refreshNotificationSettings() }
     }
