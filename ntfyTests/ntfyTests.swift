@@ -10135,3 +10135,143 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         XCTAssertTrue(rows.contains { $0.0 == "Open Settings" }, "Show the action named by the warning: \(text)")
     }
 }
+
+/// Filesystem cleanup follows the database commit. Real validation and filesystem errors drive
+/// the catch paths; no mocked save/move can accidentally bypass the production transaction.
+@MainActor
+final class AttachmentUnlinkOrderingTests: XCTestCase {
+    private let bytes = Data("irreplaceable expired attachment".utf8)
+
+    private func directory() throws -> URL {
+        let url = FileManager.default.temporaryDirectory.appendingPathComponent(UUID().uuidString)
+        try FileManager.default.createDirectory(at: url, withIntermediateDirectories: true)
+        addTeardownBlock { try? FileManager.default.removeItem(at: url) }
+        return url
+    }
+
+    private func fixture() throws -> (Store, Subscription, ntfy.Notification, URL) {
+        let store = Store(inMemory: true)
+        let sub = store.saveSubscription(baseUrl: "https://unlink.invalid", topic: "attachments")
+        let original = Message(id: "original", time: 100, event: "message", topic: "attachments",
+                               message: "keep", sequenceID: "sequence")
+        store.save(notificationsFromMessages: [original], withSubscription: sub)
+        let row = try XCTUnwrap(store.context.fetch(ntfy.Notification.fetchRequest()).first)
+        let url = try directory().appendingPathComponent("retained.bin")
+        try bytes.write(to: url)
+        store.completeAttachmentDownload(notificationID: "original", localPath: url.path,
+                                         resolvedType: "application/octet-stream", resolvedSize: Int64(bytes.count))
+        XCTAssertEqual(row.attachmentLocalPath, url.path)
+        return (store, sub, row, url)
+    }
+
+    private func failNextSave(_ store: Store) throws {
+        // Missing mandatory User fields produces an actual Core Data validation error in save().
+        let invalid = User(context: store.context)
+        XCTAssertThrowsError(try invalid.validateForInsert())
+    }
+
+    private func assertRetained(_ store: Store, url: URL, file: StaticString = #filePath, line: UInt = #line) throws {
+        store.context.refreshAllObjects()
+        let rows = try store.context.fetch(ntfy.Notification.fetchRequest())
+        XCTAssertEqual(rows.count, 1, file: file, line: line)
+        XCTAssertEqual(rows.first?.id, "original", file: file, line: line)
+        XCTAssertEqual(rows.first?.attachmentLocalPath, url.path, file: file, line: line)
+        XCTAssertEqual(try Data(contentsOf: url), bytes, file: file, line: line)
+        XCTAssertFalse(store.context.hasChanges, "Failure must roll back the transaction", file: file, line: line)
+    }
+
+    func testLocalMessageDeletionRetainsAttachmentOnFailedSaveThenUnlinksOnSuccess() throws {
+        let (store, _, row, url) = try fixture()
+        try failNextSave(store)
+        store.delete(notifications: [row])
+        try assertRetained(store, url: url)
+        store.delete(notifications: [row])
+        XCTAssertTrue(try store.context.fetch(ntfy.Notification.fetchRequest()).isEmpty)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testSequenceDeletionRetainsAttachmentOnFailedSaveThenUnlinksOnSuccess() throws {
+        let (store, sub, _, url) = try fixture()
+        let deletion = Message(id: "delete", time: 101, event: "message_delete", topic: "attachments", sequenceID: "sequence")
+        try failNextSave(store)
+        store.save(notificationsFromMessages: [deletion], withSubscription: sub)
+        try assertRetained(store, url: url)
+        XCTAssertEqual(sub.lastNotificationId, "original", "Failed sequence state/cursor must also roll back")
+        store.save(notificationsFromMessages: [deletion], withSubscription: sub)
+        XCTAssertTrue(try store.context.fetch(ntfy.Notification.fetchRequest()).isEmpty)
+        XCTAssertEqual(sub.lastNotificationId, "delete")
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testSequenceReplacementRetainsAttachmentOnFailedSaveThenUnlinksOnSuccess() throws {
+        let (store, sub, _, url) = try fixture()
+        let replacement = Message(id: "replacement", time: 101, event: "message", topic: "attachments",
+                                  message: "updated", sequenceID: "sequence")
+        try failNextSave(store)
+        XCTAssertTrue(store.save(notificationsFromMessages: [replacement], withSubscription: sub).isEmpty)
+        try assertRetained(store, url: url)
+        XCTAssertEqual(sub.lastNotificationId, "original")
+        XCTAssertEqual(store.save(notificationsFromMessages: [replacement], withSubscription: sub).map(\.id), ["replacement"])
+        let updated = try XCTUnwrap(store.context.fetch(ntfy.Notification.fetchRequest()).first)
+        XCTAssertEqual(updated.id, "replacement")
+        XCTAssertNil(updated.attachmentLocalPath)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testExplicitAttachmentDeletionRetainsFileOnFailedSaveThenUnlinksOnSuccess() throws {
+        let (store, _, row, url) = try fixture()
+        let controller = NotificationAttachmentController()
+        try failNextSave(store)
+        controller.deleteDownloadedFile(notification: row)
+        try assertRetained(store, url: url)
+        XCTAssertEqual(row.attachmentProgress, AttachmentProgressState.done.persistedValue)
+        controller.deleteDownloadedFile(notification: row)
+        store.context.refreshAllObjects()
+        XCTAssertEqual(try store.context.count(for: ntfy.Notification.fetchRequest()), 1)
+        XCTAssertNil(row.attachmentLocalPath)
+        XCTAssertEqual(row.attachmentProgress, AttachmentProgressState.deleted.persistedValue)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: url.path))
+    }
+
+    func testFailedDownloadMoveAndCopyPreserveExistingFileAndRecordedPath() throws {
+        let (store, _, _, url) = try fixture()
+        let before = Set(try FileManager.default.contentsOfDirectory(atPath: url.deletingLastPathComponent().path))
+        // ENOENT in the real move AND copy fallback, after locating an existing destination.
+        XCTAssertThrowsError(try AttachmentFileStore.storeTemporaryFile(
+            at: url.deletingLastPathComponent().appendingPathComponent("missing"), to: url, mimeType: nil))
+        try assertRetained(store, url: url)
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: url.deletingLastPathComponent().path)),
+                       before.union([".attachments.lock"]), "No staging file may survive failure")
+    }
+
+    func testSuccessfulDownloadReplacementRemovesOldBytesAndStagingFile() throws {
+        let (store, _, row, url) = try fixture()
+        let source = url.deletingLastPathComponent().appendingPathComponent("incoming")
+        let replacement = Data("new download".utf8)
+        try replacement.write(to: source)
+        let result = try AttachmentFileStore.storeTemporaryFile(at: source, to: url, mimeType: "image/png")
+        XCTAssertEqual(result.localFileUrl, url)
+        XCTAssertEqual(result.size, Int64(replacement.count))
+        XCTAssertEqual(result.mimeType, "image/png")
+        XCTAssertEqual(try Data(contentsOf: url), replacement)
+        XCTAssertFalse(FileManager.default.fileExists(atPath: source.path))
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: url.deletingLastPathComponent().path)),
+                       ["retained.bin", ".attachments.lock"])
+        store.context.refreshAllObjects()
+        XCTAssertEqual(row.attachmentLocalPath, url.path)
+    }
+
+    func testFailedFinalRenameCleansStagingAndPreservesDestination() throws {
+        let dir = try directory()
+        let source = dir.appendingPathComponent("incoming")
+        try bytes.write(to: source)
+        // A nonempty directory cannot be replaced with a file: the actual final rename fails.
+        let destination = dir.appendingPathComponent("destination")
+        try FileManager.default.createDirectory(at: destination, withIntermediateDirectories: true)
+        let sentinel = destination.appendingPathComponent("retained.bin")
+        try bytes.write(to: sentinel)
+        XCTAssertThrowsError(try AttachmentFileStore.storeTemporaryFile(at: source, to: destination, mimeType: nil))
+        XCTAssertEqual(try Data(contentsOf: sentinel), bytes)
+        XCTAssertEqual(Set(try FileManager.default.contentsOfDirectory(atPath: dir.path)), ["destination", ".attachments.lock"])
+    }
+}

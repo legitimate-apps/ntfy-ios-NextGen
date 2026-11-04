@@ -1107,12 +1107,14 @@ class Store: ObservableObject {
                       let topic = subscription.topic, let id = notification.id else { return nil }
                 return SequenceRemoval(baseUrl: baseUrl, topic: topic, sequence: notification.sequenceID ?? id)
             }
+            var pendingFileCleanup = Set<String>()
             do {
                 for notification in notifications {
-                    deleteAttachmentLocalFile(for: notification)
+                    detachAttachmentLocalFile(for: notification, pendingFileCleanup: &pendingFileCleanup)
                     context.delete(notification)
                 }
                 try context.save()
+                pendingFileCleanup.forEach { try? FileManager.default.removeItem(atPath: $0) }
                 removals.forEach(notificationRemover)
             } catch {
                 Log.w(Store.tag, "Cannot delete notifications", error)
@@ -1911,6 +1913,7 @@ class Store: ObservableObject {
         let retention = applyingRetention ? notificationRetention() : .forever
         let expiry = Int64(Date().timeIntervalSince1970) - retention.seconds
         var presentations: [Message] = []
+        var pendingFileCleanup = Set<String>()
         var removals: [SequenceRemoval] = []
         var traversed = Set<String>()
         var batchIVs = Set<String>()
@@ -1968,7 +1971,7 @@ class Store: ObservableObject {
                 if let row {
                     if message.event == "message_clear" { row.read = true }
                     else {
-                        deleteAttachmentLocalFile(for: row)
+                        detachAttachmentLocalFile(for: row, pendingFileCleanup: &pendingFileCleanup)
                         context.delete(row)
                     }
                 }
@@ -1979,7 +1982,7 @@ class Store: ObservableObject {
                 message.isUpdate = row != nil
                 if row == nil { notification.read = false }
                 else {
-                    deleteAttachmentLocalFile(for: notification)
+                    detachAttachmentLocalFile(for: notification, pendingFileCleanup: &pendingFileCleanup)
                     removals.append(SequenceRemoval(baseUrl: subscription.baseUrl ?? "", topic: message.topic,
                                                     sequence: sequence, throughTime: message.time, keepingID: message.id))
                 }
@@ -1999,7 +2002,10 @@ class Store: ObservableObject {
             }
             try advanceCursor(of: subscription, to: last, polledSince: orderedSince)
         }
+        // Capture before save invalidates deleted objects. Later events may reuse a cached path.
+        let retainedPaths = Set(rows.filter { !$0.isDeleted }.compactMap(\.attachmentLocalPath))
         try context.save()
+        pendingFileCleanup.subtracting(retainedPaths).forEach { try? FileManager.default.removeItem(atPath: $0) }
         if !presentations.isEmpty {
             quietAlerts.received(identity: subscription.objectID.uriRepresentation().absoluteString)
         }
@@ -2079,9 +2085,10 @@ class Store: ObservableObject {
         subscription.lastEventTime = candidate.time
     }
 
-    private func deleteAttachmentLocalFile(for notification: Notification) {
+    // Capture plain paths before deleting/overwriting managed objects; unlink only after save.
+    private func detachAttachmentLocalFile(for notification: Notification, pendingFileCleanup: inout Set<String>) {
         if let localPath = notification.attachmentLocalPath, !localPath.isEmpty {
-            try? FileManager.default.removeItem(at: URL(fileURLWithPath: localPath))
+            pendingFileCleanup.insert(localPath)
             notification.attachmentLocalPath = nil
         }
     }

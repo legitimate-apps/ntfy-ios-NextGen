@@ -292,10 +292,10 @@ extension Notification {
     }
 
     @MainActor
-    func markAttachmentDeleted() {
+    func markAttachmentDeleted() throws {
         attachmentLocalPath = nil
         attachmentProgress = AttachmentProgressState.deleted.persistedValue
-        try? managedObjectContext?.save()
+        try managedObjectContext?.save()
     }
 }
 
