@@ -10127,9 +10127,29 @@ final class UrgentAlertsPresentationTests: XCTestCase {
     }
 
     func testDeniedBannerRecoveryLabelWrapsInFullAtLargestDynamicType() throws {
-        let text = try render(urgent: false, subscriptionList: true,
+        let rows = try render(urgent: false, subscriptionList: true,
                               sizeCategory: .accessibilityExtraExtraExtraLarge,
-                              authorization: .denied).map(\.0).joined(separator: " ")
+                              authorization: .denied)
+        let text = rows.map(\.0).joined(separator: " ")
         XCTAssertTrue(text.contains("Open Notification Settings"), "Recovery action must stay readable: \(text)")
+        let firstLine = try XCTUnwrap(rows.first { $0.0 == "Open Notification" })
+        let secondLine = try XCTUnwrap(rows.first { $0.0 == "Settings" })
+        XCTAssertEqual(firstLine.1.minX * UIScreen.main.bounds.width,
+                       secondLine.1.minX * UIScreen.main.bounds.width, accuracy: 3,
+                       "Wrapped action lines must share the banner's leading edge")
+    }
+
+    func testWarningInstructionsNameTheVisibleRecoveryAction() throws {
+        let defaults = UserDefaults.standard
+        let previous = defaults.object(forKey: "NTFYStatusWarnings")
+        defaults.set("banners", forKey: "NTFYStatusWarnings")
+        defer {
+            if let previous { defaults.set(previous, forKey: "NTFYStatusWarnings") }
+            else { defaults.removeObject(forKey: "NTFYStatusWarnings") }
+        }
+        let text = try render(urgent: false, authorization: .authorized).map(\.0).joined(separator: " ")
+        XCTAssertTrue(text.contains("Banners are off"), "Exercise the warning row: \(text)")
+        XCTAssertTrue(text.contains("Tap Open Notification Settings"), "Instruction must name its recovery action: \(text)")
+        XCTAssertFalse(text.contains("Tap Open Settings"))
     }
 }

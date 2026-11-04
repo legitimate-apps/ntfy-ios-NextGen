@@ -8,8 +8,11 @@ struct NotificationPermissionBanner: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(DeliveryHealthCopy.notificationsOff)
                 .fixedSize(horizontal: false, vertical: true)
-            Button(String(localized: "Open Notification Settings")) { delegate.openNotificationSettings() }
-                .fixedSize(horizontal: false, vertical: true)
+            Button(action: { delegate.openNotificationSettings() }) {
+                Text(String(localized: "Open Notification Settings"))
+                    .multilineTextAlignment(.leading)
+            }
+            .fixedSize(horizontal: false, vertical: true)
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -106,7 +109,9 @@ struct NotificationStatusView: View {
             Image(systemName: "exclamationmark.triangle.fill").foregroundColor(.orange).accessibilityHidden(true)
             VStack(alignment: .leading, spacing: 3) {
                 Text(warning.title)
-                Text(warning.detail).font(.subheadline).foregroundColor(.secondary)
+                Text(warning.detail.replacingOccurrences(
+                    of: DeliveryHealthCopy.openSettings, with: String(localized: "Open Notification Settings")))
+                    .font(.subheadline).foregroundColor(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
             }
         }
