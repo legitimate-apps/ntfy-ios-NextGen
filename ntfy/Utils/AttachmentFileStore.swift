@@ -130,15 +130,26 @@ enum AttachmentFileStore {
             remoteUrl: remoteUrl,
             mimeType: mimeType
         )
+        return try storeTemporaryFile(at: temporaryFileUrl, to: destinationUrl, mimeType: mimeType)
+    }
+
+    // Separate path resolution from the filesystem transaction so it can run without an app group.
+    static func storeTemporaryFile(at temporaryFileUrl: URL, to destinationUrl: URL, mimeType: String?) throws -> DownloadedAttachmentFile {
         return try withFileAccess(at: destinationUrl) {
-            try? FileManager.default.removeItem(at: destinationUrl)
+            // Stage on the destination volume: failed moves/copies never touch the retained file.
+            let stagedUrl = destinationUrl.deletingLastPathComponent().appendingPathComponent(UUID().uuidString)
+            defer { try? FileManager.default.removeItem(at: stagedUrl) }
             do {
-                try FileManager.default.moveItem(at: temporaryFileUrl, to: destinationUrl)
+                try FileManager.default.moveItem(at: temporaryFileUrl, to: stagedUrl)
             } catch {
-                try FileManager.default.copyItem(at: temporaryFileUrl, to: destinationUrl)
+                try FileManager.default.copyItem(at: temporaryFileUrl, to: stagedUrl)
             }
-            let attributes = try FileManager.default.attributesOfItem(atPath: destinationUrl.path)
+            let attributes = try FileManager.default.attributesOfItem(atPath: stagedUrl.path)
             let size = (attributes[FileAttributeKey.size] as? NSNumber)?.int64Value ?? 0
+            // Same-directory rename atomically replaces the destination under the existing lock.
+            guard Darwin.rename(stagedUrl.path, destinationUrl.path) == 0 else {
+                throw POSIXError(POSIXErrorCode(rawValue: errno) ?? .EIO)
+            }
             return DownloadedAttachmentFile(localFileUrl: destinationUrl, size: size, mimeType: mimeType)
         }
     }

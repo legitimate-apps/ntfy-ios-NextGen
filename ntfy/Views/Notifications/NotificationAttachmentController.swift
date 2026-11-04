@@ -120,9 +120,17 @@ final class NotificationAttachmentController: ObservableObject {
         guard let localFileUrl = notification.attachmentLocalFileUrl() else {
             return
         }
-        try? FileManager.default.removeItem(at: localFileUrl)
-        notification.markAttachmentDeleted()
-        clearTransientProgressState(for: notification)
+        guard let context = notification.managedObjectContext else { return }
+        notification.attachmentLocalPath = nil
+        notification.attachmentProgress = AttachmentProgressState.deleted.persistedValue
+        do {
+            try context.save()
+            try? FileManager.default.removeItem(at: localFileUrl)
+            clearTransientProgressState(for: notification)
+        } catch {
+            context.rollback()
+            Log.w("NotificationAttachmentController", "Cannot delete downloaded attachment", error)
+        }
     }
 
     deinit {
