@@ -112,8 +112,8 @@ final class LocalizationTests: XCTestCase {
             "Date shown is the end of the reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report.",
             "Import audio from Files, up to 50 MB. The first 29 seconds are used. System ringtones are not available to apps.",
             "Allowed messages use their usual topic sound and urgency. Notification and Focus settings still apply.",
-            "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.",
-            "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.",
+            "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.",
+            "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.",
             "Shows the system notification permission prompt",
             "When enabled, priority 5 messages can play sound even when silenced.",
         ]
@@ -179,9 +179,60 @@ final class LocalizationTests: XCTestCase {
 
     func testSystemSettingsWarningsNameTheSettingsApp() {
         XCTAssertEqual(NotificationWarning.backgroundRefreshOff.detail,
-                       String(localized: "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."))
+                       String(localized: "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."))
         XCTAssertEqual(NotificationWarning.lowPowerMode.detail,
-                       String(localized: "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."))
+                       String(localized: "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."))
+    }
+
+    func testWarningBodiesDoNotRepeatTheirTitlesInAnyLanguage() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let warnings: [NotificationWarning] = [.alertsHidden, .bannersOff, .lockScreenOff,
+            .notificationCenterOff, .soundsOff, .scheduledSummary, .backgroundRefreshOff,
+            .backgroundRefreshRestricted, .lowPowerMode]
+
+        // Resolve the runtime value back to its catalog entry, even when the test host's
+        // language is not English. This also keeps the gate tied to the live warning copy.
+        func localizations(for text: String) throws -> [String: Any] {
+            let matches = strings.values.compactMap { $0["localizations"] as? [String: Any] }
+                .filter { $0.values.contains { stringUnits($0).contains { $0["value"] as? String == text } } }
+            XCTAssertEqual(matches.count, 1, "Warning text must resolve uniquely: \(text)")
+            return try XCTUnwrap(matches.first)
+        }
+        func words(_ text: String, language: String) -> [String] {
+            var tokens = text.lowercased(with: Locale(identifier: language))
+                .components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
+            let articles: Set<String> = ["the", "der", "die", "das", "el", "los", "las", "la",
+                "il", "gli", "i", "le", "les", "l", "de", "het"]
+            if let first = tokens.first, articles.contains(first) { tokens.removeFirst() }
+            // Italian names the setting with an imperative in the title and a noun in prose.
+            if language == "it", tokens.starts(with: ["aggiorna", "app", "in", "background"]) {
+                tokens.replaceSubrange(0..<4, with: ["aggiornamento", "delle", "app", "in", "background"])
+            }
+            return tokens
+        }
+        let stateVerbs: Set<String> = ["are", "is", "sind", "ist", "está", "están", "sono",
+            "è", "są", "jest", "staan", "staat", "blijven", "est", "sont"]
+        for warning in warnings {
+            let titles = try localizations(for: warning.title)
+            let bodies = try localizations(for: warning.detail)
+            XCTAssertEqual(Set(titles.keys), Set(bodies.keys))
+            XCTAssertEqual(titles.count, 7)
+            for language in titles.keys.sorted() {
+                let title = try XCTUnwrap(stringUnits(try XCTUnwrap(titles[language])).first?["value"] as? String)
+                let body = try XCTUnwrap(stringUnits(try XCTUnwrap(bodies[language])).first?["value"] as? String)
+                let titleWords = words(title, language: language)
+                let bodyWords = words(body, language: language)
+                let verb = try XCTUnwrap(titleWords.firstIndex { stateVerbs.contains($0) },
+                                         "Unrecognized warning title state: \(language): \(title)")
+                let subject = Array(titleWords.prefix(verb))
+                XCTAssertFalse(subject.isEmpty)
+                XCTAssertFalse(bodyWords.starts(with: titleWords) || bodyWords.starts(with: subject),
+                               "Warning body repeats title opening: \(language)/\(warning.rawValue): \(title) / \(body)")
+            }
+        }
     }
 
     func testSpanishTopicTerminologyDoesNotUseTema() throws {

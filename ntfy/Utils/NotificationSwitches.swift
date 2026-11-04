@@ -82,9 +82,9 @@ enum NotificationWarning: String, Equatable {
         case .notificationCenterOff: return String(localized: "Messages you miss won't stay in Notification Center. Tap Open Settings, then turn on Notification Center.")
         case .soundsOff: return String(localized: "New messages arrive without a sound. Tap Open Settings, then turn on Sounds.")
         case .scheduledSummary: return String(localized: "Regular alerts are held and shown together at set times, not right away. Tap Open Settings, then choose Immediate Delivery.")
-        case .backgroundRefreshOff: return String(localized: "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.")
+        case .backgroundRefreshOff: return String(localized: "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.")
         case .backgroundRefreshRestricted: return String(localized: "Screen Time or device management blocks background updates, so messages can arrive late. Only whoever set the restriction can change it.")
-        case .lowPowerMode: return String(localized: "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.")
+        case .lowPowerMode: return String(localized: "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.")
         }
     }
 }

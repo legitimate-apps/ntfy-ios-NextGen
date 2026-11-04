@@ -29400,49 +29400,49 @@
         }
       }
     },
-    "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.": {
+    "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."
+            "value": "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Die Hintergrundaktualisierung ist aus, daher können Nachrichten verspätet oder erst beim Öffnen der App eintreffen. Aktiviere sie in der App „Einstellungen“ unter Allgemein → Hintergrundaktualisierung."
+            "value": "Nachrichten können verspätet oder erst beim Öffnen der App eintreffen. Aktiviere die Hintergrundaktualisierung in der App „Einstellungen“ unter Allgemein → Hintergrundaktualisierung."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "La actualización en segundo plano está desactivada, así que los mensajes pueden llegar tarde o solo al abrir la app. Actívala en la app Ajustes, en General → Actualización en segundo plano."
+            "value": "Los mensajes pueden llegar tarde o solo al abrir la app. Actívala en la app Ajustes, en General → Actualización en segundo plano."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’aggiornamento delle app in background è disattivato, quindi i messaggi possono arrivare in ritardo o solo quando apri l’app. Attivalo nell’app Impostazioni, sotto Generali → Aggiorna app in background."
+            "value": "I messaggi possono arrivare in ritardo o solo quando apri l’app. Attivalo nell’app Impostazioni, sotto Generali → Aggiorna app in background."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Odświeżanie aplikacji w tle jest wyłączone, więc wiadomości mogą docierać z opóźnieniem lub dopiero po otwarciu aplikacji. Włącz je w aplikacji Ustawienia, w sekcji Ogólne → Odświeżanie aplikacji w tle."
+            "value": "Wiadomości mogą docierać z opóźnieniem lub dopiero po otwarciu aplikacji. Włącz odświeżanie w aplikacji Ustawienia, w sekcji Ogólne → Odświeżanie aplikacji w tle."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Ververs op achtergrond staat uit, dus berichten kunnen te laat of pas bij het openen van de app binnenkomen. Zet dit aan in de app Instellingen onder Algemeen → Ververs op achtergrond."
+            "value": "Berichten kunnen te laat of pas bij het openen van de app binnenkomen. Zet dit aan in de app Instellingen onder Algemeen → Ververs op achtergrond."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "L’actualisation en arrière-plan est désactivée : les messages peuvent arriver en retard ou seulement à l’ouverture de l’app. Activez cette option dans l’app Réglages, sous Général → Actualiser en arrière-plan."
+            "value": "Les messages peuvent arriver en retard ou seulement à l’ouverture de l’app. Activez cette option dans l’app Réglages, sous Général → Actualiser en arrière-plan."
           }
         }
       }
@@ -29588,49 +29588,49 @@
         }
       }
     },
-    "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.": {
+    "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.": {
       "extractionState": "manual",
       "localizations": {
         "en": {
           "stringUnit": {
             "state": "translated",
-            "value": "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."
+            "value": "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."
           }
         },
         "de": {
           "stringUnit": {
             "state": "translated",
-            "value": "Der Stromsparmodus unterbricht Hintergrundaktualisierungen, um Akku zu sparen, daher können Nachrichten verspätet eintreffen. Deaktiviere ihn in der App „Einstellungen“ unter Batterie."
+            "value": "Hintergrundaktualisierungen werden unterbrochen, um Akku zu sparen, daher können Nachrichten verspätet eintreffen. Deaktiviere den Stromsparmodus in der App „Einstellungen“ unter Batterie."
           }
         },
         "es": {
           "stringUnit": {
             "state": "translated",
-            "value": "El modo de bajo consumo pausa las actualizaciones en segundo plano para ahorrar batería, así que los mensajes pueden llegar tarde. Desactívalo en la app Ajustes, en Batería."
+            "value": "Las actualizaciones en segundo plano se pausan para ahorrar batería, así que los mensajes pueden llegar tarde. Desactívalo en la app Ajustes, en Batería."
           }
         },
         "it": {
           "stringUnit": {
             "state": "translated",
-            "value": "Il risparmio energetico sospende gli aggiornamenti in background per risparmiare batteria, quindi i messaggi possono arrivare in ritardo. Disattivalo nell’app Impostazioni, sotto Batteria."
+            "value": "Gli aggiornamenti in background vengono sospesi per risparmiare batteria, quindi i messaggi possono arrivare in ritardo. Disattivalo nell’app Impostazioni, sotto Batteria."
           }
         },
         "pl": {
           "stringUnit": {
             "state": "translated",
-            "value": "Tryb niskiego zużycia energii wstrzymuje odświeżanie w tle, aby oszczędzać baterię, więc wiadomości mogą docierać z opóźnieniem. Wyłącz go w aplikacji Ustawienia, w sekcji Bateria."
+            "value": "Odświeżanie w tle jest wstrzymywane, aby oszczędzać baterię, więc wiadomości mogą docierać z opóźnieniem. Wyłącz tryb niskiego zużycia energii w aplikacji Ustawienia, w sekcji Bateria."
           }
         },
         "nl": {
           "stringUnit": {
             "state": "translated",
-            "value": "De energiebesparingsmodus onderbreekt achtergrondupdates om batterij te sparen, dus berichten kunnen te laat binnenkomen. Zet de modus uit in de app Instellingen onder Batterij."
+            "value": "Achtergrondupdates worden onderbroken om batterij te sparen, dus berichten kunnen te laat binnenkomen. Zet de energiebesparingsmodus uit in de app Instellingen onder Batterij."
           }
         },
         "fr": {
           "stringUnit": {
             "state": "translated",
-            "value": "Le mode économie d’énergie suspend les actualisations en arrière-plan pour économiser la batterie : les messages peuvent arriver en retard. Désactivez ce mode dans l’app Réglages, sous Batterie."
+            "value": "Les actualisations en arrière-plan sont suspendues pour économiser la batterie : les messages peuvent arriver en retard. Désactivez ce mode dans l’app Réglages, sous Batterie."
           }
         }
       }
