@@ -8,7 +8,7 @@ struct NotificationPermissionBanner: View {
         VStack(alignment: .leading, spacing: 8) {
             Text(DeliveryHealthCopy.notificationsOff)
                 .fixedSize(horizontal: false, vertical: true)
-            Button(DeliveryHealthCopy.openSettings) { delegate.openNotificationSettings() }
+            Button(String(localized: "Open Notification Settings")) { delegate.openNotificationSettings() }
         }
         .font(.subheadline)
         .frame(maxWidth: .infinity, alignment: .leading)
@@ -56,7 +56,7 @@ struct NotificationStatusView: View {
                     delegate.requestStandardNotificationAuthorization { result = nil }
                 }
             } else {
-                Button(DeliveryHealthCopy.openSettings) { delegate.openNotificationSettings() }
+                Button(String(localized: "Open Notification Settings")) { delegate.openNotificationSettings() }
             }
             Button(repairing ? DeliveryHealthCopy.repairing : DeliveryHealthCopy.repair, action: repair)
                 .disabled(repairing)

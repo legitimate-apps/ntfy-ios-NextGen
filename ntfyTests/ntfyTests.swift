@@ -10036,14 +10036,26 @@ final class MessageDynamicTypeTests: XCTestCase {
 /// Render the real sections rather than pinning their SwiftUI implementation.
 @MainActor
 final class UrgentAlertsPresentationTests: XCTestCase {
-    private func render(urgent: Bool) throws -> [(String, CGRect)] {
+    private func render(urgent: Bool, banner: Bool = false,
+                        authorization: UNAuthorizationStatus = .notDetermined) throws -> [(String, CGRect)] {
+        let method = try XCTUnwrap(class_getInstanceMethod(UNNotificationSettings.self,
+            #selector(getter: UNNotificationSettings.authorizationStatus)))
+        let original = method_getImplementation(method)
+        let status: @convention(block) (NSObject) -> Int = { _ in authorization.rawValue }
+        let replacement = imp_implementationWithBlock(status)
+        method_setImplementation(method, replacement)
+        defer {
+            method_setImplementation(method, original)
+            imp_removeBlock(replacement)
+        }
         let scene = try XCTUnwrap(UIApplication.shared.connectedScenes.compactMap { $0 as? UIWindowScene }.first)
         let previous = scene.windows.first(where: \.isKeyWindow)
         let window = UIWindow(windowScene: scene)
         window.frame = UIScreen.main.bounds
         let store = Store(inMemory: true, credentialStore: InMemoryCredentialStore(), topicSecrets: InMemoryTopicSecretStore())
         let root = Form {
-            if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
+            if banner { NotificationPermissionBanner() }
+            else if urgent { UrgentAlertsSettingView() } else { NotificationStatusView() }
         }.environmentObject(AppDelegate()).environmentObject(store)
             .environment(\.managedObjectContext, store.context)
             .environment(\.sizeCategory, .large).environment(\.colorScheme, .light)
@@ -10079,6 +10091,18 @@ final class UrgentAlertsPresentationTests: XCTestCase {
         XCTAssertTrue(text.contains("Not requested yet"))
         XCTAssertTrue(text.contains("Allow notifications"))
         XCTAssertFalse(text.contains("Open Notification Settings"))
+    }
+
+    func testSettingsRecoveryUsesOneLabelInBothSectionsAndBanner() throws {
+        for authorization: UNAuthorizationStatus in [.denied, .provisional] {
+            for urgent in [false, true] {
+                let text = try render(urgent: urgent, authorization: authorization).map(\.0).joined(separator: " ")
+                XCTAssertTrue(text.contains("Open Notification Settings"), "Same recovery destination needs the same label: \(text)")
+                XCTAssertFalse(text.contains("Open Settings"))
+            }
+        }
+        let banner = try render(urgent: false, banner: true, authorization: .denied).map(\.0).joined(separator: " ")
+        XCTAssertTrue(banner.contains("Open Notification Settings"))
     }
 
     func testStatusAndActionPrecedeTheExplanation() throws {
