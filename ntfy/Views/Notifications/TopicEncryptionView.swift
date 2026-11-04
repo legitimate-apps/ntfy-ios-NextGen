@@ -80,7 +80,7 @@ struct TopicEncryptionView: View {
             Form {
                 Section(
                     header: Text(String(localized: "End-to-end encryption")),
-                    footer: Text(String(localized: "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new phone needs it entered again. Senders need the same password; see \"How to send encrypted messages\"."))
+                    footer: Text(String(localized: "With a password, messages are encrypted by whoever sends them, in transit and on the server: the server, Google and Apple see only ciphertext. Once they arrive they are stored readable on this device. The password stays on this device only and isn't backed up, so a restored or new device needs it entered again. Senders need the same password; see \"How to send encrypted messages\"."))
                 ) {
                     if let currentPassword, !isEditing {
                         Label(String(localized: "On for this topic"), systemImage: "lock.fill")
@@ -108,7 +108,7 @@ struct TopicEncryptionView: View {
                     } else {
                         if passwordUnreadable && !isEditing {
                             Label(String(localized: "On, but the password can't be read right now"), systemImage: "lock.trianglebadge.exclamationmark")
-                            Text(String(localized: "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your phone, set the password again or remove it."))
+                            Text(String(localized: "Encrypted messages stay locked and plain ones are marked \"Not encrypted\". If this persists after unlocking your device, set the password again or remove it."))
                                 .font(.footnote)
                                 .foregroundColor(.secondary)
                             Button(String(localized: "Remove password"), role: .destructive) { confirmRemove = true }

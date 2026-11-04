@@ -287,7 +287,7 @@ struct NotificationListView: View {
             case .encryptionUnavailable:
                 return Alert(
                     title: Text(String(localized: "Not sent")),
-                    message: Text(String(localized: "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your phone, or set the password again."))
+                    message: Text(String(localized: "This topic is end-to-end encrypted, but its password can't be read right now, so the test message would go out unencrypted. Try again after unlocking your device, or set the password again."))
                 )
             }
         }

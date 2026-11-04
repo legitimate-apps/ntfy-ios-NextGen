@@ -194,7 +194,7 @@ final class RelayCheckTests: XCTestCase {
     func testReceivedCopyDoesNotClaimPhoneDelivery() {
         let message = RelayCheck.State.received(stamp).message!
         let time = DateFormatter.localizedString(from: Date(timeIntervalSince1970: Double(stamp) / 1000), dateStyle: .none, timeStyle: .medium)
-        XCTAssertEqual(message, String(localized: "ntfy-me.com received a wake-up for this topic at \(time), and FCM accepted it. This does not prove your phone received it or that this test caused the wake-up."))
+        XCTAssertEqual(message, String(localized: "ntfy-me.com received a wake-up for this topic at \(time), and FCM accepted it. This does not prove your device received it or that this test caused the wake-up."))
     }
     func testNoObservationCopyDoesNotAssertWrongConfigurationOrTwoMinuteTest() {
         let message = RelayCheck.State.notObserved.message!
