@@ -17,6 +17,20 @@ struct NotificationPermissionBanner: View {
     }
 }
 
+/// Consistent title/value hierarchy for notification permission and delivery settings.
+struct NotificationStatusRow: View {
+    let title: String
+    let value: String
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 3) {
+            Text(title)
+            Text(value).font(.subheadline).foregroundColor(.secondary)
+        }
+        .accessibilityElement(children: .combine)
+    }
+}
+
 struct NotificationStatusView: View {
     @EnvironmentObject private var delegate: AppDelegate
     @StateObject private var subscriptions = SubscriptionsObservable()
@@ -29,13 +43,13 @@ struct NotificationStatusView: View {
 
     var body: some View {
         Section(header: Text(DeliveryHealthCopy.status)) {
-            statusRow(DeliveryHealthCopy.permission,
+            NotificationStatusRow(title: DeliveryHealthCopy.permission, value:
                       DeliveryHealthCopy.permissionLabel(delegate.notificationAuthorizationStatus))
-            statusRow(DeliveryHealthCopy.phoneRegistration,
+            NotificationStatusRow(title: DeliveryHealthCopy.phoneRegistration, value:
                       delegate.hasPhoneRegistration ? DeliveryHealthCopy.registered : DeliveryHealthCopy.waiting)
-            statusRow(DeliveryHealthCopy.pushRegistration,
+            NotificationStatusRow(title: DeliveryHealthCopy.pushRegistration, value:
                       delegate.hasPushRegistration ? DeliveryHealthCopy.registered : DeliveryHealthCopy.waiting)
-            statusRow(DeliveryHealthCopy.pendingTopics, String(pendingCount))
+            NotificationStatusRow(title: DeliveryHealthCopy.pendingTopics, value: String(pendingCount))
             ForEach(delegate.notificationSwitches.warnings(), id: \.self, content: warningRow)
             if delegate.notificationAuthorizationStatus == .notDetermined {
                 Button(DeliveryHealthCopy.allowNotifications) {
@@ -84,14 +98,6 @@ struct NotificationStatusView: View {
         let host = hostname.trimmingCharacters(in: CharacterSet(charactersIn: "."))
         let appHost = URL(string: Config.appBaseUrl)?.host?.lowercased().trimmingCharacters(in: CharacterSet(charactersIn: "."))
         return host != appHost && host != "ntfy-me.com" && host != "ntfy.sh"
-    }
-
-    private func statusRow(_ title: String, _ value: String) -> some View {
-        VStack(alignment: .leading, spacing: 3) {
-            Text(title)
-            Text(value).font(.subheadline).foregroundColor(.secondary)
-        }
-        .accessibilityElement(children: .combine)
     }
 
     private func warningRow(_ warning: NotificationWarning) -> some View {

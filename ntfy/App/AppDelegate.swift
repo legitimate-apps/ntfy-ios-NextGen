@@ -300,7 +300,7 @@ class AppDelegate: UIResponder, UIApplicationDelegate, ObservableObject {
             } else {
                 Log.e(self.tag, "Failed to register for local push notifications", error)
             }
-            DispatchQueue.main.async { completion?() }
+            self.refreshNotificationSettings(completion: completion)
         }
     }
     
