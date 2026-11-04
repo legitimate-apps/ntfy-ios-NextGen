@@ -81,7 +81,7 @@ struct TopicSoundView: View {
                     soundRow(nil, title: String(localized: "Default"))
                     ForEach(TopicSound.builtins) { sound in soundRow(sound.id, title: sound.title) }
                 }
-                Section(header: Text(String(localized: "Imported sounds")), footer: Text(String(localized: "Import audio from Files, up to 50 MB. The first 29 seconds are used. iOS system ringtones are not available to apps."))) {
+                Section(header: Text(String(localized: "Imported sounds")), footer: Text(String(localized: "Import audio from Files, up to 50 MB. The first 29 seconds are used. System ringtones are not available to apps."))) {
                     ForEach(imports) { sound in soundRow(sound.id, title: sound.title) }
                         .onDelete(perform: remove)
                         .deleteDisabled(busy)

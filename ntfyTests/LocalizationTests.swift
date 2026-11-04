@@ -104,6 +104,18 @@ final class LocalizationTests: XCTestCase {
             "Topics could not be read. Unlock your device and open NTFY me, then try again.",
             "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline.",
             "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen.",
+            "Allow notifications so each message sent to %@ shows up on your lock screen, even when the app is closed. You'll be asked for permission next.",
+            "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. You'll be asked for permission next.",
+            "Critical alerts were not allowed. You can enable them for ntfy in the Settings app under Notifications.",
+            "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in the Settings app, including your Focus settings.",
+            "Your device provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident.",
+            "Date shown is the end of the reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report.",
+            "Import audio from Files, up to 50 MB. The first 29 seconds are used. System ringtones are not available to apps.",
+            "Allowed messages use their usual topic sound and urgency. Notification and Focus settings still apply.",
+            "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.",
+            "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.",
+            "Shows the system notification permission prompt",
+            "When enabled, priority 5 messages can play sound even when silenced.",
         ]
         let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
             .appendingPathComponent("Localization/Localizable.xcstrings"))
@@ -111,7 +123,7 @@ final class LocalizationTests: XCTestCase {
         let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
         let plugIns = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
         let extensionURL = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: plugIns, includingPropertiesForKeys: nil)
-            .first { $0.pathExtension == "appex" })
+            .first { $0.lastPathComponent == "ntfyNSE.appex" })
         let extensionBundle = try XCTUnwrap(Bundle(url: extensionURL))
         for key in keys {
             let entry = try XCTUnwrap(strings[key], "Missing device-neutral catalog key: \(key)")
@@ -132,6 +144,95 @@ final class LocalizationTests: XCTestCase {
         XCTAssertNotEqual(DeliveryHealthCopy.phoneRegistration, DeliveryHealthCopy.pushRegistration)
         XCTAssertEqual(NotificationWarning.lockScreenOff.detail,
                        String(localized: "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen."))
+    }
+
+    /// Shipped release copy is immutable; the official upstream client is a product name.
+    /// Current instructions should say Settings or describe the action directly on both platforms.
+    func testCurrentCatalogCopyDoesNotNameOnlyThePhoneOperatingSystem() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let historicalOrProductNames: Set<String> = [
+            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings.",
+            "Notification status now shows iOS settings that hide or delay alerts.",
+            "For instant delivery from your own server, add \"%@\" to its config. Without it, messages may arrive with significant delay. A server has one upstream; using %@ stops instant delivery to the official ntfy iOS app on that server. See %@.",
+        ]
+        XCTAssertTrue(historicalOrProductNames.isSubset(of: Set(strings.keys)))
+        let ios = try NSRegularExpression(pattern: #"\biOS\b"#)
+        for (key, entry) in strings where !historicalOrProductNames.contains(key) {
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+            for (language, value) in localizations {
+                for unit in stringUnits(value) {
+                    let text = try XCTUnwrap(unit["value"] as? String)
+                    XCTAssertNil(ios.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+                                 "\(language): current copy names only iOS: \(key): \(text)")
+                }
+            }
+        }
+    }
+
+    func testPlatformNeutralUrgentCopyReachesTheApp() {
+        XCTAssertEqual(UrgentAlertsState.explanation,
+                       String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in the Settings app, including your Focus settings."))
+    }
+
+    func testSystemSettingsWarningsNameTheSettingsApp() {
+        XCTAssertEqual(NotificationWarning.backgroundRefreshOff.detail,
+                       String(localized: "Messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."))
+        XCTAssertEqual(NotificationWarning.lowPowerMode.detail,
+                       String(localized: "Background updates are paused to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."))
+    }
+
+    func testWarningBodiesDoNotRepeatTheirTitlesInAnyLanguage() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let warnings: [NotificationWarning] = [.alertsHidden, .bannersOff, .lockScreenOff,
+            .notificationCenterOff, .soundsOff, .scheduledSummary, .backgroundRefreshOff,
+            .backgroundRefreshRestricted, .lowPowerMode]
+
+        // Resolve the runtime value back to its catalog entry, even when the test host's
+        // language is not English. This also keeps the gate tied to the live warning copy.
+        func localizations(for text: String) throws -> [String: Any] {
+            let matches = strings.values.compactMap { $0["localizations"] as? [String: Any] }
+                .filter { $0.values.contains { stringUnits($0).contains { $0["value"] as? String == text } } }
+            XCTAssertEqual(matches.count, 1, "Warning text must resolve uniquely: \(text)")
+            return try XCTUnwrap(matches.first)
+        }
+        func words(_ text: String, language: String) -> [String] {
+            var tokens = text.lowercased(with: Locale(identifier: language))
+                .components(separatedBy: CharacterSet.alphanumerics.inverted).filter { !$0.isEmpty }
+            let articles: Set<String> = ["the", "der", "die", "das", "el", "los", "las", "la",
+                "il", "gli", "i", "le", "les", "l", "de", "het"]
+            if let first = tokens.first, articles.contains(first) { tokens.removeFirst() }
+            // Italian names the setting with an imperative in the title and a noun in prose.
+            if language == "it", tokens.starts(with: ["aggiorna", "app", "in", "background"]) {
+                tokens.replaceSubrange(0..<4, with: ["aggiornamento", "delle", "app", "in", "background"])
+            }
+            return tokens
+        }
+        let stateVerbs: Set<String> = ["are", "is", "sind", "ist", "está", "están", "sono",
+            "è", "są", "jest", "staan", "staat", "blijven", "est", "sont"]
+        for warning in warnings {
+            let titles = try localizations(for: warning.title)
+            let bodies = try localizations(for: warning.detail)
+            XCTAssertEqual(Set(titles.keys), Set(bodies.keys))
+            XCTAssertEqual(titles.count, 7)
+            for language in titles.keys.sorted() {
+                let title = try XCTUnwrap(stringUnits(try XCTUnwrap(titles[language])).first?["value"] as? String)
+                let body = try XCTUnwrap(stringUnits(try XCTUnwrap(bodies[language])).first?["value"] as? String)
+                let titleWords = words(title, language: language)
+                let bodyWords = words(body, language: language)
+                let verb = try XCTUnwrap(titleWords.firstIndex { stateVerbs.contains($0) },
+                                         "Unrecognized warning title state: \(language): \(title)")
+                let subject = Array(titleWords.prefix(verb))
+                XCTAssertFalse(subject.isEmpty)
+                XCTAssertFalse(bodyWords.starts(with: titleWords) || bodyWords.starts(with: subject),
+                               "Warning body repeats title opening: \(language)/\(warning.rawValue): \(title) / \(body)")
+            }
+        }
     }
 
     func testSpanishTopicTerminologyDoesNotUseTema() throws {

@@ -11,7 +11,7 @@ struct DiagnosticReportsView: View {
                     VStack(alignment: .leading, spacing: 8) {
                         Text(String(localized: "No diagnostic reports"))
                             .font(.headline)
-                        Text(String(localized: "iOS provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident."))
+                        Text(String(localized: "Your device provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident."))
                             .foregroundColor(.secondary)
                     }
                     .padding(.vertical, 8)
@@ -69,7 +69,7 @@ private struct DiagnosticReportView: View {
                 Text(report.kind.title).font(.headline)
                 Text(report.date.formatted(date: .long, time: .shortened))
             } footer: {
-                Text(String(localized: "Date shown is the end of the iOS reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report."))
+                Text(String(localized: "Date shown is the end of the reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report."))
             }
             Section {
                 Button {
