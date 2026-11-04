@@ -104,6 +104,18 @@ final class LocalizationTests: XCTestCase {
             "Topics could not be read. Unlock your device and open NTFY me, then try again.",
             "Get one alert when no message arrives within the chosen time, even if this topic is muted. A new message starts the timer again. A quiet alert can also mean this device isn't receiving messages, including when it is offline.",
             "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen.",
+            "Allow notifications so each message sent to %@ shows up on your lock screen, even when the app is closed. You'll be asked for permission next.",
+            "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. You'll be asked for permission next.",
+            "Critical alerts were not allowed. You can enable them for ntfy in the Settings app under Notifications.",
+            "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in the Settings app, including your Focus settings.",
+            "Your device provides reports after some crashes, hangs or resource issues. They may arrive later and do not cover every incident.",
+            "Date shown is the end of the reporting period. The JSON file contains call stacks and technical metadata. You can attach it to a bug report.",
+            "Import audio from Files, up to 50 MB. The first 29 seconds are used. System ringtones are not available to apps.",
+            "Allowed messages use their usual topic sound and urgency. Notification and Focus settings still apply.",
+            "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh.",
+            "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery.",
+            "Shows the system notification permission prompt",
+            "When enabled, priority 5 messages can play sound even when silenced.",
         ]
         let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
             .appendingPathComponent("Localization/Localizable.xcstrings"))
@@ -111,7 +123,7 @@ final class LocalizationTests: XCTestCase {
         let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
         let plugIns = try XCTUnwrap(Bundle.main.builtInPlugInsURL)
         let extensionURL = try XCTUnwrap(FileManager.default.contentsOfDirectory(at: plugIns, includingPropertiesForKeys: nil)
-            .first { $0.pathExtension == "appex" })
+            .first { $0.lastPathComponent == "ntfyNSE.appex" })
         let extensionBundle = try XCTUnwrap(Bundle(url: extensionURL))
         for key in keys {
             let entry = try XCTUnwrap(strings[key], "Missing device-neutral catalog key: \(key)")
@@ -132,6 +144,44 @@ final class LocalizationTests: XCTestCase {
         XCTAssertNotEqual(DeliveryHealthCopy.phoneRegistration, DeliveryHealthCopy.pushRegistration)
         XCTAssertEqual(NotificationWarning.lockScreenOff.detail,
                        String(localized: "New messages won't show while your device is locked. Tap Open Settings, then turn on Lock Screen."))
+    }
+
+    /// Shipped release copy is immutable; the official upstream client is a product name.
+    /// Current instructions should say Settings or describe the action directly on both platforms.
+    func testCurrentCatalogCopyDoesNotNameOnlyThePhoneOperatingSystem() throws {
+        let url = try XCTUnwrap(Bundle(for: Self.self).resourceURL?
+            .appendingPathComponent("Localization/Localizable.xcstrings"))
+        let catalog = try XCTUnwrap(JSONSerialization.jsonObject(with: Data(contentsOf: url)) as? [String: Any])
+        let strings = try XCTUnwrap(catalog["strings"] as? [String: [String: Any]])
+        let historicalOrProductNames: Set<String> = [
+            "Priority 4 and 5 messages can now break through Focus and the Notification Summary when Time Sensitive notifications are allowed in iOS and Focus settings.",
+            "Notification status now shows iOS settings that hide or delay alerts.",
+            "For instant delivery from your own server, add \"%@\" to its config. Without it, messages may arrive with significant delay. A server has one upstream; using %@ stops instant delivery to the official ntfy iOS app on that server. See %@.",
+        ]
+        XCTAssertTrue(historicalOrProductNames.isSubset(of: Set(strings.keys)))
+        let ios = try NSRegularExpression(pattern: #"\biOS\b"#)
+        for (key, entry) in strings where !historicalOrProductNames.contains(key) {
+            let localizations = try XCTUnwrap(entry["localizations"] as? [String: Any])
+            for (language, value) in localizations {
+                for unit in stringUnits(value) {
+                    let text = try XCTUnwrap(unit["value"] as? String)
+                    XCTAssertNil(ios.firstMatch(in: text, range: NSRange(text.startIndex..., in: text)),
+                                 "\(language): current copy names only iOS: \(key): \(text)")
+                }
+            }
+        }
+    }
+
+    func testPlatformNeutralUrgentCopyReachesTheApp() {
+        XCTAssertEqual(UrgentAlertsState.explanation,
+                       String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in the Settings app, including your Focus settings."))
+    }
+
+    func testSystemSettingsWarningsNameTheSettingsApp() {
+        XCTAssertEqual(NotificationWarning.backgroundRefreshOff.detail,
+                       String(localized: "Background App Refresh is off, so messages can arrive late or only when you open the app. Turn it on in the Settings app under General → Background App Refresh."))
+        XCTAssertEqual(NotificationWarning.lowPowerMode.detail,
+                       String(localized: "Low Power Mode pauses background updates to save battery, so messages can arrive late. Turn it off in the Settings app under Battery."))
     }
 
     func testSpanishTopicTerminologyDoesNotUseTema() throws {

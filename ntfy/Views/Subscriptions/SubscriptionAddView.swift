@@ -516,8 +516,8 @@ enum SubscriptionPermissionCopy {
     static func message(baseUrl: String, topicURL: String, topicCount: Int) -> String {
         if let hint = Config.ntfyShDeliveryHint(baseUrl: baseUrl) { return hint }
         if topicCount > 1 {
-            return String(localized: "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. iOS will ask you next.")
+            return String(localized: "Allow notifications so messages sent to the topics you added show up on your lock screen, even when the app is closed. You'll be asked for permission next.")
         }
-        return String(localized: "Allow notifications so each message sent to \(shortUrl(url: topicURL)) shows up on your lock screen, even when the app is closed. iOS will ask you next.")
+        return String(localized: "Allow notifications so each message sent to \(shortUrl(url: topicURL)) shows up on your lock screen, even when the app is closed. You'll be asked for permission next.")
     }
 }

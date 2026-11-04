@@ -7419,7 +7419,7 @@ final class UrgentAlertsStateTests: XCTestCase {
     }
 
     func testExplanationNamesPrioritiesAndBothSystemControlsWithPermissionCondition() {
-        XCTAssertEqual(UrgentAlertsState.explanation, String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in iOS settings, including your Focus settings."))
+        XCTAssertEqual(UrgentAlertsState.explanation, String(localized: "Priority 4 and 5 messages are Time Sensitive. They can break through Focus and the Notification Summary when allowed in the Settings app, including your Focus settings."))
     }
 }
 

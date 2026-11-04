@@ -24,7 +24,7 @@ struct QuietHoursView: View {
                         }))
                 }
             }
-            Section(footer: Text(String(localized: "Allowed messages use their usual topic sound and urgency. iOS notification and Focus settings still apply."))) {
+            Section(footer: Text(String(localized: "Allowed messages use their usual topic sound and urgency. Notification and Focus settings still apply."))) {
                 Toggle(String(localized: "Allow priority 5"), isOn: $schedule.allowUrgent)
                 NavigationLink(String(localized: "Allowed topics")) {
                     List {
